@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>설정 - Facility Safety</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed": "#001f27",
+                      "secondary-fixed": "#bdeafa",
+                      "surface-dim": "#d5dbde",
+                      "tertiary": "#914d00",
+                      "on-primary-fixed-variant": "#004e5f",
+                      "on-primary-container": "#00414f",
+                      "background": "#f5fafd",
+                      "surface-container-low": "#eff4f7",
+                      "tertiary-fixed-dim": "#ffb77d",
+                      "on-surface-variant": "#3d494d",
+                      "primary-fixed": "#b3ebff",
+                      "surface": "#f5fafd",
+                      "tertiary-fixed": "#ffdcc3",
+                      "outline": "#6d797e",
+                      "primary": "#00677d",
+                      "surface-container": "#e9eff1",
+                      "on-secondary-container": "#3d6977",
+                      "on-secondary": "#ffffff",
+                      "surface-bright": "#f5fafd",
+                      "on-error-container": "#93000a",
+                      "on-error": "#ffffff",
+                      "surface-variant": "#dee3e6",
+                      "outline-variant": "#bcc9ce",
+                      "on-primary": "#ffffff",
+                      "surface-tint": "#00677d",
+                      "on-background": "#171c1f",
+                      "on-tertiary-fixed-variant": "#6e3900",
+                      "on-secondary-fixed": "#001f27",
+                      "secondary-fixed-dim": "#a1cddd",
+                      "on-tertiary-container": "#5d2f00",
+                      "on-secondary-fixed-variant": "#1e4c5a",
+                      "on-tertiary-fixed": "#2f1500",
+                      "on-surface": "#171c1f",
+                      "primary-container": "#00b4d8",
+                      "inverse-on-surface": "#ecf2f4",
+                      "primary-fixed-dim": "#4cd6fb",
+                      "error-container": "#ffdad6",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#396472",
+                      "inverse-surface": "#2b3134",
+                      "tertiary-container": "#eb8f3b",
+                      "surface-container-highest": "#dee3e6",
+                      "surface-container-high": "#e3e9ec",
+                      "secondary-container": "#bae7f7",
+                      "error": "#ba1a1a",
+                      "inverse-primary": "#4cd6fb"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "body": [
+                              "Inter"
+                      ],
+                      "label": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: theme('colors.surface');
+            color: theme('colors.on-surface');
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Material Symbols Setup */
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Korean Keep-All Word Break */
+        .keep-all {
+            word-break: keep-all;
+        }
+      </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface pb-[100px] pt-[80px] min-h-screen">
+<!-- TopAppBar Semantic Shell -->
+<header aria-label="Top Navigation" class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md shadow-none bg-opacity-70 flex justify-between items-center px-6 py-4 max-w-full mx-auto">
+<button aria-label="Location Options" class="flex items-center justify-center text-cyan-600 dark:text-cyan-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full p-2">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+</button>
+<h1 class="font-['Pretendard'] font-bold text-lg tracking-tight text-xl font-black text-slate-900 dark:text-slate-50">설정</h1>
+<button aria-label="Notifications" class="flex items-center justify-center text-cyan-600 dark:text-cyan-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full p-2">
+<span class="material-symbols-outlined" data-icon="notifications_active">notifications_active</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-4xl mx-auto px-6 space-y-10 pt-10">
+<!-- Editorial Header Section -->
+<section class="mb-12">
+<h2 class="font-display text-[2rem] font-black tracking-tight text-on-surface mb-2 keep-all">시스템 설정</h2>
+<p class="font-body text-[1rem] text-on-surface-variant leading-relaxed keep-all max-w-2xl">
+                안전 관리 시스템의 전반적인 환경을 구성합니다. 시설물 알림, 연결 장치, 보안 기준을 귀하의 운영 지침에 맞게 조정하세요.
+            </p>
+</section>
+<!-- Setting Groups (Bento-like, Assymetric layout approach using grid) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- 알림 설정 Group -->
+<section class="bg-surface-container-lowest rounded-xl p-8 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-8xl" data-icon="notifications">notifications</span>
+</div>
+<div class="mb-6">
+<h3 class="font-headline text-[1.25rem] font-bold text-on-surface mb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="notifications" data-weight="fill" style="font-variation-settings: 'FILL' 1;">notifications</span>
+                        알림 설정
+                    </h3>
+<p class="font-body text-sm text-on-surface-variant">경고 및 시스템 메시지 수신 방식</p>
+</div>
+<ul class="space-y-6">
+<!-- Setting Item -->
+<li class="flex items-center justify-between">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">알림 켜기</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">모든 주요 시스템 경고 수신</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</li>
+<!-- Setting Item -->
+<li class="flex items-center justify-between">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">조용한 시간</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">지정된 시간 동안 알림 음소거</p>
+</div>
+<button class="text-primary font-body text-sm font-semibold px-3 py-1 bg-surface-container-low hover:bg-surface-container rounded-full transition-colors">
+                            설정하기
+                        </button>
+</li>
+<!-- Setting Item -->
+<li class="flex items-center justify-between">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">긴급 상황 예외</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">조용한 시간에도 긴급 알림 수신</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-outline-variant after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</li>
+</ul>
+</section>
+<!-- 관리 및 연결 Group -->
+<section class="bg-surface-container-lowest rounded-xl p-8 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-8xl" data-icon="device_hub">device_hub</span>
+</div>
+<div class="mb-6">
+<h3 class="font-headline text-[1.25rem] font-bold text-on-surface mb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="device_hub" data-weight="fill" style="font-variation-settings: 'FILL' 1;">device_hub</span>
+                        관리 및 연결
+                    </h3>
+<p class="font-body text-sm text-on-surface-variant">담당자 및 센서/기기 네트워크 관리</p>
+</div>
+<ul class="space-y-6">
+<li class="flex items-center justify-between group cursor-pointer hover:bg-surface-container-low -mx-4 px-4 py-2 rounded-lg transition-colors">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">책임자 연락처</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">비상 연락망 및 권한 관리</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</li>
+<li class="flex items-center justify-between group cursor-pointer hover:bg-surface-container-low -mx-4 px-4 py-2 rounded-lg transition-colors">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">센서 등록</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">신규 안전 진단 센서 추가</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</li>
+<li class="flex items-center justify-between group cursor-pointer hover:bg-surface-container-low -mx-4 px-4 py-2 rounded-lg transition-colors">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">연결 장치 관리</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">활성화된 게이트웨이 상태 확인</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</li>
+</ul>
+</section>
+<!-- 안전 기준 Group -->
+<section class="bg-surface-container-lowest rounded-xl p-8 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-8xl" data-icon="security">security</span>
+</div>
+<div class="mb-6">
+<h3 class="font-headline text-[1.25rem] font-bold text-on-surface mb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="security" data-weight="fill" style="font-variation-settings: 'FILL' 1;">security</span>
+                        안전 기준
+                    </h3>
+<p class="font-body text-sm text-on-surface-variant">시스템 작동 임계값 및 보안 정책</p>
+</div>
+<ul class="space-y-6">
+<li class="flex items-center justify-between group cursor-pointer hover:bg-surface-container-low -mx-4 px-4 py-2 rounded-lg transition-colors">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">작동 임계값 설정</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">진동/온도 등 경고 발생 기준점 조정</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</li>
+<li class="flex items-center justify-between group cursor-pointer hover:bg-surface-container-low -mx-4 px-4 py-2 rounded-lg transition-colors">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">보안 설정</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">접근 제어 및 데이터 암호화 수준</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</li>
+</ul>
+</section>
+<!-- 데이터 Group -->
+<section class="bg-surface-container-lowest rounded-xl p-8 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-8xl" data-icon="database">database</span>
+</div>
+<div class="mb-6">
+<h3 class="font-headline text-[1.25rem] font-bold text-on-surface mb-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="database" data-weight="fill" style="font-variation-settings: 'FILL' 1;">database</span>
+                        데이터
+                    </h3>
+<p class="font-body text-sm text-on-surface-variant">로그 기록 및 동기화 옵션</p>
+</div>
+<ul class="space-y-6">
+<li class="flex items-center justify-between">
+<div>
+<p class="font-body font-semibold text-on-surface text-base">동기화 상태</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">마지막 동기화: 오늘 14:30</p>
+</div>
+<button aria-label="Sync Now" class="flex items-center justify-center p-2 rounded-full hover:bg-surface-container-low text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="sync">sync</span>
+</button>
+</li>
+<li class="flex items-center justify-between pt-4 mt-2 relative">
+<!-- Pseudo-border using gradient for 'No-Line' rule compliance -->
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-surface-variant to-transparent opacity-50"></div>
+<div>
+<p class="font-body font-semibold text-error text-base">데이터 초기화</p>
+<p class="font-body text-xs text-on-surface-variant mt-1">모든 로컬 캐시 및 기록 삭제</p>
+</div>
+<button class="text-error font-body text-sm font-semibold px-4 py-2 bg-error-container/30 hover:bg-error-container/60 rounded-full transition-colors">
+                            초기화
+                        </button>
+</li>
+</ul>
+</section>
+</div>
+</main>
+<!-- BottomNavBar Semantic Shell -->
+<nav aria-label="Bottom Navigation" class="fixed bottom-0 w-full z-50 rounded-t-[2rem] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl no-border shadow-[0_-8px_32px_rgba(23,28,31,0.04)] shadow-xl flex justify-around items-center px-4 pb-6 pt-3 md:hidden">
+<!-- Home (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="dashboard">dashboard</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Home</span>
+</a>
+<!-- Analysis (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="analytics">analytics</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Analysis</span>
+</a>
+<!-- Alerts (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="warning">warning</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Alerts</span>
+</a>
+<!-- Devices (Inactive) -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings_remote">settings_remote</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Devices</span>
+</a>
+<!-- Settings (Active) -->
+<a class="flex flex-col items-center justify-center text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl px-3 py-1.5 hover:text-cyan-500 transition-all opacity-80 scale-95 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings" data-weight="fill" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Settings</span>
+</a>
+</nav>
+<!-- Desktop Navigation Cluster (Visible only on md+) -->
+<div class="hidden md:flex fixed top-0 right-20 h-16 items-center space-x-6 z-[60]">
+<a class="text-slate-500 hover:text-primary transition-colors font-semibold text-sm" href="#">Home</a>
+<a class="text-slate-500 hover:text-primary transition-colors font-semibold text-sm" href="#">Analysis</a>
+<a class="text-slate-500 hover:text-primary transition-colors font-semibold text-sm" href="#">Alerts</a>
+<a class="text-slate-500 hover:text-primary transition-colors font-semibold text-sm" href="#">Devices</a>
+<a class="text-primary font-bold text-sm border-b-2 border-primary pb-1" href="#">Settings</a>
+</div>
+</body></html>

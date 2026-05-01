@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface": "#f5fafd",
+              "on-tertiary": "#ffffff",
+              "secondary-fixed": "#bdeafa",
+              "inverse-primary": "#4cd6fb",
+              "tertiary-fixed": "#ffdcc3",
+              "primary-fixed": "#b3ebff",
+              "on-secondary-fixed-variant": "#1e4c5a",
+              "surface-variant": "#dee3e6",
+              "surface-container": "#e9eff1",
+              "tertiary-fixed-dim": "#ffb77d",
+              "surface-container-low": "#eff4f7",
+              "on-primary": "#ffffff",
+              "background": "#f5fafd",
+              "outline": "#6d797e",
+              "on-secondary-container": "#3d6977",
+              "primary": "#00677d",
+              "outline-variant": "#bcc9ce",
+              "surface-bright": "#f5fafd",
+              "secondary-container": "#bae7f7",
+              "tertiary": "#914d00",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#eb8f3b",
+              "surface-tint": "#00677d",
+              "on-surface-variant": "#3d494d",
+              "secondary-fixed-dim": "#a1cddd",
+              "primary-container": "#00b4d8",
+              "inverse-on-surface": "#ecf2f4",
+              "on-surface": "#171c1f",
+              "on-primary-fixed-variant": "#004e5f",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed": "#001f27",
+              "secondary": "#396472",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed-variant": "#6e3900",
+              "surface-container-highest": "#dee3e6",
+              "on-tertiary-fixed": "#2f1500",
+              "on-primary-container": "#00414f",
+              "error-container": "#ffdad6",
+              "error": "#ba1a1a",
+              "surface-dim": "#d5dbde",
+              "inverse-surface": "#2b3134",
+              "on-primary-fixed": "#001f27",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-container": "#5d2f00",
+              "on-background": "#171c1f",
+              "primary-fixed-dim": "#4cd6fb"
+            },
+            fontFamily: {
+              "sans": ["Pretendard", "Inter", "sans-serif"],
+              "headline": ["Pretendard", "Inter"],
+              "body": ["Pretendard", "Inter"],
+              "label": ["Pretendard", "Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f5fafd;
+            color: #171c1f;
+            width: 390px;
+            height: 884px;
+            margin: 0 auto;
+            overflow: hidden;
+            position: relative;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-effect {
+            background: rgba(245, 250, 253, 0.7);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-[#f5fafd] dark:bg-slate-950/80">
+<div class="flex items-center justify-center w-full relative">
+<button class="absolute left-0 hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[#00677d]" data-icon="close">close</span>
+</button>
+<h1 class="font-['Pretendard'] font-semibold text-lg tracking-tight text-[#00677d]">CleanAir Setup</h1>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-8 pt-16 pb-24 text-center">
+<!-- Progress Indicator -->
+<div class="mb-10">
+<div class="flex items-center gap-1.5 mb-2 justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-primary-container"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-primary-container"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-primary-container"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-primary-container"></div>
+<div class="w-8 h-1.5 rounded-full bg-primary"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-surface-container-high"></div>
+</div>
+<span class="text-secondary font-bold text-xs uppercase tracking-widest">Stage 5 / 6</span>
+</div>
+<!-- Headline & Description -->
+<div class="mb-12">
+<h2 class="text-3xl font-extrabold text-on-surface mb-4 tracking-tight">연결 방식 선택</h2>
+<p class="text-secondary text-lg leading-relaxed">동일한 Wi-Fi에 연결된 센서를<br/>어떻게 등록할까요?</p>
+</div>
+<!-- Connection Options -->
+<div class="w-full space-y-4">
+<!-- Option 1: Active/Selected Style Simulation -->
+<button class="w-full group relative flex items-center p-6 bg-surface-container-lowest rounded-xl text-left transition-all hover:ring-2 hover:ring-primary-container shadow-[0_8px_32px_rgba(23,28,31,0.04)]">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center mr-4">
+<span class="material-symbols-outlined text-primary" data-icon="wifi_find">wifi_find</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-on-surface">주변 센서 자동 감지 (mDNS)</p>
+<p class="text-xs text-secondary mt-0.5">네트워크 내 기기를 자동으로 찾습니다</p>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</button>
+<!-- Option 2 -->
+<button class="w-full group relative flex items-center p-6 bg-surface-container-low rounded-xl text-left transition-all hover:bg-surface-container-lowest hover:shadow-sm">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center mr-4">
+<span class="material-symbols-outlined text-secondary" data-icon="dialpad">dialpad</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-on-surface">PIN 번호 직접 입력</p>
+<p class="text-xs text-secondary mt-0.5">기기 뒷면의 8자리 코드를 입력합니다</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<!-- Hint Section -->
+<div class="mt-10 px-4 py-3 bg-surface-container rounded-lg flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary text-sm mt-0.5" data-icon="info">info</span>
+<p class="text-secondary text-xs text-left leading-snug">자동 감지가 되지 않을 경우 PIN 입력을 권장합니다.</p>
+</div>
+</main>
+<!-- BottomNavBar (Action Shell) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-between items-center px-8 pb-10 pt-4 bg-[#f5fafd]/70 shadow-[0_-8px_32px_rgba(23,28,31,0.04)] glass-effect rounded-t-3xl">
+<button class="flex flex-col items-center justify-center text-[#396472] px-6 py-3 hover:brightness-110 transition-all active:scale-90 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="arrow_back">arrow_back</span>
+<span class="font-['Pretendard'] font-bold text-xs uppercase tracking-widest">Back</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-gradient-to-br from-[#00677d] to-[#00B4D8] text-white rounded-full px-8 py-3 hover:brightness-110 transition-all active:scale-90 transition-transform">
+<span class="material-symbols-outlined mb-1" data-icon="arrow_forward">arrow_forward</span>
+<span class="font-['Pretendard'] font-bold text-xs uppercase tracking-widest">Next</span>
+</button>
+</nav>
+</body></html>

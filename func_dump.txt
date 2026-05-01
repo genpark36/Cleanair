@@ -1,0 +1,4489 @@
+﻿================================================================================
+=== NODE: 🔄 데이터 변환 (API → MQTT 형식) (id: 44a14e1a1f6cc3bb)
+================================================================================
+// Normalize AirGradient API payload for dashboards and MQTT
+const apiData = msg.payload;
+
+if (!apiData || typeof apiData !== 'object') {
+    node.error('Invalid API response', msg);
+    return null;
+}
+
+const pm25 = parseFloat(apiData.pm02) || 0;
+const co2 = parseInt(apiData.rco2) || 400;
+const temp = parseFloat(apiData.atmp) || 20;
+const humidity = parseFloat(apiData.rhum) || 50;
+const tvoc = parseFloat(apiData.tvocIndex) || 0;
+const nox = parseInt(apiData.noxIndex) || 0;
+
+function calculateDewPoint(temp, humidity) {
+    const a = 17.27;
+    const b = 237.7;
+    const alpha = ((a * temp) / (b + temp)) + Math.log(humidity / 100);
+    return (b * alpha) / (a - alpha);
+}
+
+function calculateDiscomfortIndex(temp, humidity) {
+    const di = 0.81 * temp + 0.01 * humidity * (0.99 * temp - 14.3) + 46.3;
+    return Math.round(di * 10) / 10;
+}
+
+function getDiscomfortLevel(di) {
+    if (di < 68) return { level: '쾌적', color: '#4CAF50', score: 100 };
+    if (di < 75) return { level: '보통', color: '#FFC107', score: 80 };
+    if (di < 80) return { level: '약간 불쾌', color: '#FF9800', score: 60 };
+    return { level: '불쾌', color: '#F44336', score: 40 };
+}
+
+function calculateUSAQI(pm25) {
+    const ranges = [
+        { cLow: 0, cHigh: 12, iLow: 0, iHigh: 50 },
+        { cLow: 12.1, cHigh: 35.4, iLow: 51, iHigh: 100 },
+        { cLow: 35.5, cHigh: 55.4, iLow: 101, iHigh: 150 },
+        { cLow: 55.5, cHigh: 150.4, iLow: 151, iHigh: 200 },
+        { cLow: 150.5, cHigh: 250.4, iLow: 201, iHigh: 300 },
+        { cLow: 250.5, cHigh: 500.4, iLow: 301, iHigh: 500 }
+    ];
+    for (const bp of ranges) {
+        if (pm25 >= bp.cLow && pm25 <= bp.cHigh) {
+            const aqi = ((bp.iHigh - bp.iLow) / (bp.cHigh - bp.cLow)) * (pm25 - bp.cLow) + bp.iLow;
+            return Math.round(aqi);
+        }
+    }
+    return pm25 > 500 ? 500 : 0;
+}
+
+function getAQILevel(aqi) {
+    if (aqi <= 50) return { level: '좋음', color: '#00E400', category: 'Good' };
+    if (aqi <= 100) return { level: '보통', color: '#FFFF00', category: 'Moderate' };
+    if (aqi <= 150) return { level: '민감군 주의', color: '#FF7E00', category: 'USG' };
+    if (aqi <= 200) return { level: '나쁨', color: '#FF0000', category: 'Unhealthy' };
+    if (aqi <= 300) return { level: '매우 나쁨', color: '#8F3F97', category: 'Very Unhealthy' };
+    return { level: '위험', color: '#7E0023', category: 'Hazardous' };
+}
+
+const dewPoint = calculateDewPoint(temp, humidity);
+const discomfortIndex = calculateDiscomfortIndex(temp, humidity);
+const discomfortInfo = getDiscomfortLevel(discomfortIndex);
+const usAQI = calculateUSAQI(pm25);
+const aqiInfo = getAQILevel(usAQI);
+
+const transformedData = {
+    pm25,
+    co2,
+    tvoc,
+    nox,
+    temp,
+    humidity,
+    dewPoint: Math.round(dewPoint * 10) / 10,
+    discomfortIndex,
+    discomfortLevel: discomfortInfo.level,
+    discomfortColor: discomfortInfo.color,
+    discomfortScore: discomfortInfo.score,
+    usAQI,
+    aqiLevel: aqiInfo.level,
+    aqiColor: aqiInfo.color,
+    aqiCategory: aqiInfo.category,
+    wifi_rssi: parseInt(apiData.wifi) || -50,
+    serialno: apiData.serialno || 'Unknown',
+    firmware: apiData.firmware || 'Unknown',
+    timestamp: Date.now(),
+    api_update_time: new Date().toLocaleString('ko-KR')
+};
+
+node.status({
+    fill: "green",
+    shape: "dot",
+    text: `AQI:${usAQI}(${aqiInfo.level}) DI:${discomfortIndex}(${discomfortInfo.level})`
+});
+
+msg.payload = transformedData;
+msg.topic = "airgradient/sensors/data";
+
+return msg;
+
+
+================================================================================
+=== NODE: 📊 브리지 상태 업데이트 (id: 9984f4b67188cdee)
+================================================================================
+// 브리지 운영 통계 업데이트
+let stats = context.get('bridge_stats') || {
+    total_requests: 0,
+    success_count: 0,
+    error_count: 0,
+    start_time: new Date().toISOString(),
+    last_success: null
+};
+
+// 성공 카운터 증가
+stats.total_requests++;
+stats.success_count++;
+stats.last_success = new Date().toISOString();
+
+// 통계 저장
+context.set('bridge_stats', stats);
+
+// 상태 메시지 생성
+const uptime = Math.round((new Date() - new Date(stats.start_time)) / 1000 / 60);
+const successRate = Math.round((stats.success_count / stats.total_requests) * 100);
+const errorRate = Math.round((stats.error_count / stats.total_requests) * 100) || 0;
+
+const statusMsg = `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+    <h3 style="margin: 0 0 15px 0; text-align: center; font-size: 18px;">🌉 API → MQTT 브리지 운영 현황</h3>
+    
+    <div style="background: rgba(255,255,255,0.15); padding: 15px; margin: 10px 0; border-radius: 8px;">
+        <h4 style="margin: 0 0 10px 0; color: #FFE082; font-size: 14px;">📊 요청 통계</h4>
+        <div style="margin-left: 15px; line-height: 1.8; font-size: 13px;">
+            <div>✅ <strong>총 요청:</strong> <span style="color: #A5D6A7; font-weight: bold;">${stats.total_requests}회</span></div>
+            <div>📈 <strong>성공률:</strong> <span style="color: #A5D6A7; font-weight: bold;">${successRate}%</span></div>
+            <div>❌ <strong>실패율:</strong> <span style="color: #FFCDD2; font-weight: bold;">${errorRate}%</span></div>
+            <div>🕐 <strong>가동시간:</strong> <span style="color: #BCAAA4; font-weight: bold;">${uptime}분</span></div>
+        </div>
+    </div>
+    
+    <div style="background: rgba(255,255,255,0.15); padding: 15px; margin: 10px 0; border-radius: 8px;">
+        <h4 style="margin: 0 0 10px 0; color: #FFE082; font-size: 14px;">🔧 시스템 상태</h4>
+        <div style="margin-left: 15px; line-height: 1.8; font-size: 13px;">
+            <div>📡 <strong>API 연결:</strong> <span style="color: #A5D6A7; font-weight: bold;">정상</span></div>
+            <div>📤 <strong>MQTT 전송:</strong> <span style="color: #A5D6A7; font-weight: bold;">활성화</span></div>
+            <div>🔄 <strong>업데이트 주기:</strong> <span style="color: #81D4FA; font-weight: bold;">5초</span></div>
+        </div>
+    </div>
+</div>
+`;
+
+msg.payload = {
+    stats: stats,
+    status_message: statusMsg,
+    current_data: msg.payload
+};
+
+return msg;
+
+
+================================================================================
+=== NODE: HiveMQ payload fanout (id: 3d35178086cb6b61)
+================================================================================
+const base = msg.payload || {};
+const timestamp = Date.now();
+const toNumber = (value, fallback = 0) => {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : fallback;
+};
+const location = flow.get('location_override') || null;
+
+const seasonalApparentRaw = flow.get('seasonal_apparent_latest') || null;
+
+const resolveSeasonalValue = (raw) => {
+    if (!raw) return null;
+    const summerTemp = toNumber(raw.sensibleTemp_Summer, null);
+    const winterTemp = toNumber(raw.windChill, null);
+    const winterReal = toNumber(raw.windChill_RealTemp, null);
+    if (raw.seasonMode === 'summer') {
+        return summerTemp;
+    }
+    if (raw.seasonMode === 'winter') {
+        if (raw.isWinterCalc && winterTemp != null) {
+            return winterTemp;
+        }
+        if (winterReal != null) {
+            return winterReal;
+        }
+        return winterTemp;
+    }
+    if (summerTemp != null) return summerTemp;
+    if (winterTemp != null) return winterTemp;
+    return winterReal;
+};
+
+const buildSeasonalSnapshot = (raw) => {
+    if (!raw) return null;
+    const summerTemp = toNumber(raw.sensibleTemp_Summer, null);
+    const winterTemp = toNumber(raw.windChill, null);
+    const winterReal = toNumber(raw.windChill_RealTemp, null);
+    const winterWind = toNumber(raw.windChill_RealWind, null);
+    const summer = summerTemp != null ? {
+        apparentTemp: summerTemp,
+        riskMessage: raw.heatRiskMessage || null,
+        riskColor: raw.heatRiskColor || null
+    } : null;
+    const hasWinterData = winterTemp != null || winterReal != null || winterWind != null || raw.windChill_message;
+    const winter = hasWinterData ? {
+        apparentTemp: winterTemp,
+        message: raw.windChill_message || null,
+        color: raw.windChill_Color || null,
+        isWinterCalc: !!raw.isWinterCalc,
+        realTemp: winterReal,
+        realWind: winterWind
+    } : null;
+    return {
+        seasonMode: raw.seasonMode || null,
+        updatedAt: raw.updatedAt || Date.now(),
+        summer: summer,
+        winter: winter
+    };
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 듀얼 k값 분류 함수 (PM2.5 & CO2)
+// ═══════════════════════════════════════════════════════════════
+const getLevel = (k) => {
+    if (k >= 1.0) return 'HIGH_POS';
+    if (k >= 0.2) return 'LOW_POS';
+    if (k > -0.1) return 'ZERO';
+    return 'NEGATIVE';
+};
+
+const getLevelKr = (level) => {
+    const map = {
+        'HIGH_POS': '급속감소',
+        'LOW_POS': '자연감소',
+        'ZERO': '정체',
+        'NEGATIVE': '축적중'
+    };
+    return map[level] || level;
+};
+
+const getModeKr = (mode) => {
+    const map = {
+        'purification': '정화기',
+        'ventilation': '환기',
+        'combined': '복합(정화+환기)',
+        'stagnant': '정체',
+        'polluting': '오염축적'
+    };
+    return map[mode] || mode;
+};
+
+const getScenarioKr = (scenario, mode) => {
+    const map = {
+        'PM Rapid Decay (Sealed)': 'PM 급속감소 (밀폐상태)',
+        'CO2 Rapid Decay (Ventilation)': 'CO₂ 급속감소 (환기중)',
+        'Combined Decay (Purify+Vent)': '복합 감소 (정화+환기)',
+        'Concentration Rising': '농도 상승중',
+        'Stagnant': '정체 상태'
+    };
+    return map[scenario] || getModeKr(mode);
+};
+
+const seasonalApparentValue = resolveSeasonalValue(seasonalApparentRaw);
+const seasonalApparent = buildSeasonalSnapshot(seasonalApparentRaw);
+const apparentTempValue = seasonalApparentValue != null
+    ? seasonalApparentValue
+    : toNumber(base.apparentTemp, base.temp);
+
+const snapshot = {
+    id: base.serialno || 'node-red-snapshot',
+    timestamp,
+    raw: {
+        pm25: toNumber(base.pm25),
+        co2: toNumber(base.co2, 400),
+        tvoc: toNumber(base.tvoc),
+        nox: toNumber(base.nox),
+        temp: toNumber(base.temp, 24),
+        humidity: toNumber(base.humidity, 45)
+    },
+    derived: {
+        dewPoint: toNumber(base.dewPoint),
+        discomfortIndex: toNumber(base.discomfortIndex),
+        usAQI: toNumber(base.usAQI),
+        aqiLevel: base.aqiLevel || '보통',
+        aqiCategory: base.aqiCategory || 'Moderate'
+    },
+    health: {
+        respiratoryIndex: toNumber(base.respiratoryIndex, 70),
+        immunityRisk: toNumber(base.immunityRisk, 30),
+        cognitiveFocus: toNumber(base.cognitiveFocus, 70),
+        cardioScore: toNumber(base.cardioScore, 80),
+        cardioRisk: toNumber(base.cardioRisk, 20),
+        sleepComfort: toNumber(base.sleepComfort, 75),
+        apparentTemp: apparentTempValue,
+        seasonalApparent: seasonalApparent,
+        purifier: {
+            k: toNumber(base.k, 1.2),
+            kEffective: toNumber(base.kEffective, 1.0),
+            t50_min: toNumber(base.t50_min, 30),
+            cadrIndex: toNumber(base.cadrIndex, 3),
+            cadrGrade: base.cadrGrade || 'B'
+        },
+        ipi: {
+            k: toNumber(base.ipi && base.ipi.k, 1.0),
+            t90_min: toNumber(base.ipi && base.ipi.t90_min, 60),
+            level: base.ipi && base.ipi.level ? base.ipi.level : '보통',
+            score: toNumber(base.ipi && base.ipi.score, 2)
+        }
+    },
+    meta: {
+        firmware: base.firmware || 'unknown',
+        serialno: base.serialno || 'node-red',
+        wifi_rssi: toNumber(base.wifi_rssi, -50),
+        sensor_source: 'node-red-bridge'
+    },
+    location: location
+};
+const child = {
+    timestamp,
+    focus: (() => {
+        const focusData = flow.get('child_focus_latest');
+        if (focusData) {
+            return {
+                co2: focusData.co2,
+                level: focusData.level,
+                message: focusData.message,
+                recommendedAction: focusData.recommendedAction
+            };
+        }
+        return {
+            co2: snapshot.raw.co2,
+            level: snapshot.derived.aqiLevel,
+            message: `CO₂ ${snapshot.raw.co2} ppm`,
+            recommendedAction: snapshot.raw.co2 > 1000 ? '창문 환기 10분' : '상시 모니터링'
+        };
+    })(),
+    respiratory: (() => {
+        const respData = flow.get('child_resp_latest');
+        if (respData) {
+            return {
+                score: respData.score,
+                level: respData.level,
+                temp: respData.temp,
+                rh: respData.rh,
+                tvoc: respData.tvoc,
+                rhMsg: respData.rhMsg,
+                tMsg: respData.tMsg,
+                vocMsg: respData.vocMsg
+            };
+        }
+        return {
+            score: snapshot.health.respiratoryIndex,
+            level: snapshot.derived.aqiLevel,
+            temp: snapshot.raw.temp,
+            rh: snapshot.raw.humidity,
+            tvoc: snapshot.raw.tvoc,
+            rhMsg: snapshot.raw.humidity > 60 ? '다습' : '쾌적',
+            tMsg: snapshot.raw.temp > 26 ? '약간 더움' : '쾌적',
+            vocMsg: snapshot.raw.tvoc > 200 ? '높음' : '정상'
+        };
+    })(),
+    infection: (() => {
+        const infData = flow.get('child_inf_latest');
+        if (infData) {
+            return {
+                score: infData.score,
+                level: infData.level,
+                combo: infData.combo,
+                co2: infData.co2,
+                rh: infData.rh
+            };
+        }
+        return {
+            score: snapshot.health.immunityRisk,
+            level: snapshot.health.immunityRisk > 60 ? '주의' : '보통',
+            combo: 2,
+            co2: snapshot.raw.co2,
+            rh: snapshot.raw.humidity
+        };
+    })(),
+    mold: (() => {
+        const moldData = flow.get('mold_latest');
+        if (moldData) {
+            return {
+                riskLevel: moldData.riskLevel,
+                riskMessage: moldData.riskMessage,
+                riskColor: moldData.riskColor,
+                durationHours: moldData.durationHours,
+                humidity: moldData.humidity,
+                pm25: moldData.pm25
+            };
+        }
+        return {
+            riskLevel: snapshot.raw.humidity >= 70 ? 4 : snapshot.raw.humidity >= 60 ? 3 : 1,
+            riskMessage: snapshot.raw.humidity >= 60 ? '고습도 — 환기 필요' : '안정',
+            durationHours: 0,
+            humidity: snapshot.raw.humidity,
+            pm25: snapshot.raw.pm25
+        };
+    })()
+};
+const senior = {
+    timestamp,
+    cardio: (() => {
+        const cardioData = flow.get('senior_cardio_latest');
+        if (cardioData) {
+            return {
+                score: cardioData.score,
+                level: cardioData.level,
+                highHours: cardioData.highHours,
+                kAvg: cardioData.kAvg,
+                riskRaw: cardioData.riskRaw,
+                samples: cardioData.samples
+            };
+        }
+        return {
+            score: snapshot.health.cardioScore,
+            level: snapshot.health.cardioScore >= 85 ? '우수' : '보통',
+            highHours: 0.2,
+            kAvg: toNumber(base.k, 1.2),
+            riskRaw: snapshot.health.cardioRisk / 100,
+            samples: 24
+        };
+    })(),
+    sleep: (() => {
+        const sleepData = flow.get('senior_sleep_latest');
+        if (sleepData) {
+            return {
+                score: sleepData.score,
+                level: sleepData.level,
+                goodCo2: sleepData.goodCo2,
+                goodVoc: sleepData.goodVoc,
+                samples: sleepData.samples
+            };
+        }
+        return {
+            score: snapshot.health.sleepComfort,
+            level: snapshot.health.sleepComfort >= 80 ? '양호' : '보통',
+            goodCo2: Math.max(0, 100 - Math.abs(snapshot.raw.co2 - 800) / 10),
+            goodVoc: Math.max(0, 100 - Math.max(0, snapshot.raw.tvoc - 150)),
+            samples: 24
+        };
+    })(),
+    pmExposure: {
+        pm25: snapshot.raw.pm25,
+        band: snapshot.derived.aqiLevel,
+        message: `PM2.5 ${snapshot.raw.pm25} µg/m³`
+    },
+    ventilation: {
+        k: toNumber(base.k, 1.2),
+        t50Minutes: Math.max(10, Math.round(60 / Math.max(0.1, toNumber(base.k, 1.2)))),
+        message: '환기 속도 추정'
+    }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// 듀얼 k값 기반 정화 데이터 (PM2.5 k & CO2 k)
+// ═══════════════════════════════════════════════════════════════
+const kPm25 = toNumber(flow.get('k_pm25'), 0);
+const kCo2 = toNumber(flow.get('k_co2'), 0);
+const levelPm25 = getLevel(kPm25);
+const levelCo2 = getLevel(kCo2);
+const r2Pm25 = toNumber(flow.get('k_pm25_r2'), 0);
+const r2Co2 = toNumber(flow.get('k_co2_r2'), 0);
+const R2_THRESHOLD = 0.7;
+
+const purification = {
+    timestamp,
+    cadr: (() => {
+        const cadrData = flow.get('purifier_cadr_latest');
+        const kPmVal = toNumber(kPm25, cadrData ? cadrData.k : 0);
+        const kCo2Val = toNumber(kCo2, 0);
+        const lvPm = getLevel(kPmVal);
+        const lvCo2 = getLevel(kCo2Val);
+        
+        // t50 계산 (각각) - 반감기
+        const t50_pm25 = kPmVal > 0.001 ? Math.round(0.693 / kPmVal * 60) : 999;
+        const t50_co2 = kCo2Val > 0.001 ? Math.round(0.693 / kCo2Val * 60) : 999;
+        
+        // 시나리오 진단
+        let mode = 'stagnant';
+        let scenario = '정체 상태';
+        if (lvPm === 'HIGH_POS' && (lvCo2 === 'LOW_POS' || lvCo2 === 'ZERO')) {
+            mode = 'purification';
+            scenario = 'PM 급속감소 (밀폐상태)';
+        } else if ((lvPm === 'LOW_POS' || lvPm === 'ZERO' || lvPm === 'NEGATIVE') && lvCo2 === 'HIGH_POS') {
+            mode = 'ventilation';
+            scenario = 'CO₂ 급속감소 (환기중)';
+        } else if (lvPm === 'HIGH_POS' && lvCo2 === 'HIGH_POS') {
+            mode = 'combined';
+            scenario = '복합 감소 (정화+환기)';
+        } else if ((lvPm === 'NEGATIVE' && lvCo2 !== 'HIGH_POS') || (lvCo2 === 'NEGATIVE' && lvPm !== 'HIGH_POS')) {
+            mode = 'polluting';
+            scenario = '농도 상승중';
+        }
+        
+        const kEffective = cadrData ? cadrData.kEffective : Math.max(kPmVal, kCo2Val);
+        const dualKDisplay = `k_PM=${kPmVal.toFixed(2)}, k_CO₂=${kCo2Val.toFixed(2)} (1/h)`;
+        const dualT50Display = `t₅₀_PM≈${t50_pm25}분, t₅₀_CO₂≈${t50_co2}분`;
+        
+        // CADR 등급 계산 (듀얼)
+        const kMax = Math.max(kPmVal, kCo2Val);
+        let grade = 'C', index = 1;
+        if (kMax >= 2) { grade = 'S'; index = 4; }
+        else if (kMax >= 1) { grade = 'A'; index = 3; }
+        else if (kMax >= 0.5) { grade = 'B'; index = 2; }
+        
+        // PM2.5 개별 등급
+        let gradePm25 = 'C';
+        if (kPmVal >= 2) gradePm25 = 'S';
+        else if (kPmVal >= 1) gradePm25 = 'A';
+        else if (kPmVal >= 0.5) gradePm25 = 'B';
+        
+        // CO2 개별 등급
+        let gradeCo2 = 'C';
+        if (kCo2Val >= 2) gradeCo2 = 'S';
+        else if (kCo2Val >= 1) gradeCo2 = 'A';
+        else if (kCo2Val >= 0.5) gradeCo2 = 'B';
+        
+        if (cadrData) {
+            return {
+                kEffective: cadrData.kEffective,
+                index: cadrData.index,
+                grade: cadrData.grade,
+                trend: cadrData.trend,
+                updatedAt: cadrData.updatedAt || new Date(timestamp).toLocaleTimeString('ko-KR'),
+                // ★ 듀얼 k값 및 등급 필드
+                k_pm25: kPmVal,
+                k_co2: kCo2Val,
+                gradePm25: gradePm25,
+                gradeCo2: gradeCo2,
+                t50_pm25: t50_pm25,
+                t50_co2: t50_co2,
+                levelPm25: getLevelKr(lvPm),
+                levelCo2: getLevelKr(lvCo2),
+                r2_pm25: r2Pm25,
+                r2_co2: r2Co2,
+                pmAccuracyWarning: r2Pm25 < R2_THRESHOLD,
+                co2AccuracyWarning: r2Co2 < R2_THRESHOLD,
+                mode: getModeKr(mode),
+                scenario: scenario,
+                dualKDisplay: dualKDisplay,
+                dualT50Display: dualT50Display
+            };
+        }
+        return {
+            kEffective: kMax,
+            index: index,
+            grade: grade,
+            trend: mode === 'polluting' ? '축적중' : mode === 'stagnant' ? '정체' : '정화중',
+            updatedAt: new Date(timestamp).toLocaleTimeString('ko-KR'),
+            // ★ 듀얼 k값 및 등급 필드
+            k_pm25: kPmVal,
+            k_co2: kCo2Val,
+            gradePm25: gradePm25,
+            gradeCo2: gradeCo2,
+            t50_pm25: t50_pm25,
+            t50_co2: t50_co2,
+            levelPm25: getLevelKr(lvPm),
+            levelCo2: getLevelKr(lvCo2),
+            r2_pm25: r2Pm25,
+            r2_co2: r2Co2,
+            pmAccuracyWarning: r2Pm25 < R2_THRESHOLD,
+            co2AccuracyWarning: r2Co2 < R2_THRESHOLD,
+            mode: getModeKr(mode),
+            scenario: scenario,
+            dualKDisplay: dualKDisplay,
+            dualT50Display: dualT50Display
+        };
+    })(),
+    ipi: (() => {
+        const ipiData = flow.get('purifier_ipi_latest');
+        const kPmVal = toNumber(kPm25, 0);
+        const kCo2Val = toNumber(kCo2, 0);
+        const kMax = Math.max(kPmVal, kCo2Val);
+        
+        // t90 계산 (각각)
+        const t90_pm25 = kPmVal > 0.001 ? Math.round(2.303 / kPmVal * 60) : 999;
+        const t90_co2 = kCo2Val > 0.001 ? Math.round(2.303 / kCo2Val * 60) : 999;
+        
+        if (ipiData && ipiData.k_co2 !== undefined) {
+            return {
+                level: ipiData.level,
+                score: ipiData.score,
+                k_co2: ipiData.k_co2,
+                k_pm25: ipiData.k_pm25,
+                t90_co2: ipiData.t90_co2,
+                t90_pm25: ipiData.t90_pm25
+            };
+        }
+        // IPI 등급 계산 (CO2 k값 단독 기준)
+        let level = '양호';
+        let score = 3;
+        if (kCo2Val >= 3.0) { level = '안심'; score = 4; }
+        else if (kCo2Val >= 1.0) { level = '보통'; score = 3; }
+        else if (kCo2Val >= 0.3) { level = '주의'; score = 2; }
+        else { level = '경고'; score = 1; }
+        
+        return {
+            level: level,
+            score: score,
+            k_co2: kCo2Val,
+            k_pm25: kPmVal,
+            t90_co2: t90_co2,
+            t90_pm25: t90_pm25
+        };
+    })(),
+    ventilation: {
+        status: snapshot.raw.co2 > 1000 ? '환기필요' : '정화중',
+        message: snapshot.raw.co2 > 1000 ? 'CO₂가 높습니다. 환기하세요.' : '정화 중',
+        alerts: snapshot.raw.co2 > 1000 ? ['환기 필요', '창문 개방 권장'] : ['정상 운전']
+    }
+};
+
+// ★ 센서 통계 데이터 가져오기 (센서 vs API 데이터 비교에서 계산된 값)
+const sensorStats = flow.get('sensor_stats_latest') || {};
+const defaultStats = { rmse: null, mape: null, cv: null, r2: null, n: 0 };
+const pmStats = sensorStats.pm25 || defaultStats;
+const tempStats = sensorStats.temp || defaultStats;
+const humStats = sensorStats.humidity || defaultStats;
+
+// ★ 에어코리아/기상청 API 데이터 가져오기
+const apiData = flow.get('latest_api_data') || {};
+const apiPm25 = apiData.pm25;  // 에어코리아 AQI 값
+const apiTemp = apiData.temperature;  // 기상청 온도
+const apiHum = apiData.humidity;  // 기상청 습도
+
+// 편차 계산 함수
+const calcDelta = (sensor, api) => {
+    if (sensor == null || api == null) return null;
+    const d = sensor - api;
+    return (d >= 0 ? '+' : '') + d.toFixed(1);
+};
+
+const locationDetail = {
+    timestamp,
+    title: '근처 측정소 비교',
+    subtitle: location && location.city ? location.city : '현재 위치 기준',
+    pm25: {
+        sensor: snapshot.raw.pm25,
+        station: apiPm25,
+        delta: calcDelta(snapshot.raw.pm25, apiPm25),
+        unit: 'µg/m³',
+        stats: pmStats
+    },
+    temperature: {
+        sensor: snapshot.raw.temp,
+        station: apiTemp,
+        delta: calcDelta(snapshot.raw.temp, apiTemp),
+        unit: '°C',
+        stats: tempStats
+    },
+    humidity: {
+        sensor: snapshot.raw.humidity,
+        station: apiHum,
+        delta: calcDelta(snapshot.raw.humidity, apiHum),
+        unit: '%',
+        stats: humStats
+    }
+};
+return [
+    { payload: snapshot },
+    { payload: child },
+    { payload: senior },
+    { payload: purification },
+    { payload: locationDetail }
+];
+
+
+================================================================================
+=== NODE: 우선순위 알림 감지 (id: a8cfbc415669f339)
+================================================================================
+const snapshot = msg.payload || {};
+const raw = snapshot.raw || {};
+const health = snapshot.health || {};
+const purifier = health.purifier || {};
+const childFocus = flow.get('child_focus_latest') || {};
+const childResp = flow.get('child_resp_latest') || {};
+const childInf = flow.get('child_inf_latest') || {};
+const moldLatest = flow.get('mold_latest') || {};
+const seniorCardio = flow.get('senior_cardio_latest') || {};
+const seniorSleep = flow.get('senior_sleep_latest') || {};
+const seasonalApparent = health.seasonalApparent || snapshot.seasonalApparent || null;
+const now = Date.now();
+
+const SUPPRESS_MS = 30 * 60 * 1000;
+const DEFAULT_MIN_DURATION = 90 * 1000;
+const QUIET_HOURS = { start: 22, end: 7 };
+const severityRank = { notice: 1, warning: 2, critical: 3 };
+const testDurationOverride = flow.get('alert_test_min_ms');
+const diagConfig = flow.get('alert_diag_config') || {};
+const diagEnabled = !!diagConfig.enabled;
+const diagTargets = Array.isArray(diagConfig.types) && diagConfig.types.length ? diagConfig.types : null;
+const diagLabel = diagConfig.label || 'alert-diag';
+const diagPretty = !!diagConfig.pretty;
+const diagVerbose = !!diagConfig.verbose;
+
+const shouldDiag = (type) => {
+    if (!diagEnabled) return false;
+    if (!diagTargets) return true;
+    return diagTargets.includes(type);
+};
+
+const emitDiag = (info) => {
+    if (!shouldDiag(info.type)) return;
+    const payload = diagPretty ? JSON.stringify(info, null, 2) : JSON.stringify(info);
+    node.warn(`[${diagLabel}] ${payload}`);
+};
+
+const isQuietHour = (date) => {
+    const hour = date.getHours();
+    if (QUIET_HOURS.start === QUIET_HOURS.end) return false;
+    if (QUIET_HOURS.start < QUIET_HOURS.end) {
+        return hour >= QUIET_HOURS.start && hour < QUIET_HOURS.end;
+    }
+    return hour >= QUIET_HOURS.start || hour < QUIET_HOURS.end;
+};
+
+const quietHours = isQuietHour(new Date(now));
+
+const outdoorData = flow.get('latest_api_data') || {};
+const outdoorPm25 = Number(outdoorData.pm25);
+const outdoorValid = Number.isFinite(outdoorPm25);
+
+// =================================================================
+// [수정됨] 상태 정리(Pruning) 로직
+// =================================================================
+const state = flow.get('alert_state') || {};
+const pruneBefore = now - (24 * 60 * 60 * 1000);
+
+Object.keys(state).forEach((key) => {
+    const entry = state[key];
+
+    // 1. entry 자체가 깨졌으면 삭제
+    if (!entry) {
+        delete state[key];
+        return;
+    }
+
+    // 2. [중요] 현재 감시 중(activeSince 존재)이면 절대 삭제하지 않음!
+    //    (이 부분이 없어서 타이머가 계속 리셋되었습니다)
+    if (entry.activeSince) return;
+
+    // 3. 감시 중이 아닌데, 이벤트 기록이 없거나(0) 너무 오래됐으면 삭제
+    if (!entry.lastEventTs || entry.lastEventTs < pruneBefore) {
+        delete state[key];
+    }
+});
+// =================================================================
+
+const trendMeta = (() => {
+    const k = Number(purifier.kEffective ?? purifier.k);
+    const pmR2 = Number(flow.get('k_pm25_r2'));
+    let code = 'unknown';
+    let label = '변화 추정 불가';
+    if (Number.isFinite(k)) {
+        if (k >= 1.5) { code = 'fast_drop'; label = '급속 감소'; }
+        else if (k >= 0.5) { code = 'slow_drop'; label = '완만 감소'; }
+        else if (k >= -0.05) { code = 'flat'; label = '정체'; }
+        else { code = 'rising'; label = '상승'; }
+    }
+    return {
+        code,
+        label,
+        k: Number.isFinite(k) ? k : null,
+        kSource: purifier.cadrGrade || null,
+        pmR2: Number.isFinite(pmR2) ? pmR2 : null
+    };
+})();
+
+const ensureState = (type) => {
+    if (!state[type]) {
+        state[type] = {
+            activeSince: null,
+            pendingSeverity: null,
+            lastEventTs: 0,
+            lastEventSeverity: null,
+            lastEventId: null,
+            lastValue: null,
+            lastUpdated: null,
+            durationBuffer: null
+        };
+    }
+    return state[type];
+};
+
+const events = [];
+
+const round = (value, digits = 1) => {
+    if (!Number.isFinite(value)) return null;
+    const factor = Math.pow(10, digits);
+    return Math.round(value * factor) / factor;
+};
+
+const isSameLocalDay = (leftTs, rightTs) => {
+    if (!leftTs || !rightTs) return false;
+    const left = new Date(leftTs);
+    const right = new Date(rightTs);
+    return left.getFullYear() === right.getFullYear()
+        && left.getMonth() === right.getMonth()
+        && left.getDate() === right.getDate();
+};
+
+const resolveApparentSnapshot = (seasonal, healthData) => {
+    const seasonMode = seasonal && seasonal.seasonMode ? seasonal.seasonMode : null;
+    const summerTemp = seasonal && seasonal.summer ? seasonal.summer.apparentTemp : null;
+    const winterTemp = seasonal && seasonal.winter ? seasonal.winter.apparentTemp : null;
+    const fallbackTemp = healthData && healthData.apparentTemp != null ? healthData.apparentTemp : null;
+    const apparentTemp = seasonMode === 'summer' ? (summerTemp != null ? summerTemp : fallbackTemp)
+        : seasonMode === 'winter' ? (winterTemp != null ? winterTemp : fallbackTemp)
+        : (fallbackTemp != null ? fallbackTemp : (summerTemp != null ? summerTemp : winterTemp));
+    const summerMessage = seasonal && seasonal.summer ? seasonal.summer.riskMessage : null;
+    const winterMessage = seasonal && seasonal.winter ? seasonal.winter.message : null;
+    return {
+        apparentTemp: Number.isFinite(apparentTemp) ? apparentTemp : null,
+        seasonMode,
+        summerMessage,
+        winterMessage
+    };
+};
+
+const recordEvent = (event, entry, diagInfo) => {
+    const lastEventTs = entry.lastEventTs || 0;
+    const lastEventSeverity = entry.lastEventSeverity || null;
+    const suppressed = lastEventTs && (now - lastEventTs) < SUPPRESS_MS && (severityRank[lastEventSeverity] || 0) >= (severityRank[event.severity] || 0);
+    const eventIdSeed = entry.activeSince || now;
+    const eventId = `${event.type}-${event.severity}-${Math.floor(eventIdSeed / 1000)}`;
+    const payload = {
+        ...event,
+        eventId,
+        timestamp: now,
+        quietHours,
+        quietHoursWindow: QUIET_HOURS,
+        suppressed,
+        muted: suppressed,
+        suppressedUntil: suppressed ? lastEventTs + SUPPRESS_MS : null,
+        trend: trendMeta.code,
+        trendMeta
+    };
+    if (!suppressed) {
+        entry.lastEventTs = now;
+        entry.lastEventSeverity = event.severity;
+        entry.lastEventId = eventId;
+    }
+    entry.activeSince = now;
+    entry.pendingSeverity = null;
+    entry.durationBuffer = null;
+    events.push(payload);
+    if (diagInfo) {
+        diagInfo.reason = suppressed ? 'suppressed' : 'triggered';
+        diagInfo.eventId = eventId;
+        diagInfo.suppressed = suppressed;
+        diagInfo.suppressedUntil = payload.suppressedUntil;
+        emitDiag(diagInfo);
+    }
+};
+
+// Resolve per-watcher duration with optional overrides
+const resolveMinDuration = (watcher, severity) => {
+    const base = watcher.minDurationMs ?? DEFAULT_MIN_DURATION;
+    let resolved = base;
+    let source = watcher.minDurationMs ? `${watcher.type}:config` : 'default';
+    const applyCandidate = (value, label) => {
+        if (!Number.isFinite(value)) return false;
+        resolved = Math.max(0, value);
+        source = label;
+        return true;
+    };
+    if (testDurationOverride != null) {
+        if (typeof testDurationOverride === 'number') {
+            applyCandidate(testDurationOverride, 'override:number');
+        } else if (typeof testDurationOverride === 'string') {
+            applyCandidate(Number(testDurationOverride), 'override:string');
+        } else if (typeof testDurationOverride === 'object' && !Array.isArray(testDurationOverride)) {
+            if (severity && applyCandidate(Number(testDurationOverride[`${watcher.type}:${severity}`]), `${watcher.type}:${severity}`)) {
+                // applied
+            } else if (applyCandidate(Number(testDurationOverride[watcher.type]), watcher.type)) {
+                // applied
+            } else if (severity && applyCandidate(Number(testDurationOverride[severity]), severity)) {
+                // applied
+            } else {
+                applyCandidate(Number(testDurationOverride.default ?? testDurationOverride.global), 'override:default');
+            }
+        }
+    }
+    return { value: resolved, source };
+};
+
+const watchers = [
+    {
+        type: 'pm25_high',
+        label: 'PM2.5',
+        value: Number(raw.pm25),
+        unit: 'µg/m³',
+        decimals: 1,
+        minDurationMs: 90 * 1000,
+        ventilationRecommended: true,
+        altActionWhenVentSuppressed: '정화기 강풍/플라즈마 모드로 전환',
+        thresholds: [
+            { limit: 55, severity: 'critical', title: 'PM2.5 매우 나쁨', action: '창문 단기 환기 + 정화기 터보', message: 'WHO 24h 권고의 4배 이상입니다.' },
+            { limit: 35, severity: 'warning', title: 'PM2.5 나쁨', action: '정화기 강풍 모드로 전환', message: '환경부 나쁨 기준을 초과했습니다.' },
+            { limit: 15, severity: 'notice', title: 'PM2.5 주의', action: '실내 재순환/필터 점검', message: 'WHO 일평균 권고(15)를 초과했습니다.' }
+        ],
+        hysteresis: { clearBelow: 12 }
+    },
+    {
+        type: 'co2_high',
+        label: 'CO₂',
+        value: Number(raw.co2),
+        unit: 'ppm',
+        decimals: 0,
+        minDurationMs: 120 * 1000,
+        ventilationRecommended: true,
+        thresholds: [
+            { limit: 1500, severity: 'critical', title: 'CO₂ 매우 높음', action: '즉시 환기 10분 이상', message: 'CO₂가 1500ppm을 넘어 집중력 저하/두통 구간입니다.' },
+            { limit: 1000, severity: 'warning', title: 'CO₂ 높음', action: '창문 5~10분 환기', message: 'CO₂가 1000ppm을 넘었습니다.' },
+            { limit: 800, severity: 'notice', title: 'CO₂ 주의', action: '부분 환기 또는 인원 분산', message: 'CO₂가 800ppm을 넘었습니다.' }
+        ],
+        hysteresis: { clearBelow: 700 }
+    },
+    {
+        type: 'tvoc_high',
+        label: 'TVOC',
+        value: Number(raw.tvoc),
+        unit: 'Index',
+        decimals: 0,
+        minDurationMs: 120 * 1000,
+        ventilationRecommended: true,
+        altActionWhenVentSuppressed: '정화기 플라즈마/흡착 모드 사용',
+        thresholds: [
+            { limit: 400, severity: 'critical', title: 'TVOC 매우 높음', action: '3~5분 급환기 + 오염원 제거', message: 'TVOC Index 400 이상 — WHO 권고를 크게 초과했습니다.' },
+            { limit: 300, severity: 'warning', title: 'TVOC 높음', action: '환기 및 오염원 확인', message: 'TVOC Index 300 이상입니다.' },
+            { limit: 200, severity: 'notice', title: 'TVOC 주의', action: '부분 환기 및 공기정화기 점검', message: 'TVOC Index 200 이상입니다.' }
+        ],
+        hysteresis: { clearBelow: 150 }
+    },
+    {
+        type: 'nox_high',
+        label: 'NOx',
+        value: Number(raw.nox),
+        unit: 'Index',
+        decimals: 0,
+        minDurationMs: 90 * 1000,
+        ventilationRecommended: true,
+        thresholds: [
+            { limit: 2, severity: 'warning', title: 'NOx 주의', action: '환기 및 오염원 점검', message: 'NOx 지수 2 이상입니다.' }
+        ],
+        hysteresis: { clearBelow: 0.5 }
+    },
+    {
+        type: 'respiratory_low',
+        label: '호흡기 지표',
+        value: Number(childResp.score ?? (snapshot.child && snapshot.child.respiratory ? snapshot.child.respiratory.score : null) ?? health.respiratoryIndex),
+        unit: '점',
+        decimals: 0,
+        minDurationMs: 5 * 60 * 1000,
+        compare: 'lte',
+        thresholds: [
+            { limit: 40, severity: 'critical', title: '호흡기 지표 경고', action: '실내 환경 개선 및 환기', message: '호흡기 점수가 경고 구간입니다.' },
+            { limit: 60, severity: 'warning', title: '호흡기 지표 주의', action: '환기 및 오염원 확인', message: '호흡기 점수가 낮습니다.' }
+        ],
+        hysteresis: { clearAbove: 65 }
+    },
+    {
+        type: 'infection_risk',
+        label: '감염 위험',
+        value: Number(childInf.score ?? (snapshot.child && snapshot.child.infection ? snapshot.child.infection.score : null) ?? health.immunityRisk),
+        unit: '점',
+        decimals: 0,
+        minDurationMs: 5 * 60 * 1000,
+        compare: 'gte',
+        thresholds: [
+            { limit: 80, severity: 'critical', title: '감염 위험 매우 높음', action: '환기 및 밀집도 관리', message: '감염 위험 점수가 매우 높습니다.' },
+            { limit: 60, severity: 'warning', title: '감염 위험 높음', action: '환기 및 밀집도 관리', message: '감염 위험 점수가 높습니다.' }
+        ],
+        hysteresis: { clearBelow: 55 }
+    },
+    {
+        type: 'focus_poor',
+        label: '집중 환경',
+        value: Number(raw.co2),
+        unit: 'ppm',
+        decimals: 0,
+        minDurationMs: 3 * 60 * 1000,
+        compare: 'gte',
+        thresholds: [
+            { limit: 1500, severity: 'critical', title: '집중 환경 나쁨', action: '즉시 환기', message: 'CO₂가 1500ppm 이상입니다.' },
+            { limit: 1000, severity: 'warning', title: '집중 환경 주의', action: '10분 환기 권장', message: 'CO₂가 1000ppm 이상입니다.' }
+        ],
+        hysteresis: { clearBelow: 900 }
+    },
+    {
+        type: 'cardio_low',
+        label: '심혈관 보호점수',
+        value: Number(seniorCardio.score ?? (snapshot.senior && snapshot.senior.cardio ? snapshot.senior.cardio.score : null) ?? health.cardioScore),
+        unit: '점',
+        decimals: 0,
+        minDurationMs: 10 * 60 * 1000,
+        compare: 'lte',
+        thresholds: [
+            { limit: 40, severity: 'critical', title: '심혈관 보호점수 위험', action: '실내 활동 권장', message: '심혈관 보호점수가 위험 구간입니다.' },
+            { limit: 60, severity: 'warning', title: '심혈관 보호점수 주의', action: '공기질 개선 및 활동 조절', message: '심혈관 보호점수가 낮습니다.' }
+        ],
+        hysteresis: { clearAbove: 65 }
+    },
+    {
+        type: 'sleep_quality_low',
+        label: '수면 환경',
+        value: Number(seniorSleep.score ?? (snapshot.senior && snapshot.senior.sleep ? snapshot.senior.sleep.score : null) ?? health.sleepComfort),
+        unit: '점',
+        decimals: 0,
+        minDurationMs: 10 * 60 * 1000,
+        compare: 'lte',
+        thresholds: [
+            { limit: 40, severity: 'critical', title: '수면 환경 매우 나쁨', action: '취침 전 환기 권장', message: '수면 환경 점수가 매우 낮습니다.' },
+            { limit: 60, severity: 'warning', title: '수면 환경 주의', action: '취침 전 환기 권장', message: '수면 환경 점수가 낮습니다.' }
+        ],
+        hysteresis: { clearAbove: 65 }
+    },
+    {
+        type: 'mold_risk',
+        label: '곰팡이 위험',
+        value: Number(moldLatest.riskLevel ?? (snapshot.child && snapshot.child.mold ? snapshot.child.mold.riskLevel : null) ?? snapshot.moldRiskLevel ?? health.moldRiskLevel),
+        unit: '단계',
+        decimals: 0,
+        minDurationMs: 10 * 60 * 1000,
+        compare: 'gte',
+        thresholds: [
+            { limit: 4, severity: 'critical', title: '곰팡이 위험', action: '제습 및 환기 즉시 실행', message: '고습 24시간 이상 지속 위험' },
+            { limit: 3, severity: 'warning', title: '곰팡이 경고', action: '습도 60% 이하 유지', message: '곰팡이 성장 위험 구간입니다.' },
+            { limit: 2, severity: 'notice', title: '곰팡이 주의', action: '환기/제습 준비', message: '곰팡이 위험이 증가했습니다.' }
+        ],
+        hysteresis: { clearBelow: 1 }
+    }
+];
+
+watchers.forEach((watcher) => {
+    const value = watcher.value;
+    const diagInfo = shouldDiag(watcher.type) ? {
+        type: watcher.type,
+        label: watcher.label,
+        timestamp: new Date(now).toISOString(),
+        quietHours,
+        value
+    } : null;
+    if (!Number.isFinite(value)) {
+        if (diagInfo) {
+            diagInfo.reason = 'value_not_numeric';
+            emitDiag(diagInfo);
+        }
+        delete state[watcher.type];
+        return;
+    }
+
+    const compare = watcher.compare || 'gte';
+    const threshold = watcher.thresholds.find((t) => (compare === 'lte' ? value <= t.limit : value >= t.limit));
+    const hysteresisClearBelow = watcher.hysteresis?.clearBelow ?? watcher.resetBelow;
+    const hysteresisClearAbove = watcher.hysteresis?.clearAbove ?? watcher.resetAbove;
+    const entry = ensureState(watcher.type);
+    entry.lastValue = value;
+    entry.lastUpdated = now;
+
+    if (diagInfo) {
+        diagInfo.threshold = threshold ? { limit: threshold.limit, severity: threshold.severity } : null;
+        diagInfo.pendingSeverity = entry.pendingSeverity;
+        diagInfo.activeSince = entry.activeSince;
+        diagInfo.hysteresisClear = compare === 'lte' ? (hysteresisClearAbove ?? null) : (hysteresisClearBelow ?? null);
+        diagInfo.compare = compare;
+    }
+
+    if (!threshold) {
+        if (compare === 'lte') {
+            if (hysteresisClearAbove != null && value >= hysteresisClearAbove) {
+                if (diagInfo && diagVerbose) {
+                    diagInfo.reason = 'cleared_by_hysteresis';
+                    emitDiag(diagInfo);
+                }
+                delete state[watcher.type];
+            } else {
+                if (diagInfo && diagVerbose) {
+                    diagInfo.reason = 'below_threshold';
+                    emitDiag(diagInfo);
+                }
+                entry.activeSince = null;
+                entry.pendingSeverity = null;
+                entry.durationBuffer = null;
+            }
+        } else {
+            if (hysteresisClearBelow != null && value <= hysteresisClearBelow) {
+                if (diagInfo && diagVerbose) {
+                    diagInfo.reason = 'cleared_by_hysteresis';
+                    emitDiag(diagInfo);
+                }
+                delete state[watcher.type];
+            } else {
+                if (diagInfo && diagVerbose) {
+                    diagInfo.reason = 'below_threshold';
+                    emitDiag(diagInfo);
+                }
+                entry.activeSince = null;
+                entry.pendingSeverity = null;
+                entry.durationBuffer = null;
+            }
+        }
+        return;
+    }
+
+    if (!entry.activeSince || !entry.pendingSeverity || (severityRank[threshold.severity] || 0) > (severityRank[entry.pendingSeverity] || 0)) {
+        entry.activeSince = now;
+        entry.pendingSeverity = threshold.severity;
+        if (diagInfo && diagVerbose) {
+            diagInfo.reason = 'severity_updated';
+            diagInfo.activeSince = entry.activeSince;
+            diagInfo.pendingSeverity = entry.pendingSeverity;
+            emitDiag(diagInfo);
+        }
+    }
+
+    const { value: minDuration, source: minDurationSource } = resolveMinDuration(watcher, threshold.severity);
+    const durationMs = now - entry.activeSince;
+
+    if (durationMs < minDuration) {
+        entry.durationBuffer = {
+            accumulatedMs: durationMs,
+            requiredMs: minDuration,
+            source: minDurationSource
+        };
+        if (diagInfo) {
+            diagInfo.reason = 'duration_pending';
+            diagInfo.duration = entry.durationBuffer;
+            emitDiag(diagInfo);
+        }
+        return;
+    }
+
+    const ventilationSuppressed = quietHours && threshold.severity !== 'critical' && watcher.ventilationRecommended;
+    const recommendedAction = ventilationSuppressed && watcher.altActionWhenVentSuppressed
+        ? watcher.altActionWhenVentSuppressed
+        : threshold.action;
+
+    const outdoorBetter = watcher.type === 'pm25_high' && outdoorValid ? outdoorPm25 < value : null;
+
+    const durationMeta = {
+        accumulatedMs: durationMs,
+        requiredMs: minDuration,
+        met: true,
+        source: minDurationSource
+    };
+
+    const event = {
+        type: watcher.type,
+        label: watcher.label,
+        severity: threshold.severity,
+        priority: severityRank[threshold.severity] || 0,
+        title: threshold.title,
+        message: threshold.message,
+        recommendedAction,
+        value: round(value, watcher.decimals),
+        unit: watcher.unit,
+        ventilation: watcher.ventilationRecommended ? {
+            recommended: !ventilationSuppressed,
+            suppressed: ventilationSuppressed,
+            reason: ventilationSuppressed ? 'quiet_hours' : null,
+            altAction: ventilationSuppressed ? watcher.altActionWhenVentSuppressed : null
+        } : null,
+        quietFriendly: ventilationSuppressed,
+        purifier: {
+            k: Number(purifier.k),
+            kEffective: Number(purifier.kEffective),
+            cadrGrade: purifier.cadrGrade,
+            t50: purifier.t50_min
+        },
+        outdoorComparison: watcher.type === 'pm25_high' ? {
+            available: outdoorValid,
+            outdoorValue: outdoorValid ? outdoorPm25 : null,
+            outdoorBetter,
+            delta: outdoorValid ? round(value - outdoorPm25, 1) : null
+        } : null,
+        context: {
+            snapshotId: snapshot.id || (snapshot.meta && snapshot.meta.serialno) || 'node-red',
+            location: snapshot.location || null
+        },
+        duration: durationMeta,
+        hysteresis: {
+            trigger: threshold.limit,
+            clear: compare === 'lte' ? (hysteresisClearAbove ?? null) : (hysteresisClearBelow ?? null),
+            value
+        }
+    };
+
+    if (diagInfo) {
+        diagInfo.duration = durationMeta;
+        diagInfo.ventilationSuppressed = ventilationSuppressed;
+        diagInfo.outdoorBetter = outdoorBetter;
+        diagInfo.recommendedAction = recommendedAction;
+    }
+
+    recordEvent(event, entry, diagInfo);
+});
+
+const apparentSnapshot = resolveApparentSnapshot(seasonalApparent, health);
+const nowDate = new Date(now);
+const scheduleSlots = [
+    { type: 'apparent_temp_morning', hour: 7, label: '체감온도(아침)' },
+    { type: 'apparent_temp_evening', hour: 19, label: '체감온도(저녁)' }
+];
+if (Number.isFinite(apparentSnapshot.apparentTemp)) {
+    for (const slot of scheduleSlots) {
+        if (nowDate.getHours() !== slot.hour || nowDate.getMinutes() >= 10) continue;
+        const entry = ensureState(slot.type);
+        if (isSameLocalDay(entry.lastEventTs, now)) continue;
+
+        const apparentTemp = apparentSnapshot.apparentTemp;
+        let severity = 'notice';
+        let recommendedAction = '실내 온열/보온 환경 점검';
+        let message = `체감온도 ${round(apparentTemp, 1)}°C`;
+        if (apparentSnapshot.seasonMode === 'summer') {
+            if (apparentTemp >= 38) severity = 'critical';
+            else if (apparentTemp >= 35) severity = 'warning';
+            else if (apparentTemp >= 33) severity = 'notice';
+            message = apparentSnapshot.summerMessage || message;
+            recommendedAction = '수분 보충 및 환기/냉방';
+        } else if (apparentSnapshot.seasonMode === 'winter') {
+            if (apparentTemp <= -15) severity = 'critical';
+            else if (apparentTemp <= -10) severity = 'warning';
+            else if (apparentTemp <= -5) severity = 'notice';
+            message = apparentSnapshot.winterMessage || message;
+            recommendedAction = '보온 유지 및 한파 대비';
+        }
+
+        const event = {
+            type: slot.type,
+            label: '체감온도',
+            severity,
+            priority: severityRank[severity] || 0,
+            title: slot.label,
+            message,
+            recommendedAction,
+            value: round(apparentTemp, 1),
+            unit: '°C',
+            ventilation: null,
+            quietFriendly: false,
+            context: {
+                snapshotId: snapshot.id || (snapshot.meta && snapshot.meta.serialno) || 'node-red',
+                location: snapshot.location || null,
+                schedule: slot.type
+            },
+            duration: {
+                accumulatedMs: 0,
+                requiredMs: 0,
+                met: true,
+                source: 'schedule'
+            },
+            hysteresis: {
+                trigger: null,
+                clear: null,
+                value: apparentTemp
+            }
+        };
+        recordEvent(event, entry, null);
+    }
+}
+
+flow.set('alert_state', state);
+
+if (!events.length) {
+    return null;
+}
+
+events.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+return { payload: events };
+
+
+================================================================================
+=== NODE: FCM 알림 발송 (Node-RED) (id: 849d9e14e449025e)
+================================================================================
+const events = Array.isArray(msg.payload) ? msg.payload : (msg.payload ? [msg.payload] : []);
+if (!events.length) return null;
+
+const serviceAccountJsonRaw = env.get('FCM_SERVICE_ACCOUNT_JSON');
+const serviceAccountJsonB64 = env.get('FCM_SERVICE_ACCOUNT_JSON_B64');
+const projectIdOverride = env.get('FCM_PROJECT_ID') || null;
+
+const loadServiceAccount = () => {
+    if (serviceAccountJsonRaw) {
+        return JSON.parse(serviceAccountJsonRaw);
+    }
+    if (serviceAccountJsonB64) {
+        const decoded = Buffer.from(serviceAccountJsonB64, 'base64').toString('utf8');
+        return JSON.parse(decoded);
+    }
+    node.warn('FCM 서비스 계정 미설정 (JSON/B64 필요)');
+    return null;
+};
+
+const initFirebase = () => {
+    const creds = loadServiceAccount();
+    if (!creds) return null;
+    if (!admin.apps || admin.apps.length === 0) {
+        admin.initializeApp({
+            credential: admin.credential.cert(creds),
+            projectId: projectIdOverride || creds.project_id
+        });
+    }
+    return admin;
+};
+
+const buildPushBody = (event) => {
+    const title = `${event.title} · ${event.value}${event.unit || ''}`;
+    const action = event.recommendedAction || '상세 보기';
+    return {
+        title,
+        body: `${event.message} (${action})`,
+        data: {
+            eventId: String(event.eventId || ''),
+            type: String(event.type || ''),
+            severity: String(event.severity || ''),
+            quietHours: String(event.quietHours),
+            suppressed: String(event.suppressed),
+            durationMs: String(event.duration?.accumulatedMs ?? 0)
+        }
+    };
+};
+
+const toMinutes = (hhmm) => {
+    const [h, m] = String(hhmm || '').split(':').map((part) => parseInt(part, 10));
+    return (h * 60) + (m || 0);
+};
+
+const isWithinQuietHours = (window, timezone) => {
+    const { start, end } = window || {};
+    if (!start || !end) return false;
+    const now = timezone ? new Date(new Date().toLocaleString('en-US', { timeZone: timezone })) : new Date();
+    const minutes = now.getHours() * 60 + now.getMinutes();
+    const startMinutes = toMinutes(start);
+    const endMinutes = toMinutes(end);
+    if (startMinutes === endMinutes) return false;
+    if (startMinutes < endMinutes) return minutes >= startMinutes && minutes < endMinutes;
+    return minutes >= startMinutes || minutes < endMinutes;
+};
+
+const shouldDeliver = (event, user) => {
+    if (user.alertsEnabled === false) return false;
+    if (user.mutedTypes && user.mutedTypes[event.type]) return false;
+    const snoozedUntil = user.snoozedUntil ? new Date(user.snoozedUntil) : null;
+    if (snoozedUntil && Date.now() < snoozedUntil.getTime()) {
+        return event.severity === 'critical';
+    }
+    if (event.severity === 'critical') return true;
+    const quietEnabled = user.quietHoursEnabled ?? Boolean(user.quietHours);
+    if (!quietEnabled) return true;
+    if (!user.quietHours) return true;
+    const inQuiet = isWithinQuietHours(user.quietHours, user.timezone);
+    if (!inQuiet) return true;
+    return Boolean(event.quietHours === false);
+};
+
+const listDevicesForEvent = async (db, event) => {
+    const topic = event?.topic || 'all';
+    const snapshot = await db.collection('devices').where('topics', 'array-contains', topic).get();
+    const results = snapshot.docs.map((doc) => ({
+        userId: doc.id,
+        token: doc.data().token,
+        fcmToken: doc.data().token,
+        ...doc.data()
+    }));
+    if (topic === 'all') return results;
+    const allSnapshot = await db.collection('devices').where('topics', 'array-contains', 'all').get();
+    const allResults = allSnapshot.docs.map((doc) => ({
+        userId: doc.id,
+        token: doc.data().token,
+        fcmToken: doc.data().token,
+        ...doc.data()
+    }));
+    return [...results, ...allResults].filter((device, index, array) => (
+        array.findIndex((other) => other.token === device.token) === index
+    ));
+};
+
+return (async () => {
+    try {
+        const adminReady = initFirebase();
+        if (!adminReady) return null;
+        const db = adminReady.firestore();
+        const messaging = adminReady.messaging();
+
+        for (const event of events) {
+            if (!event?.eventId) {
+                node.warn('이벤트 누락: eventId 없음');
+                continue;
+            }
+            if (event.suppressed) continue;
+
+            try {
+                await db.collection('alerts').add({
+                    ...event,
+                    createdAt: new Date()
+                });
+            } catch (err) {
+                node.error('alerts 저장 실패', err);
+            }
+
+            const recipients = await listDevicesForEvent(db, event);
+            for (const user of recipients) {
+                if (!shouldDeliver(event, user)) continue;
+                const token = user?.fcmToken || user?.token;
+                if (!token) continue;
+                const payload = buildPushBody(event);
+                try {
+                    await messaging.send({
+                        token,
+                        notification: {
+                            title: payload.title,
+                            body: payload.body
+                        },
+                        android: {
+                            priority: 'high',
+                            notification: {
+                                channelId: 'iaq_alerts'
+                            }
+                        },
+                        data: payload.data
+                    });
+                } catch (err) {
+                    const code = err?.errorInfo?.code || err?.code;
+                    if (code === 'messaging/registration-token-not-registered') {
+                        const tokenId = user?.userId || token;
+                        if (tokenId) {
+                            try {
+                                await db.collection('devices').doc(tokenId).delete();
+                            } catch (deleteErr) {
+                                node.error('invalid token 삭제 실패', deleteErr);
+                            }
+                        }
+                    } else {
+                        node.error('FCM 전송 실패', err);
+                    }
+                }
+            }
+        }
+    } catch (err) {
+        node.error('FCM 알림 처리 실패', err);
+    }
+    return msg;
+})();
+
+
+================================================================================
+=== NODE: 🔧 에러 처리 로직 (id: 995e229fd2ecc604)
+================================================================================
+// 에러 통계 업데이트
+let stats = context.get('bridge_stats') || {
+    total_requests: 0,
+    success_count: 0,
+    error_count: 0,
+    start_time: new Date().toISOString(),
+    last_error: null
+};
+
+stats.error_count++;
+stats.last_error = new Date().toISOString();
+context.set('bridge_stats', stats);
+
+// 에러 메시지 생성
+const errorMsg = `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+    <h3 style="margin: 0 0 15px 0; text-align: center; font-size: 18px;">🚨 API 브리지 에러 발생</h3>
+    
+    <div style="background: rgba(255,255,255,0.15); padding: 15px; margin: 10px 0; border-radius: 8px;">
+        <h4 style="margin: 0 0 10px 0; color: #FFE082; font-size: 14px;">❌ 에러 정보</h4>
+        <div style="margin-left: 15px; line-height: 1.8; font-size: 13px;">
+            <div style="margin: 8px 0; padding: 8px 12px; background: rgba(0,0,0,0.2); border-radius: 6px;">📝 <strong>메시지:</strong> <span style="color: #FFCDD2; font-weight: bold;">${msg.error.message || 'Unknown error'}</span></div>
+            <div>🕐 <strong>발생시간:</strong> <span style="color: #C8E6C9; font-weight: bold;">${new Date().toLocaleString('ko-KR')}</span></div>
+            <div>📊 <strong>총 에러:</strong> <span style="color: #FFCDD2; font-weight: bold;">${stats.error_count}회</span></div>
+        </div>
+    </div>
+    
+    <div style="background: rgba(255,255,255,0.15); padding: 15px; margin: 10px 0; border-radius: 8px;">
+        <h4 style="margin: 0 0 10px 0; color: #FFE082; font-size: 14px;">🔍 문제 해결 가이드</h4>
+        <div style="margin-left: 15px; line-height: 1.4; font-size: 13px;">
+            <div style="margin: 8px 0; padding: 8px 12px; background: rgba(0,0,0,0.1); border-radius: 6px;">1️⃣ <strong>AirGradient 기기 전원 확인</strong></div>
+            <div style="margin: 8px 0; padding: 8px 12px; background: rgba(0,0,0,0.1); border-radius: 6px;">2️⃣ <strong>WiFi 연결 상태 확인</strong></div>
+            <div style="margin: 8px 0; padding: 8px 12px; background: rgba(0,0,0,0.1); border-radius: 6px;">3️⃣ <strong>네트워크 연결 확인</strong></div>
+            <div style="margin: 8px 0; padding: 8px 12px; background: rgba(0,0,0,0.1); border-radius: 6px;">4️⃣ <strong>IP 주소 확인</strong> (192.168.45.230)</div>
+        </div>
+    </div>
+</div>
+`;
+
+node.error(`API 요청 실패: ${msg.error.message}`, msg);
+
+node.status({
+    fill: "red",
+    shape: "ring",
+    text: `❌ API 에러: ${new Date().toLocaleTimeString('ko-KR')}`
+});
+
+msg.payload = {
+    error: true,
+    error_message: errorMsg,
+    error_details: msg.error
+};
+
+return msg;
+
+
+================================================================================
+=== NODE: 🎮 브리지 제어 (id: b42700eb5099d1b8)
+================================================================================
+// 브리지 시작/중지 제어
+const isEnabled = msg.payload;
+
+if (isEnabled) {
+    // 브리지 시작
+    node.log('🌉 API 브리지 시작됨');
+    node.status({fill: "green", shape: "dot", text: "브리지 활성화"});
+    
+    // 즉시 한 번 실행
+    msg.payload = new Date().getTime();
+    msg.topic = "bridge_start";
+    return msg;
+} else {
+    // 브리지 중지
+    node.log('🛑 API 브리지 중지됨');
+    node.status({fill: "red", shape: "ring", text: "브리지 비활성화"});
+    
+    // 중지 메시지 전송
+    msg.payload = {
+        bridge_stopped: true,
+        message: "🛑 API 브리지가 중지되었습니다.",
+        timestamp: new Date().toLocaleString('ko-KR')
+    };
+    return null;
+}
+
+
+================================================================================
+=== NODE: 📊 CSV 생성기 (id: 61103206e838d8e9)
+================================================================================
+
+const action = msg.payload;
+
+if (action === 'clear_data') {
+    global.set('csvData', []);
+    node.send({
+        payload: '🗑️ 모든 데이터가 삭제되었습니다.',
+        topic: 'notification'
+    });
+    return null;
+}
+
+if (action === 'export_csv') {
+    const csvData = global.get('csvData') || [];
+    
+    if (csvData.length === 0) {
+        node.send({
+            payload: '⚠️ 내보낼 데이터가 없습니다.',
+            topic: 'notification'
+        });
+        return null;
+    }
+    
+    const headers = [
+        'Timestamp', 'Time_KR', 'PM2.5_µg/m³', 'CO2_ppm', 'TVOC_index',
+        'NOx_index', 'Temperature_°C', 'Humidity_%', 'US_AQI', 'Discomfort_Index',
+        'score', 'combo', 'Air_Quality_State', 'K_PM2.5', 'K_CO2', 't50_PM2.5', 't50_CO2', 'R2_PM2.5', 'R2_CO2'
+    ];
+    
+    // 엑셀이 UTF-8을 인식하도록 BOM 추가
+    const BOM = "\uFEFF";
+    
+    let csvContent = BOM + headers.join(',') + '\n';
+    
+    csvData.forEach(record => {
+        const sanitize = (str) => `"${String(str).replace(/"/g, '""')}"`;
+
+        const row = [
+            record.timestamp,
+            record.time_str,
+            record.pm25,
+            record.co2,
+            record.tvoc,
+            record.nox,
+            record.temp,
+            record.humidity,
+            record.usAQI,
+            record.discomfortIndex,
+            record.score ?? '',            // 원상 복구: record.missionScore -> record.score
+            record.combo ?? '',             // 원상 복구: record.comboCount -> record.combo
+            sanitize(record.airQualityState), // 원상 복구 및 안정성 강화
+            record.k_pm25 ?? '',
+            record.k_co2 ?? '',
+            record.t50_pm25 ?? '',
+            record.t50_co2 ?? '',
+            record.r2_pm25 ?? '',
+            record.r2_co2 ?? ''
+        ];
+        csvContent += row.join(',') + '\n';
+    });
+    
+    // 파일명 생성
+    const now = new Date();
+    const filename = `AirGradient_Data_${now.toISOString().split('T')[0]}_${now.toTimeString().slice(0,8).replace(/:/g, '')}.csv`;
+    
+    // 다운로드 메시지 준비
+    msg.payload = {
+        filename: filename,
+        content: csvContent, 
+        recordCount: csvData.length
+    };
+    
+    return msg;
+}
+
+return null;
+
+
+================================================================================
+=== NODE: 브라우저 위치 업데이트 (id: 8a38bed30b14e0c4)
+================================================================================
+const payload = msg.payload || {};
+const rawLat = payload.lat !== undefined ? payload.lat : payload.latitude;
+const rawLon = payload.lon !== undefined ? payload.lon : payload.longitude;
+const lat = Number(rawLat);
+const lon = Number(rawLon);
+
+if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    node.warn('브라우저 위치 데이터가 유효하지 않습니다.', msg);
+    return null;
+}
+
+const normalizeText = (value) => {
+    if (!value || typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : null;
+};
+
+const accuracy = payload.accuracy !== undefined ? Number(payload.accuracy) : null;
+const city = normalizeText(payload.city);
+const region = normalizeText(payload.region);
+const source = normalizeText(payload.source) || 'browser-gps';
+const timestamp = payload.timestamp ? Number(payload.timestamp) : Date.now();
+
+const override = {
+    lat,
+    lon,
+    accuracy,
+    city,
+    region,
+    source,
+    timestamp,
+    updatedAt: Date.now()
+};
+
+flow.set('location_override', override);
+flow.set('location_source', source);
+
+msg.payload = override;
+
+node.status({ fill: 'green', shape: 'dot', text: `GPS ${lat.toFixed(4)}, ${lon.toFixed(4)}` });
+
+return msg;
+
+
+================================================================================
+=== NODE: ipinfo.io 요청 준비 (id: 0c9846a767daa827)
+================================================================================
+
+// ipinfo.io로 위치 정보 가져오기
+msg.url = 'https://ipinfo.io/json';
+msg.method = 'GET';
+return msg;
+
+
+
+================================================================================
+=== NODE: WAQI 요청 준비 (id: cb2734376bd93a13)
+================================================================================
+
+const OVERRIDE_TTL = 1000 * 60 * 10; // 10분 유지
+const now = Date.now();
+const payload = msg.payload || {};
+const override = flow.get('location_override');
+
+const normalizeText = (value) => {
+    if (!value || typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === 'Unknown' || trimmed === '알 수 없음') return null;
+    return trimmed;
+};
+
+const overrideSource = normalizeText(override && override.source) || 'browser-gps';
+const overrideActive = override && Number.isFinite(override.lat) && Number.isFinite(override.lon) && (now - (override.updatedAt || 0) < OVERRIDE_TTL);
+
+let lat = null;
+let lon = null;
+let city = null;
+let region = null;
+let source = normalizeText(payload.source) || null;
+let accuracy = payload.accuracy !== undefined ? Number(payload.accuracy) : null;
+
+if (typeof payload.lat === 'number' && typeof payload.lon === 'number') {
+    lat = Number(payload.lat);
+    lon = Number(payload.lon);
+    city = normalizeText(payload.city);
+    region = normalizeText(payload.region);
+    source = source || 'browser-gps';
+} else if (typeof payload.loc === 'string') {
+    const parts = payload.loc.split(',');
+    if (parts.length === 2) {
+        lat = parseFloat(parts[0]);
+        lon = parseFloat(parts[1]);
+    }
+    city = normalizeText(payload.city);
+    region = normalizeText(payload.region);
+    source = source || 'ipinfo';
+}
+
+if ((!Number.isFinite(lat) || !Number.isFinite(lon)) && overrideActive) {
+    lat = override.lat;
+    lon = override.lon;
+    accuracy = override.accuracy !== undefined ? Number(override.accuracy) : accuracy;
+    city = normalizeText(override.city) || city;
+    region = normalizeText(override.region) || region;
+    source = overrideSource;
+}
+
+if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    node.error('위치 정보를 가져올 수 없습니다.', msg);
+    return null;
+}
+
+if (overrideActive && source !== overrideSource) {
+    lat = override.lat;
+    lon = override.lon;
+    accuracy = override.accuracy !== undefined ? Number(override.accuracy) : accuracy;
+    city = normalizeText(override.city) || city;
+    region = normalizeText(override.region) || region;
+    source = overrideSource;
+}
+
+if (!city && payload.city) city = normalizeText(payload.city);
+if (!region && payload.region) region = normalizeText(payload.region);
+
+if (overrideActive) {
+    flow.set('location_override', {
+        lat: override.lat,
+        lon: override.lon,
+        accuracy: override.accuracy !== undefined ? override.accuracy : accuracy,
+        city: override.city || city || null,
+        region: override.region || region || null,
+        source: overrideSource,
+        timestamp: override.timestamp || now,
+        updatedAt: now
+    });
+}
+
+if (!overrideActive && source === 'browser-gps' && accuracy !== null) {
+    flow.set('location_override', {
+        lat,
+        lon,
+        accuracy,
+        city: city || null,
+        region: region || null,
+        source,
+        timestamp: payload.timestamp ? Number(payload.timestamp) : now,
+        updatedAt: now
+    });
+}
+
+flow.set('current_latitude', lat);
+const finalLon = lon;
+flow.set('current_longitude', finalLon);
+if (city) flow.set('current_city', city);
+if (region) flow.set('current_region', region);
+if (accuracy !== null && !Number.isNaN(accuracy)) {
+    flow.set('current_location_accuracy', accuracy);
+}
+flow.set('location_source', source || overrideSource || 'ipinfo');
+
+const token = env.get('WAQI_TOKEN') || '521285b593a8efe34cacac7c6782f6c42016c02c';
+msg.url = `https://api.waqi.info/feed/geo:${lat.toFixed(10)};${finalLon.toFixed(10)}/?token=${token}`;
+msg.method = 'GET';
+msg.locationSource = source || overrideSource || 'ipinfo';
+
+node.status({fill:'blue',shape:'ring',text:`조회 중: ${lat.toFixed(4)}, ${finalLon.toFixed(4)} (${msg.locationSource})`});
+
+return msg;
+
+
+
+================================================================================
+=== NODE: 기상청 날씨 API 요청 (id: e4c06587752eb10c)
+================================================================================
+
+msg.waqi = msg.payload;
+
+function latLonToGrid(lat, lon) {
+    const RE = 6371.00877;
+    const GRID = 5.0;
+    const SLAT1 = 30.0;
+    const SLAT2 = 60.0;
+    const OLON = 126.0;
+    const OLAT = 38.0;
+    const XO = 43;
+    const YO = 136;
+    
+    const DEGRAD = Math.PI / 180.0;
+    const re = RE / GRID;
+    const slat1 = SLAT1 * DEGRAD;
+    const slat2 = SLAT2 * DEGRAD;
+    const olon = OLON * DEGRAD;
+    const olat = OLAT * DEGRAD;
+    
+    let sn = Math.log(Math.cos(slat1) / Math.cos(slat2)) / Math.log(Math.tan(Math.PI * 0.25 + slat2 * 0.5) / Math.tan(Math.PI * 0.25 + slat1 * 0.5));
+    let sf = Math.pow(Math.tan(Math.PI * 0.25 + slat1 * 0.5), sn) * Math.cos(slat1) / sn;
+    let ro = re * sf / Math.pow(Math.tan(Math.PI * 0.25 + olat * 0.5), sn);
+    let ra = re * sf / Math.pow(Math.tan(Math.PI * 0.25 + lat * DEGRAD * 0.5), sn);
+    let theta = lon * DEGRAD - olon;
+    if (theta > Math.PI) theta -= 2.0 * Math.PI;
+    if (theta < -Math.PI) theta += 2.0 * Math.PI;
+    theta *= sn;
+    
+    const x = Math.floor(ra * Math.sin(theta) + XO + 0.5);
+    const y = Math.floor(ro - ra * Math.cos(theta) + YO + 0.5);
+    
+    return { x, y };
+}
+
+const lat = flow.get('current_latitude');
+const lon = flow.get('current_longitude');
+
+if (lat === undefined || lat === null || lon === undefined || lon === null) {
+    node.error('위치 정보가 없습니다');
+    return null;
+}
+
+const grid = latLonToGrid(lat, lon);
+
+const KST_OFFSET = 9 * 60 * 60000;
+const nowUtc = new Date();
+const nowKst = new Date(nowUtc.getTime() + KST_OFFSET);
+const baseDateTime = new Date(nowKst.getTime());
+if (nowKst.getUTCMinutes() < 45) {
+    baseDateTime.setUTCHours(baseDateTime.getUTCHours() - 1);
+}
+baseDateTime.setUTCMinutes(0, 0, 0);
+
+const pad = (value) => value.toString().padStart(2, '0');
+const baseDate = `${baseDateTime.getUTCFullYear()}${pad(baseDateTime.getUTCMonth() + 1)}${pad(baseDateTime.getUTCDate())}`;
+const baseTime = `${pad(baseDateTime.getUTCHours())}${pad(baseDateTime.getUTCMinutes())}`;
+
+const url = 'http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst';
+const params = {
+    serviceKey: '0ff577610fcbaaf42f9d941958fb96d4cbb8dd29371883b62f3e43006e4eec97',
+    numOfRows: '60',
+    pageNo: '1',
+    dataType: 'JSON',
+    base_date: baseDate,
+    base_time: baseTime,
+    nx: grid.x,
+    ny: grid.y
+};
+
+const queryString = Object.keys(params).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+msg.url = `${url}?${queryString}`;
+msg.method = 'GET';
+
+node.status({fill:'blue',shape:'dot',text:`기상청 ${baseDate} ${baseTime}`});
+
+return msg;
+
+
+
+================================================================================
+=== NODE: 공기질/날씨 데이터 통합 (id: f9203c18487e02c3)
+================================================================================
+
+const kma = msg.payload;
+const waqi = msg.waqi;
+
+const OVERRIDE_TTL = 1000 * 60 * 10;
+const now = Date.now();
+const override = flow.get('location_override');
+
+const normalizeText = (value) => {
+    if (!value || typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === 'Unknown' || trimmed === '알 수 없음') return null;
+    return trimmed;
+};
+
+const overrideSource = normalizeText(override && override.source) || 'browser-gps';
+const overrideActive = override && Number.isFinite(override.lat) && Number.isFinite(override.lon) && (now - (override.updatedAt || 0) < OVERRIDE_TTL);
+
+let apiData = {
+    pm25: null,
+    temperature: null,
+    humidity: null,
+    source: {
+        airQuality: 'AQICN',
+        weather: 'KMA'
+    }
+};
+
+const ensureContext = (key, value) => {
+    if (value === undefined || value === null) return;
+    const existing = flow.get(key);
+    if (existing === undefined || existing === null || existing === '') {
+        flow.set(key, value);
+    }
+};
+
+// AQICN 공기질 데이터 및 위치 보정
+if (waqi && waqi.status === 'ok' && waqi.data) {
+    apiData.pm25 = waqi.data.aqi || null;
+
+    const cityInfo = waqi.data.city || {};
+    const stationName = normalizeText(cityInfo.name);
+    const regionRaw = normalizeText(cityInfo.url);
+
+    if (stationName) {
+        if (overrideActive) {
+            ensureContext('current_city', stationName);
+        } else {
+            flow.set('current_city', stationName);
+            flow.set('location_source', 'waqi-city');
+        }
+    }
+
+    if (Array.isArray(cityInfo.geo) && cityInfo.geo.length >= 2) {
+        const stationLat = Number(cityInfo.geo[0]);
+        const stationLon = Number(cityInfo.geo[1]);
+        const validGeo = Number.isFinite(stationLat) && Number.isFinite(stationLon);
+        if (validGeo) {
+            if (!overrideActive) {
+                flow.set('current_latitude', stationLat);
+                flow.set('current_longitude', stationLon);
+            } else {
+                ensureContext('current_latitude', stationLat);
+                ensureContext('current_longitude', stationLon);
+            }
+        }
+    }
+
+    if (regionRaw) {
+        if (overrideActive) {
+            ensureContext('current_region', regionRaw);
+        } else {
+            flow.set('current_region', regionRaw);
+        }
+    }
+
+    if (overrideActive && (stationName || regionRaw)) {
+        const accuracyValue = override.accuracy !== undefined ? Number(override.accuracy) : null;
+        const accuracyStored = accuracyValue !== null && !Number.isNaN(accuracyValue) ? accuracyValue : null;
+
+        flow.set('location_override', {
+            lat: override.lat,
+            lon: override.lon,
+            accuracy: accuracyStored,
+            city: override.city || stationName || null,
+            region: override.region || regionRaw || null,
+            source: overrideSource,
+            timestamp: override.timestamp || now,
+            updatedAt: now
+        });
+    }
+
+    node.warn(`AQICN AQI: ${apiData.pm25}`);
+}
+
+// 기상청 온습도 데이터
+if (kma && kma.response && kma.response.header.resultCode === '00') {
+    const items = kma.response.body.items.item || [];
+    for (let item of items) {
+        if (item.category === 'T1H') apiData.temperature = parseFloat(item.obsrValue);
+        if (item.category === 'REH') apiData.humidity = parseFloat(item.obsrValue);
+    }
+    node.warn(`기상청 온도: ${apiData.temperature}, 습도: ${apiData.humidity}`);
+} else if (kma && kma.response) {
+    node.error(`기상청 API 오류: ${kma.response.header.resultMsg}`);
+}
+
+if (overrideActive) {
+    ensureContext('location_source', overrideSource);
+}
+
+apiData.retrievedAt = new Date().toISOString();
+
+msg.payload = apiData;
+flow.set('latest_api_data', apiData);
+node.status({fill:'green',shape:'dot',text:`데이터 통합 완료`});
+
+return msg;
+
+
+
+================================================================================
+=== NODE: API Key Guard (status) (id: 58650e8c9dab4955)
+================================================================================
+
+const expected = env.get('NR_API_KEY') || flow.get('api_key_override');
+const headers = (msg.req && msg.req.headers) || {};
+const provided = headers['x-api-key'];
+
+if (!expected) {
+    node.warn('NR_API_KEY 환경 변수가 설정되지 않아 모든 요청을 임시 허용합니다.');
+    return [msg, null];
+}
+
+if (!provided || provided !== expected) {
+    node.status({fill:'red',shape:'ring',text:'401 Unauthorized'});
+    msg.statusCode = 401;
+    msg.payload = { error: 'Unauthorized' };
+    return [null, msg];
+}
+
+node.status({fill:'green',shape:'dot',text:'인증 통과'});
+return [msg, null];
+
+
+
+================================================================================
+=== NODE: 상태 응답 생성 (id: b657bfb1d48a55cd)
+================================================================================
+
+const latitude = flow.get('current_latitude');
+const longitude = flow.get('current_longitude');
+const source = flow.get('location_source') || null;
+const location = {
+    city: flow.get('current_city') || null,
+    region: flow.get('current_region') || null,
+    latitude: typeof latitude === 'number' ? latitude : null,
+    longitude: typeof longitude === 'number' ? longitude : null,
+    source: source
+};
+
+const sensor = flow.get('latest_sensor_data') || null;
+const apiData = flow.get('latest_api_data') || null;
+
+if (!sensor && !apiData) {
+    msg.statusCode = 503;
+    msg.payload = { error: '데이터가 아직 준비되지 않았습니다.' };
+    node.status({fill:'yellow',shape:'ring',text:'데이터 없음'});
+    return msg;
+}
+
+msg.statusCode = 200;
+msg.payload = {
+    location,
+    sensor,
+    api: apiData
+};
+msg.headers = { 'Content-Type': 'application/json; charset=utf-8' };
+node.status({fill:'green',shape:'dot',text:'status 발행'});
+
+return msg;
+
+
+
+================================================================================
+=== NODE: API Key Guard (compare) (id: 10c3c83d35850ffb)
+================================================================================
+
+const expected = env.get('NR_API_KEY') || flow.get('api_key_override');
+const headers = (msg.req && msg.req.headers) || {};
+const provided = headers['x-api-key'];
+
+if (!expected) {
+    node.warn('NR_API_KEY 환경 변수가 설정되지 않아 모든 요청을 임시 허용합니다.');
+    return [msg, null];
+}
+
+if (!provided || provided !== expected) {
+    node.status({fill:'red',shape:'ring',text:'401 Unauthorized'});
+    msg.statusCode = 401;
+    msg.payload = { error: 'Unauthorized' };
+    return [null, msg];
+}
+
+node.status({fill:'green',shape:'dot',text:'인증 통과'});
+return [msg, null];
+
+
+
+================================================================================
+=== NODE: 비교 응답 생성 (id: fed8b1912e98c064)
+================================================================================
+
+const comparison = flow.get('api_comparison_result');
+
+if (!comparison) {
+    msg.statusCode = 503;
+    msg.payload = { error: '비교 데이터가 준비되지 않았습니다.' };
+    node.status({fill:'yellow',shape:'ring',text:'comparison 없음'});
+    return msg;
+}
+
+const location = comparison.location || {};
+const rawCity = typeof location.city === 'string' ? location.city : null;
+const cleanCity = rawCity && rawCity !== 'Unknown' && rawCity !== '위치 없음' ? rawCity : null;
+const region = typeof location.region === 'string' ? location.region : null;
+const latitude = typeof location.latitude === 'number' ? location.latitude : null;
+const longitude = typeof location.longitude === 'number' ? location.longitude : null;
+const source = typeof location.source === 'string' ? location.source : (typeof comparison.locationSource === 'string' ? comparison.locationSource : null);
+
+const makeValue = (value, decimals = 1) => {
+    if (value === null || value === undefined) return null;
+    const num = Number(value);
+    if (Number.isNaN(num)) return String(value);
+    return num.toFixed(decimals);
+};
+
+const formatError = (value) => {
+    if (value === null || value === undefined) return null;
+    return `${value}%`;
+};
+
+const pm25 = comparison.pm25 || {};
+const temperature = comparison.temperature || {};
+const humidity = comparison.humidity || {};
+
+const subtitleParts = [];
+if (cleanCity) subtitleParts.push(cleanCity);
+if (latitude !== null && longitude !== null) subtitleParts.push(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+const subtitle = subtitleParts.length > 0 ? `📍 ${subtitleParts.join(' | ')}` : null;
+
+msg.statusCode = 200;
+msg.payload = {
+    title: '📊 센서 vs API 비교',
+    subtitle: subtitle,
+    location: {
+        city: cleanCity,
+        region: region,
+        latitude: latitude,
+        longitude: longitude,
+        source: source
+    },
+    pm25: {
+        sensor: makeValue(pm25.sensor, 0),
+        api: makeValue(pm25.api, 0),
+        error: formatError(pm25.error)
+    },
+    temperature: {
+        sensor: makeValue(temperature.sensor, 1),
+        api: makeValue(temperature.api, 1),
+        error: formatError(temperature.error)
+    },
+    humidity: {
+        sensor: makeValue(humidity.sensor, 1),
+        api: makeValue(humidity.api, 1),
+        error: formatError(humidity.error)
+    },
+    updatedAt: comparison.timestamp || new Date().toISOString(),
+    locationSource: source || null
+};
+msg.headers = { 'Content-Type': 'application/json; charset=utf-8' };
+node.status({fill:'green',shape:'dot',text:`compare 발행: ${cleanCity || '위치 미확인'}`});
+
+return msg;
+
+
+
+================================================================================
+=== NODE: 데이터 통합 (id: 6af1c4271ef231e7)
+================================================================================
+const t = msg.topic || "";
+let pm = flow.get('pm') || null;
+let co2 = flow.get('co2') || null;
+let tvoc = flow.get('tvoc') || null;
+let temp = flow.get('temp') || null;
+let humidity = flow.get('humidity') || null;
+
+// 시간 간격 체크
+const now = Date.now();
+const lastDetailTime = flow.get('last_detail_chart_time') || 0;
+const timeDiff = now - lastDetailTime;
+
+if (t.endsWith('/sensors/data') && typeof msg.payload === 'object') {
+  if (isFinite(Number(msg.payload.pm25))) pm = Number(msg.payload.pm25);
+  if (isFinite(Number(msg.payload.co2))) co2 = Number(msg.payload.co2);
+  if (isFinite(Number(msg.payload.tvoc))) tvoc = Number(msg.payload.tvoc);
+  if (isFinite(Number(msg.payload.temp))) temp = Number(msg.payload.temp);
+  if (isFinite(Number(msg.payload.humidity))) humidity = Number(msg.payload.humidity);
+}
+else if (t.endsWith('/PM2.5') && isFinite(Number(msg.payload))) {
+  pm = Number(msg.payload);
+}
+else if (t.endsWith('/CO2') && isFinite(Number(msg.payload))) {
+  co2 = Number(msg.payload);
+}
+else if (t.endsWith('/TVOC') || t.endsWith('/tVOC') || t.endsWith('/TVOC/ppb')) {
+  if (isFinite(Number(msg.payload))) {
+    tvoc = Number(msg.payload);
+  }
+}
+else if (t.endsWith('/temperature') && isFinite(Number(msg.payload))) {
+  temp = Number(msg.payload);
+}
+else if ((t.endsWith('/humidity') || t.endsWith('/RH')) && isFinite(Number(msg.payload))) {
+  humidity = Number(msg.payload);
+}
+
+flow.set('pm', pm);
+flow.set('co2', co2);
+flow.set('tvoc', tvoc);
+flow.set('temp', temp);
+flow.set('humidity', humidity);
+flow.set('last_detail_chart_time', now);
+
+// 30초 이상 간격이 있으면 그래프 끊기
+let pmMsg, co2Msg;
+if (timeDiff > 30000 && lastDetailTime > 0) {
+    pmMsg = { payload: [], topic: "PM2.5" };
+    co2Msg = { payload: [], topic: "CO2" };
+} else {
+    pmMsg = Number.isFinite(pm) ? { payload: pm, topic: "PM2.5" } : null;
+    co2Msg = Number.isFinite(co2) ? { payload: co2, topic: "CO2" } : null;
+}
+
+const combinedMsg = {
+    payload: {
+        pm25: pm,
+        co2,
+        tvoc,
+        temp,
+        humidity
+    },
+    topic: "combined"
+};
+
+return [pmMsg, co2Msg, combinedMsg];
+
+
+
+================================================================================
+=== NODE: 알림 생성 (id: 069a6417fb25f767)
+================================================================================
+const pm = msg.payload.pm25;
+const co2 = msg.payload.co2;
+let msgs = [];
+if (isFinite(pm)) {
+  if      (pm >= 55)  msgs.push("PM2.5 매우 나쁨 — 즉시 환기/정화");
+  else if (pm >= 35)  msgs.push("PM2.5 나쁨 — 정화기 가동 권장");
+  else if (pm >= 15)  msgs.push("PM2.5 주의 — 관리 필요");
+}
+if (isFinite(co2)) {
+  if      (co2 >= 1500) msgs.push("CO₂ 매우 높음 — 즉시 환기");
+  else if (co2 >= 1000) msgs.push("CO₂ 높음 — 10분 환기 권장");
+}
+msg.payload = msgs.length? msgs.join(" | ") : "양호";
+return msg;
+
+
+
+================================================================================
+=== NODE: k 계산 (PM2.5 감소구간) (id: 6a5be2ac5e0e094a)
+================================================================================
+// ═══════════════════════════════════════════════════════════════
+// PM2.5 Decay Rate (k) Calculation Node
+// Output 1: Gauge (k value)
+// Output 2: Chart ({ topic: 'PM2.5 Purification', payload: k })
+// Output 3: Log entry
+// ═══════════════════════════════════════════════════════════════
+
+const WINDOW_MS = 300 * 1000;  // 5분 윈도우
+const MIN_SAMPLES = 15;
+const BUFFER_LIMIT = 400;
+const EPS = 1e-6;
+const NOISE_THRESHOLD = 0.99;  // 저농도 컷오프
+
+const now = Date.now();
+const timestampIso = new Date(now).toISOString();
+
+// 입력 파싱
+let rawValue = msg.payload;
+if (rawValue && typeof rawValue === 'object') {
+    rawValue = rawValue.pm25 ?? rawValue.value ?? rawValue.pm ?? rawValue.payload;
+}
+const pm25 = Number(rawValue);
+
+if (!Number.isFinite(pm25) || pm25 <= 0) {
+    node.status({ fill: 'red', shape: 'ring', text: 'PM2.5 데이터 없음' });
+    return [null, null, null];
+}
+
+// 슬라이딩 윈도우 버퍼
+let buffer = context.get('pm120sBuffer') || [];
+buffer = buffer.filter(entry => now - entry.t <= WINDOW_MS);
+buffer.push({ t: now, v: pm25 });
+if (buffer.length > BUFFER_LIMIT) {
+    buffer = buffer.slice(buffer.length - BUFFER_LIMIT);
+}
+context.set('pm120sBuffer', buffer);
+
+if (buffer.length < MIN_SAMPLES) {
+    node.status({ fill: 'yellow', shape: 'ring', text: `샘플 ${buffer.length}/${MIN_SAMPLES}` });
+    return [null, null, null];
+}
+
+const maxVal = Math.max(...buffer.map(e => e.v));
+if (maxVal < NOISE_THRESHOLD) {
+    node.status({ fill: 'grey', shape: 'ring', text: `노이즈 수준 (max=${maxVal.toFixed(2)})` });
+    return [null, null, null];
+}
+
+// Log-Linear 회귀: ln(PM2.5) vs time
+const firstTs = buffer[0].t;
+const points = buffer.map(entry => ({
+    x: (entry.t - firstTs) / 3600000,  // hours
+    y: Math.log(Math.max(entry.v, EPS))
+}));
+
+const sums = points.reduce((acc, p) => {
+    acc.x += p.x; acc.y += p.y;
+    acc.xy += p.x * p.y;
+    acc.xx += p.x * p.x;
+    acc.yy += p.y * p.y;
+    return acc;
+}, { x: 0, y: 0, xy: 0, xx: 0, yy: 0 });
+
+const n = points.length;
+const denom = (n * sums.xx) - (sums.x * sums.x);
+let slope = 0, rSquared = 0;
+
+if (denom !== 0) {
+    slope = ((n * sums.xy) - (sums.x * sums.y)) / denom;
+    const intercept = (sums.y - slope * sums.x) / n;
+    const ssTot = sums.yy - ((sums.y * sums.y) / n);
+    const ssRes = points.reduce((acc, p) => {
+        const fitted = slope * p.x + intercept;
+        return acc + Math.pow(p.y - fitted, 2);
+    }, 0);
+    rSquared = ssTot === 0 ? 1 : Math.max(0, 1 - (ssRes / ssTot));
+}
+
+const kRaw = Number((-slope).toFixed(3));
+const kEffective = Number(Math.max(0, kRaw).toFixed(3));
+
+// ★ flow context에 저장 (마스터 노드에서 읽음)
+flow.set('k_pm25', kRaw);
+flow.set('k_pm25_effective', kEffective);
+flow.set('k_pm25_timestamp', now);
+flow.set('k_pm25_r2', rSquared);
+
+// 4-Level 분류
+function getLevel(k) {
+    if (k >= 1.0) return 'HIGH_POS';
+    if (k >= 0.2) return 'LOW_POS';
+    if (k > -0.1) return 'ZERO';
+    return 'NEGATIVE';
+}
+
+const level = getLevel(kRaw);
+const levelLabels = {
+    'HIGH_POS': 'Rapid Decay',
+    'LOW_POS': 'Natural Decay',
+    'ZERO': 'Stagnant',
+    'NEGATIVE': 'Accumulating'
+};
+
+// 로그 엔트리
+const logEntry = {
+    Timestamp: timestampIso,
+    kRaw: kRaw,
+    kEffective: kEffective,
+    R2: Number(rSquared.toFixed(3)),
+    PM_Concentration: Number(pm25.toFixed(1)),
+    Level: level
+};
+
+node.status({
+    fill: kRaw < 0 ? 'red' : (kRaw >= 1.0 ? 'green' : 'blue'),
+    shape: 'dot',
+    text: `${levelLabels[level]} k=${kRaw.toFixed(2)}/h`
+});
+
+// 3개 출력
+return [
+    { payload: kEffective },  // Output 1: Gauge
+    { topic: 'PM2.5 Purification', payload: kRaw },  // Output 2: Chart
+    { payload: logEntry }  // Output 3: Log
+];
+
+
+================================================================================
+=== NODE: k 통합 (id: 73828c61c1927bc5)
+================================================================================
+// ═══════════════════════════════════════════════════════════════
+// Hybrid ACH Master - Dual K-Value Analysis
+// 4-Level Classification + 5-Scenario Diagnosis
+// Output 1: Gauge + 듀얼 k값/등급 (PM2.5, CO2 개별)
+// Output 2: Chart data
+// Output 3: Log entry
+// Output 4: Status/Diagnosis text (한글)
+// ═══════════════════════════════════════════════════════════════
+
+const DATA_TTL_MS = 10 * 60 * 1000;  // 10분
+
+const now = Date.now();
+
+// ★ flow context에서 k 값 읽기
+const kPm = flow.get('k_pm25') ?? null;
+const kCo2 = flow.get('k_co2') ?? null;
+const kPmTs = flow.get('k_pm25_timestamp') ?? 0;
+const kCo2Ts = flow.get('k_co2_timestamp') ?? 0;
+const co2Current = flow.get('co2_current') ?? 0;
+
+// ★ R² 신뢰도 값 읽기
+const r2Pm = flow.get('k_pm25_r2') ?? 0;
+const r2Co2 = flow.get('k_co2_r2') ?? 0;
+const R2_THRESHOLD = 0.7;  // 신뢰도 임계값
+
+// 데이터 유효성 검사
+const pmValid = kPm !== null && (now - kPmTs) < DATA_TTL_MS;
+const co2Valid = kCo2 !== null && (now - kCo2Ts) < DATA_TTL_MS;
+
+if (!pmValid && !co2Valid) {
+    node.status({ fill: 'yellow', shape: 'ring', text: 'k 데이터 수집 중' });
+    return [null, null, null, { payload: '센서 데이터 대기중...' }];
+}
+
+// 유효한 값만 사용 (없으면 0)
+const kPmVal = pmValid ? kPm : 0;
+const kCo2Val = co2Valid ? kCo2 : 0;
+
+// ═══════════════════════════════════════════════════════════════
+// 4-Level Classification
+// ═══════════════════════════════════════════════════════════════
+function getLevel(k) {
+    if (k >= 1.0) return 'HIGH_POS';   // Rapid Decay
+    if (k >= 0.2) return 'LOW_POS';    // Natural Decay
+    if (k > -0.1) return 'ZERO';       // Stagnant
+    return 'NEGATIVE';                  // Accumulating
+}
+
+// CADR 등급 계산 함수
+function getCadrGrade(k) {
+    if (k >= 2.0) return 'S';
+    if (k >= 1.0) return 'A';
+    if (k >= 0.5) return 'B';
+    return 'C';
+}
+
+const levelPm = getLevel(kPmVal);
+const levelCo2 = getLevel(kCo2Val);
+
+// ★ 개별 CADR 등급
+const gradePm25 = getCadrGrade(kPmVal);
+const gradeCo2 = getCadrGrade(kCo2Val);
+
+// ═══════════════════════════════════════════════════════════════
+// 5-Scenario Diagnosis Matrix (한글화)
+// ═══════════════════════════════════════════════════════════════
+let status = '';
+let statusKr = '';
+let action = '';
+let actionKr = '';
+let mode = '';
+
+// Scenario 1: Purification Dominant (Sealed)
+if (levelPm === 'HIGH_POS' && (levelCo2 === 'LOW_POS' || levelCo2 === 'ZERO')) {
+    status = 'PM Rapid Decay (Sealed)';
+    statusKr = 'PM 급속감소 (밀폐상태)';
+    action = 'Check CO2 levels';
+    actionKr = 'CO₂ 확인 권장';
+    mode = 'purification';
+}
+// Scenario 2: Ventilation Dominant
+else if ((levelPm === 'LOW_POS' || levelPm === 'ZERO' || levelPm === 'NEGATIVE') && levelCo2 === 'HIGH_POS') {
+    status = 'CO2 Rapid Decay (Ventilation)';
+    statusKr = 'CO₂ 급속감소 (환기중)';
+    action = 'Monitor external PM inflow';
+    actionKr = '외부 PM 유입 모니터링';
+    mode = 'ventilation';
+}
+// Scenario 3: Combined Decay
+else if (levelPm === 'HIGH_POS' && levelCo2 === 'HIGH_POS') {
+    status = 'Combined Decay (Purify+Vent)';
+    statusKr = '복합 감소 (정화+환기)';
+    action = 'Maintain current state';
+    actionKr = '현재 상태 유지';
+    mode = 'combined';
+}
+// Scenario 5: Accumulating (Pollution Event)
+else if ((levelPm === 'NEGATIVE' && levelCo2 !== 'HIGH_POS') || (levelCo2 === 'NEGATIVE' && levelPm !== 'HIGH_POS')) {
+    status = 'Concentration Rising';
+    statusKr = '농도 상승중';
+    action = 'Identify source / Ventilate';
+    actionKr = '오염원 제거/환기 필요';
+    mode = 'polluting';
+}
+// Scenario 4: Stagnant
+else {
+    status = 'Concentration Stable';
+    statusKr = '정체 상태';
+    action = 'Ventilate or Purify if needed';
+    actionKr = '환기 또는 정화 권장';
+    mode = 'stagnant';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// k_final Selection & Smoothing
+// ═══════════════════════════════════════════════════════════════
+let kFinal;
+let dominantSource;
+
+if (kPmVal < 0 && co2Valid) {
+    kFinal = Math.max(kCo2Val, 0);
+    dominantSource = 'CO2';
+} else if (pmValid && co2Valid) {
+    if (kPmVal >= kCo2Val) {
+        kFinal = kPmVal;
+        dominantSource = 'PM2.5';
+    } else {
+        kFinal = kCo2Val;
+        dominantSource = 'CO2';
+    }
+} else if (pmValid) {
+    kFinal = kPmVal;
+    dominantSource = 'PM2.5';
+} else {
+    kFinal = kCo2Val;
+    dominantSource = 'CO2';
+}
+
+// 스무딩 없음 — 원본 kFinal 사용
+
+// ═══════════════════════════════════════════════════════════════
+// CADR Metrics
+// ═══════════════════════════════════════════════════════════════
+const kEffective = Math.max(kFinal, 0);
+const t50 = kEffective > 0 ? Math.round((Math.log(2) / kEffective) * 60) : null;
+const t50Pm25 = kPmVal > 0.001 ? Math.round((Math.log(2) / kPmVal) * 60) : 999;
+const t50Co2 = kCo2Val > 0.001 ? Math.round((Math.log(2) / kCo2Val) * 60) : 999;
+
+let grade = getCadrGrade(kEffective);
+let index = grade === 'S' ? 4 : grade === 'A' ? 3 : grade === 'B' ? 2 : 1;
+
+const cadr = {
+    k: Number(kFinal.toFixed(2)),
+    kEffective: Number(kEffective.toFixed(2)),
+    t50_min: t50,
+    grade,
+    index,
+    mode,
+    dominantSource,
+    // ★ 듀얼 k값 및 개별 등급
+    kPm25: Number(kPmVal.toFixed(2)),
+    kCo2: Number(kCo2Val.toFixed(2)),
+    gradePm25: gradePm25,
+    gradeCo2: gradeCo2,
+    t50Pm25: t50Pm25,
+    t50Co2: t50Co2,
+    updatedAt: new Date(now).toISOString()
+};
+
+flow.set('purifier_cadr_latest', cadr);
+
+// ═══════════════════════════════════════════════════════════════
+// Output Messages
+// ═══════════════════════════════════════════════════════════════
+const kPmStr = pmValid ? kPmVal.toFixed(2) : 'N/A';
+const kCo2Str = co2Valid ? kCo2Val.toFixed(2) : 'N/A';
+
+// Output 2: 차트용 — PM2.5와 CO2 둘 다 표시 (음수 포함)
+const chartMsgPm = pmValid ? { payload: kPmVal, topic: 'k_PM2.5' } : null;
+const chartMsgCo2 = co2Valid ? { payload: kCo2Val, topic: 'k_CO2' } : null;
+const chartMessages = [chartMsgPm, chartMsgCo2].filter(m => m !== null);
+
+// ★ 신뢰도 표시
+const pmReliable = r2Pm >= R2_THRESHOLD;
+const co2Reliable = r2Co2 >= R2_THRESHOLD;
+const pmAccuracy = pmReliable ? '' : ' ⚠️정확도↓';
+const co2Accuracy = co2Reliable ? '' : ' ⚠️정확도↓';
+const r2PmStr = r2Pm.toFixed(2);
+const r2Co2Str = r2Co2.toFixed(2);
+
+// Output 4: 한글 환기지표 텍스트
+const statusText = `${statusKr} — ${actionKr}<br>k_PM=${kPmStr}${pmAccuracy} | k_CO₂=${kCo2Str}${co2Accuracy} (1/h)<br>R²: PM=${r2PmStr} CO₂=${r2Co2Str}`;
+
+const fillColor = mode === 'polluting' ? 'red' :
+                  mode === 'ventilation' ? 'cyan' :
+                  mode === 'purification' ? 'green' :
+                  mode === 'combined' ? 'blue' : 'grey';
+
+node.status({
+    fill: fillColor,
+    shape: 'dot',
+    text: `${statusKr} k=${kEffective.toFixed(2)}/h`
+});
+
+return [
+    { payload: kEffective, cadr, mode, kPm25: kPmVal, kCo2: kCo2Val, gradePm25, gradeCo2 },
+    chartMessages,
+    { payload: { timestamp: new Date(now).toISOString(), kPm: kPmVal, kCo2: kCo2Val, kFinal, mode, status } },
+    { payload: statusText, cadr, dualK: { pm: kPmVal, co2: kCo2Val }, gradePm25, gradeCo2 }
+];
+
+
+================================================================================
+=== NODE: ACH 로그 포맷터 (id: bd763abe63875c41)
+================================================================================
+const log = msg.payload;
+if (!log) {
+    return null;
+}
+
+const header = 'Timestamp,kRaw,kEffective,R2,PM_Concentration,Status';
+const values = [
+    log.Timestamp,
+    log.kRaw,
+    log.kEffective,
+    log.R2 ?? '',
+    log.PM_Concentration,
+    log.Status
+];
+const line = values.join(',');
+
+let prefix = '';
+if (!context.get('headerWritten')) {
+    prefix = header + '\n';
+    context.set('headerWritten', true);
+}
+
+msg.payload = prefix + line + '\n';
+return msg;
+
+
+================================================================================
+=== NODE: 고령자 모드 메시지 (id: 582e98cc59ee0701)
+================================================================================
+const pm = Number(msg.payload);
+let text;
+if (pm < 15) text = `PM2.5 ${pm} µg/m³ — 양호 (리스크 낮음)`;
+else if (pm < 35) text = `PM2.5 ${pm} µg/m³ — 주의 (민감군 영향 가능)`;
+else if (pm < 55) text = `PM2.5 ${pm} µg/m³ — 나쁨 (체류시간 줄이기 권장)`;
+else text = `PM2.5 ${pm} µg/m³ — 매우 나쁨 (즉시 환기/정화)`;
+msg.payload = text;
+return msg;
+
+
+================================================================================
+=== NODE: k 계산 (CO2) — 환기 (id: c2cb3ab9aab6b20d)
+================================================================================
+// ═══════════════════════════════════════════════════════════════
+// CO2 Decay Rate (k) Calculation Node - Ventilation Indicator
+// Output 1: Text summary
+// Output 2: Chart ({ topic: 'CO2 Ventilation', payload: k })
+// ═══════════════════════════════════════════════════════════════
+
+const WINDOW_MS = 300 * 1000;  // 5분 윈도우
+const MIN_SAMPLES = 15;
+const BUFFER_LIMIT = 400;
+const CO2_BASELINE = 420;  // 외기 배경농도
+const EPS = 1e-6;
+
+const now = Date.now();
+const timestampIso = new Date(now).toISOString();
+
+// 입력 파싱
+let rawValue = msg.payload;
+if (rawValue && typeof rawValue === 'object') {
+    rawValue = rawValue.co2 ?? rawValue.value ?? rawValue.payload;
+}
+const co2 = Number(rawValue);
+
+if (!Number.isFinite(co2) || co2 < 300) {
+    node.status({ fill: 'red', shape: 'ring', text: 'CO₂ 데이터 없음' });
+    return [null, null];
+}
+
+// CO2 - Background (최소 10ppm 보호)
+const excess = Math.max(co2 - CO2_BASELINE, 10);
+
+// 슬라이딩 윈도우 버퍼
+let buffer = context.get('co2120sBuffer') || [];
+buffer = buffer.filter(entry => now - entry.t <= WINDOW_MS);
+buffer.push({ t: now, eff: excess, co2 });
+if (buffer.length > BUFFER_LIMIT) {
+    buffer = buffer.slice(buffer.length - BUFFER_LIMIT);
+}
+context.set('co2120sBuffer', buffer);
+
+if (buffer.length < MIN_SAMPLES) {
+    node.status({ fill: 'yellow', shape: 'ring', text: `CO₂ 샘플 ${buffer.length}/${MIN_SAMPLES}` });
+    return [null, null];
+}
+
+// Log-Linear 회귀: ln(CO2 - 420) vs time
+const firstTs = buffer[0].t;
+const points = buffer.map(entry => ({
+    x: (entry.t - firstTs) / 3600000,  // hours
+    y: Math.log(Math.max(entry.eff, EPS))
+}));
+
+const sums = points.reduce((acc, p) => {
+    acc.x += p.x; acc.y += p.y;
+    acc.xy += p.x * p.y;
+    acc.xx += p.x * p.x;
+    acc.yy += p.y * p.y;
+    return acc;
+}, { x: 0, y: 0, xy: 0, xx: 0, yy: 0 });
+
+const n = points.length;
+const denom = (n * sums.xx) - (sums.x * sums.x);
+let slope = 0, rSquared = 0;
+
+if (denom !== 0) {
+    slope = ((n * sums.xy) - (sums.x * sums.y)) / denom;
+    const intercept = (sums.y - slope * sums.x) / n;
+    const ssTot = sums.yy - ((sums.y * sums.y) / n);
+    const ssRes = points.reduce((acc, p) => {
+        const fitted = slope * p.x + intercept;
+        return acc + Math.pow(p.y - fitted, 2);
+    }, 0);
+    rSquared = ssTot === 0 ? 1 : Math.max(0, 1 - (ssRes / ssTot));
+}
+
+const kRaw = Number((-slope).toFixed(3));
+const kEffective = Number(Math.max(0, kRaw).toFixed(3));
+
+// ★ flow context에 저장 (마스터 노드에서 읽음)
+flow.set('k_co2', kRaw);
+flow.set('k_co2_effective', kEffective);
+flow.set('k_co2_timestamp', now);
+flow.set('k_co2_r2', rSquared);
+flow.set('co2_current', co2);
+
+// 4-Level 분류
+function getLevel(k) {
+    if (k >= 1.0) return 'HIGH_POS';
+    if (k >= 0.2) return 'LOW_POS';
+    if (k > -0.1) return 'ZERO';
+    return 'NEGATIVE';
+}
+
+const level = getLevel(kRaw);
+const levelLabels = {
+    'HIGH_POS': 'Rapid Decay',
+    'LOW_POS': 'Natural Decay',
+    'ZERO': 'Stagnant',
+    'NEGATIVE': 'Accumulating'
+};
+
+// 텍스트 요약
+const summary = `CO₂ k=${kRaw.toFixed(2)}/h (${levelLabels[level]}) | ${co2}ppm`;
+
+node.status({
+    fill: kRaw < 0 ? 'red' : (kRaw >= 1.0 ? 'cyan' : 'blue'),
+    shape: 'dot',
+    text: `${levelLabels[level]} k=${kRaw.toFixed(2)}/h`
+});
+
+// 2개 출력
+return [
+    { payload: summary },  // Output 1: Text
+    { topic: 'CO2 Ventilation', payload: kRaw }  // Output 2: Chart
+];
+
+
+================================================================================
+=== NODE: 바이러스 잔류 위험지수 (IPI) (id: 83b820d348e54720)
+================================================================================
+// ═══════════════════════════════════════════════════════════════
+// 바이러스 잔류 위험지수 (IPI) - CO2 단일 k값 기반
+// ═══════════════════════════════════════════════════════════════
+const c = msg.cadr;
+if (!c) {
+    return [null, null];
+}
+
+// CO2 k값 가져오기 (IPI는 CO2 기반)
+const kCo2Raw = Number(flow.get('k_co2')) || 0;
+const kPm25Raw = Number(flow.get('k_pm25')) || 0;
+
+// ★ k가 음수면 0으로 처리 (게이지 표시용)
+const kCo2 = Math.max(kCo2Raw, 0);
+const kPm25 = Math.max(kPm25Raw, 0);
+
+// ★ k가 0 이하면 등급 1 (경고)로 처리
+if (kCo2Raw <= 0) {
+    const ipi = {
+        k_co2: 0,
+        k_pm25: kPm25,
+        t90_co2: 999,
+        t90_pm25: kPm25 > 0 ? Math.round(Math.log(10) / kPm25 * 60) : 999,
+        level: '경고',
+        score: 1,
+        updatedAt: c.updatedAt || Date.now()
+    };
+    flow.set('purifier_ipi_latest', ipi);
+    return [{ payload: 1, ipi }, { payload: `IPI: 경고 | k_CO₂=0.00 (1/h) | t₉₀≈N/A (환기 부족)`, ipi }];
+}
+
+// 90% 제거시간 t90 [분] = ln(10)/k [h] → 분 (CO2 기준)
+const t90_co2 = Math.round(Math.log(10) / kCo2 * 60);
+const t90_pm25 = kPm25 > 0 ? Math.round(Math.log(10) / kPm25 * 60) : 999;
+
+// IPI 등급 (CO2 k값 단독 기준)
+let level, score, shortMsg;
+if (kCo2 >= 3.0) {
+    level = '안심';
+    score = 3;
+    shortMsg = '빠른 환기';
+} else if (kCo2 >= 1.0) {
+    level = '보통';
+    score = 2;
+    shortMsg = '보통 환기';
+} else {
+    level = '경고';
+    score = 1;
+    shortMsg = '환기 부족';
+}
+
+const ipi = {
+    k_co2: Number(kCo2.toFixed(2)),
+    k_pm25: Number(kPm25.toFixed(2)),
+    t90_co2,
+    t90_pm25,
+    level,
+    score,
+    updatedAt: c.updatedAt || Date.now()
+};
+
+// flow context에 IPI 데이터 저장
+flow.set('purifier_ipi_latest', ipi);
+
+const msgGauge = {
+    payload: ipi.score,
+    ipi
+};
+
+// CO2 단일 기준 텍스트 포맷
+const msgText = {
+    payload: `IPI: ${level} | k_CO₂=${kCo2.toFixed(2)} (1/h) | t₉₀≈${t90_co2}분 (${shortMsg})`,
+    ipi
+};
+
+return [msgGauge, msgText];
+
+
+================================================================================
+=== NODE: 호흡기 건강 지표 (id: b0ef3d99e56b6707)
+================================================================================
+const d = msg.payload || {};
+
+const temp = d.temp ?? d.temperature;
+const rh = d.humidity ?? flow.get('humidity');
+const tvoc = d.tvoc ?? flow.get('tvoc');
+
+if (temp == null || rh == null || tvoc == null) {
+    return [
+        { payload: 0, resp: { temp, rh, tvoc, level: "데이터 부족" } },
+        { payload: `호흡기 데이터 부족 (T=${temp}, RH=${rh}, TVOC=${tvoc})` }
+    ];
+}
+
+let score = 100;
+
+let rhMsg = "";
+if (rh >= 40 && rh <= 60) {
+    rhMsg = "습도 양호";
+} else if ((rh >= 30 && rh < 40) || (rh > 60 && rh <= 70)) {
+    score -= 10;
+    rhMsg = "약간 건조/다습";
+} else if ((rh >= 20 && rh < 30) || (rh > 70 && rh < 80)) {
+    score -= 25;
+    rhMsg = "건조/다습 — 관리 필요";
+} else { // <20 또는 ≥80
+    score -= 35;
+    rhMsg = "심한 건조/다습 — 호흡기 부담";
+}
+
+let tMsg = "";
+if (temp >= 20 && temp <= 24) {
+    tMsg = "쾌적한 온도";
+} else if ((temp >= 18 && temp < 20) || (temp > 24 && temp <= 26)) {
+    score -= 10;
+    tMsg = "약간 춥거나 더운 편";
+} else if ((temp >= 16 && temp < 18) || (temp > 26 && temp < 28)) {
+    score -= 20;
+    tMsg = "온도 민감 구간 - 컨디션 저하 주의";
+} else { // <16 or ≥28
+    score -= 30;
+    tMsg = "온도 위험 구간 - 실내 환경 개선 권장";
+}
+
+let vocMsg = "";
+if (tvoc < 200) {
+    vocMsg = "VOC 낮음";
+} else if (tvoc < 400) {
+    score -= 10;
+    vocMsg = "약간 높음 — 환기 권장";
+} else if (tvoc < 1000) {
+    score -= 20;
+    vocMsg = "높음 — 청소/자재 점검 필요";
+} else {
+    score -= 30;
+    vocMsg = "매우 높음 — 환기 필수/원인제거 실시";
+}
+
+if (score < 0) score = 0;
+if (score > 100) score = 100;
+
+let level;
+if (score >= 80) level = "좋음";
+else if (score >= 60) level = "보통";
+else if (score >= 40) level = "주의";
+else level = "경고";
+
+const msgGauge = {
+    payload: score,
+    resp: {
+        score,
+        level,
+        temp,
+        rh,
+        tvoc,
+        rhMsg,
+        tMsg,
+        vocMsg
+    }
+};
+
+const msgText = {
+    payload: `호흡기 ${level} | 점수 ${score}점 (T=${temp}℃, RH=${rh}%, TVOC=${tvoc}ppb)<br>    (${rhMsg}, ${tMsg}, ${vocMsg})`,
+    resp: msgGauge.resp
+};
+
+return [msgGauge, msgText];
+
+
+================================================================================
+=== NODE: 어린이 모드 → flow 저장 (호흡기) (id: 835fb00187317480)
+================================================================================
+const resp = msg.resp;
+if (resp) {
+    flow.set('child_resp_latest', {
+        score: resp.score,
+        level: resp.level,
+        temp: resp.temp,
+        rh: resp.rh,
+        tvoc: resp.tvoc,
+        rhMsg: resp.rhMsg,
+        tMsg: resp.tMsg,
+        vocMsg: resp.vocMsg
+    });
+}
+return null;
+
+
+================================================================================
+=== NODE: 면역, 감염 위험 지표 (id: d17d4b218e553f8b)
+================================================================================
+const d = msg.payload || {};
+const co2 = d.co2 ?? flow.get('co2');
+const rh = d.humidity ?? d.rh ?? d.RH ?? flow.get('humidity');
+
+if (co2 == null || rh == null) {
+  return [
+    { payload: 0, inf: { co2, rh, level: "데이터 부족" } },
+    { payload: `감염 위험 데이터 부족 (CO₂=${co2}, RH=${rh})` }
+  ];
+}
+
+let co2Band;
+if (co2 < 800)        co2Band = 0;
+else if (co2 < 1000)  co2Band = 1;
+else if (co2 < 1500)  co2Band = 2;
+else                  co2Band = 3;
+
+
+let rhBand;
+if (rh >= 40 && rh <= 60) {
+    rhBand = 0;
+} else if ((rh >= 30 && rh < 40) || (rh > 60 && rh <= 70)) {
+    rhBand = 1;
+} else if ((rh >= 20 && rh < 30) || (rh > 70 && rh < 80)) {
+    rhBand = 2;
+} else {
+    rhBand = 3;
+}
+
+
+const combo = co2Band + rhBand;
+
+const map = [10, 25, 40, 55, 70, 85, 95];
+let score = map[Math.max(0, Math.min(combo, 6))];
+
+let level, msgShort;
+if (score < 30) {
+    level = "낮음";
+    msgShort = "감염 위험 낮음";
+} else if (score < 60) {
+    level = "보통";
+    msgShort = "일반적인 수준";
+} else if (score < 80) {
+    level = "높음";
+    msgShort = "환기/밀집도 관리 필요";
+} else {
+    level = "매우 높음";
+    msgShort = "밀집·환기 개선 시급";
+}
+
+const msgGauge = {
+    payload: score,
+    inf: {
+        score,
+        level,
+        combo,
+        co2,
+        rh
+    }
+};
+
+const msgText = {
+    payload: `감염 위험 ${level} | 점수 ${score}점 (CO₂=${co2} ppm, RH=${rh}%) — ${msgShort}`,
+    inf: msgGauge.inf
+};
+
+return [msgGauge, msgText];
+
+
+================================================================================
+=== NODE: 어린이 모드 → flow 저장 (감염) (id: 2ed02a414a0952cd)
+================================================================================
+const inf = msg.inf;
+if (inf) {
+    flow.set('child_inf_latest', {
+        score: inf.score,
+        level: inf.level,
+        combo: inf.combo,
+        co2: inf.co2,
+        rh: inf.rh
+    });
+}
+return null;
+
+
+================================================================================
+=== NODE: 쾌적 수면지수 (co2 + tvoc) (id: ab554d8cee9f5c14)
+================================================================================
+
+const d = msg.payload || {};
+const co2 = d.co2 ?? flow.get('co2');
+const tvoc = d.tvoc ?? flow.get('tvoc');
+
+if (co2 == null) {
+    return [null, null];
+}
+
+const now = new Date();
+const hour = now.getHours();
+
+const inSleepWindow = true; // 사실, 수면시간(22시~6시)에 측정해야 더욱 신뢰성있는 지표가 됨. 단기간 시연을 위해서 10분으로 조정..
+
+const windowMs = 10 * 60 * 1000;
+let hist = context.get('sleepHist') || [];
+
+if (inSleepWindow) {
+    hist.push({ ts: now.getTime(), co2, tvoc });
+}
+
+const nowMs = now.getTime();
+hist = hist.filter(d => nowMs - d.ts <= windowMs);
+context.set('sleepHist', hist);
+
+if (hist.length < 1) {
+    const gauge = { payload: 80, sleep: { score: 80, level: "데이터 부족", samples: hist.length } };
+    const text  = { payload: "쾌적 수면지수: 데이터 부족 (야간 데이터 축적 중)", sleep: gauge.sleep };
+    return [gauge, text];
+}
+
+
+const goodCo2 = hist.filter(d => d.co2 != null && d.co2 < 1000).length / hist.length;
+
+const vocSamples = hist.filter(d => d.tvoc != null);
+let goodVoc;
+if (vocSamples.length > 0) {
+    goodVoc = vocSamples.filter(d => d.tvoc < 200).length / vocSamples.length;
+} else {
+    // tvoc 데이터가 수집되지 않으면 그냥 기본값 0.7 정도로 보거나, 또는 1.0(무시)로 둔다.
+    goodVoc = 0.7;
+}
+
+const scoreRaw = (goodCo2 * 0.7 + goodVoc * 0.3) * 100;
+let score = Math.round(scoreRaw);
+if (score < 0) score = 0;
+if (score > 100) score = 100;
+
+
+let level;
+let interpretation;
+let scoreRange;
+if (score >= 80) {
+    level = "좋음";
+    interpretation = "CO₂·VOC 빠르게 회복 — 쾌적한 수면 환경";
+    scoreRange = "80-100";
+}
+else if (score >= 60) {
+    level = "보통";
+    interpretation = "대체로 양호하나, CO₂ 또는 VOC가 잠깐 높아지는 구간 존재";
+    scoreRange = "60-79";
+}
+else if (score >= 40) {
+    level = "나쁨";
+    interpretation = "일부 구간에서 환기 부족 — 야간 창문·환기 필요";
+    scoreRange = "40-59";
+}
+else {
+    level = "매우 나쁨";
+    interpretation = "밤새 CO₂·VOC 높음, 회복 느림 — 수면 질 크게 저하";
+    scoreRange = "0-39";
+}
+
+const sleep = {
+    score,
+    level,
+    scoreRange,
+    interpretation,
+    goodCo2: Math.round(goodCo2 * 100),  // %
+    goodVoc: Math.round(goodVoc * 100),  // %
+    samples: hist.length
+};
+
+// flow context에 수면지수 데이터 저장
+flow.set('senior_sleep_latest', sleep);
+
+const msgGauge = {
+    payload: sleep.score,
+    sleep
+};
+
+
+const msgText = {
+    payload: `수면환경 ${level} (${scoreRange}) | CO₂ 양호 ${sleep.goodCo2}%, VOC 양호 ${sleep.goodVoc}% — ${interpretation}`,
+    sleep
+};
+
+return [msgGauge, msgText];
+
+
+================================================================================
+=== NODE: 심혈관 보호점수 (id: c1a8263aded2b64d)
+================================================================================
+const d = msg.payload || {};
+let pm = d.pm25 ?? d.pm ?? d.pm2_5;
+if (pm == null) {
+    pm = flow.get('pm');   
+}
+const c = msg.cadr || {};
+let k = (typeof c.kEffective === 'number') ? c.kEffective : c.k;
+
+if (pm == null || k == null) {
+    return [null, null];
+}
+
+if (k <= 0) k = 0.1;
+
+const now = Date.now();
+const windowMs = 10 * 60 * 1000; // 단기간 시연을 위해 10분으로 설정. 원래는 24시간, 즉 24 * 60 * 60 * 1000 이렇게 해야 신뢰성있는 지표.
+
+let hist = context.get('hist') || [];
+hist.push({ ts: now, pm, k });
+
+hist = hist.filter(d => now - d.ts <= windowMs);
+context.set('hist', hist);
+
+const HIGH_TH = 5; // 원래 WHO기준 pm2.5 > 25인 경우를 반영하려했지만, 
+// 실내에서 측정했을 때 pm2.5가 25를 넘기가 어려움. 단기간 시연을 위해 5정도로 낮춰봄. (밖에서 데이터측정할때 pm결과값에 따라서 이부분 수정하면 됨)
+const high = hist.filter(d => d.pm > HIGH_TH);
+const total = hist.length;
+
+let highHours = 0;
+if (high.length > 0) {
+    let dtSum = 0;
+    for (let i = 1; i < high.length; i++) {
+        dtSum += (high[i].ts - high[i - 1].ts);
+    }
+    const avgDt = (dtSum > 0 && high.length > 1) ? dtSum / (high.length - 1) : 60 * 1000; // ms
+    highHours = high.length * avgDt / (1000 * 60 * 60);       // 시간 [h]
+}
+
+let kAvg;
+if (high.length > 0) {
+    kAvg = high.reduce((a, b) => a + (b.k > 0 ? b.k : 0.1), 0) / high.length;
+} else if (hist.length > 0) {
+    kAvg = hist.reduce((a, b) => a + (b.k > 0 ? b.k : 0.1), 0) / hist.length;
+} else {
+    kAvg = 0.1;
+}
+
+if (!Number.isFinite(kAvg) || kAvg <= 0) {
+    kAvg = 0.1; // 최소 정화율 보정
+}
+
+// 위험원시값: 고농도 노출시간[h] × (1 / k_avg)
+const riskRaw = highHours === 0 ? 0 : highHours * (1 / kAvg);
+
+const L = 8;  // 스케일 (조정 가능)
+let score = 100 * (1 - (riskRaw / L));
+if (score < 0) score = 0;
+if (score > 100) score = 100;
+score = Math.round(score);
+
+let level;
+if (score >= 80) level = "우수";
+else if (score >= 60) level = "양호";
+else if (score >= 40) level = "주의";
+else level = "위험";
+
+const cardio = {
+    score: Math.round(score),
+    level,
+    highHours: Number(highHours.toFixed(1)),
+    kAvg: Number(kAvg.toFixed(2)),
+    riskRaw: Number(riskRaw.toFixed(2)),
+    samples: total
+};
+
+// flow context에 심혈관 데이터 저장
+flow.set('senior_cardio_latest', cardio);
+
+const msgGauge = {
+    payload: cardio.score,
+    cardio
+};
+
+const msgText = {
+    payload: `심혈관 ${level} | 보호점수 ${cardio.score}점 (고농도 노출시간 ≈ ${cardio.highHours}시간, k평균 ≈ ${cardio.kAvg} 1/h)`,
+    cardio
+};
+
+return [msgGauge, msgText];
+
+
+================================================================================
+=== NODE: 체감온도 통합 계산 (id: ad773773eddd1d3b)
+================================================================================
+// 1. KMA API 응답에서 원하는 값을 찾는 헬퍼 함수
+function findValue(items, category) {
+    if (!Array.isArray(items)) return null;
+    const item = items.find(i => i.category === category);
+    if (item) {
+        return parseFloat(item.obsrValue);
+    }
+    return null;
+}
+
+// 2. KMA 응답 데이터 파싱
+const response = msg.payload && msg.payload.response;
+if (!response || !response.body) {
+    const preview = typeof msg.payload === 'string' ? msg.payload.slice(0, 120) : JSON.stringify(msg.payload || {});
+    node.error("KMA API 응답 누락/파싱 오류: " + preview, msg);
+    return null;
+}
+const header = response.header || {};
+if (header.resultCode && header.resultCode !== '00') {
+    node.error("KMA API 오류: " + header.resultMsg, msg);
+    return null;
+}
+let items = response.body.items && response.body.items.item;
+if (!items) {
+    node.error("관측 항목 없음", msg);
+    return null;
+}
+if (!Array.isArray(items)) items = [items];
+
+// 3. 값 추출
+const Ta = findValue(items, "T1H");     // 기온
+const RH = findValue(items, "REH");     // 습도
+const V_ms = findValue(items, "WSD");   // 풍속
+
+// ★ 4. 현재 날짜로 계절 모드 판단 (여름: 5~9월, 겨울: 10~4월)
+const now = new Date();
+const month = now.getMonth() + 1; // 1월=1, ... 12월=12
+let seasonMode = "winter"; // 기본값 겨울
+
+if (month >= 5 && month <= 9) {
+    seasonMode = "summer";
+} else {
+    seasonMode = "winter";
+}
+
+// 5. 결과 객체 초기화
+let resultPayload = {
+    kma_data: msg.payload,
+    waqi_data: msg.waqi,
+    seasonMode: seasonMode, // ★ 계절 모드 전달 ('summer' or 'winter')
+
+    // 여름 데이터
+    sensibleTemp_Summer: null,
+    heatRiskMessage: "데이터 없음",
+    heatRiskColor: "#555",
+
+    // 겨울 데이터
+    windChill: null,
+    windChill_message: "데이터 없음",
+    windChill_Color: "#555",
+    windChill_RealTemp: Ta,
+    windChill_RealWind: V_ms,
+    isWinterCalc: false
+};
+
+// --- 6. 여름철 체감온도 계산 ---
+if (Ta !== null && RH !== null) {
+    try {
+        let Tw = Ta * Math.atan(0.151977 * Math.pow(RH + 8.313659, 0.5)) +
+            Math.atan(Ta + RH) - Math.atan(RH - 1.676331) +
+            0.00391838 * Math.pow(RH, 1.5) * Math.atan(0.023101 * RH) - 4.686035;
+        let Tw2 = Tw * Tw;
+        let TwTa = Tw * Ta;
+        let sTemp = -0.2442 + (0.55399 * Tw) + (0.45535 * Ta) - (0.0022 * Tw2) + (0.00278 * TwTa) + 3.0;
+        resultPayload.sensibleTemp_Summer = parseFloat(sTemp.toFixed(1));
+
+        const temp = resultPayload.sensibleTemp_Summer;
+        if (temp >= 38) {
+            resultPayload.heatRiskMessage = "위험: 옥외 활동 중지";
+            resultPayload.heatRiskColor = "#e74c3c";
+        } else if (temp >= 35) {
+            resultPayload.heatRiskMessage = "경고: 옥외 활동 자제";
+            resultPayload.heatRiskColor = "#e67e22";
+        } else if (temp >= 33) {
+            resultPayload.heatRiskMessage = "주의: 야외 활동 줄이기";
+            resultPayload.heatRiskColor = "#f1c40f";
+        } else {
+            resultPayload.heatRiskMessage = "관심: 온열질환 주의";
+            resultPayload.heatRiskColor = "#2ecc71";
+        }
+    } catch (e) {
+        resultPayload.sensibleTemp_Summer = Ta;
+        resultPayload.heatRiskMessage = "계산 오류";
+    }
+}
+
+// --- 7. 겨울철 체감온도 계산 ---
+if (Ta !== null && V_ms !== null) {
+    if (Ta > 10 || V_ms < 1.3) {
+        resultPayload.isWinterCalc = false;
+        resultPayload.windChill = null;
+        resultPayload.windChill_message = "산출 구간 아님 (온화함/바람약함)";
+        resultPayload.windChill_Color = "#ccc";
+    } else {
+        resultPayload.isWinterCalc = true;
+        const V_kmh = V_ms * 3.6;
+        const V_pow = Math.pow(V_kmh, 0.16);
+        let calc_temp = 13.12 + (0.6215 * Ta) - (11.37 * V_pow) + (0.3965 * Ta * V_pow);
+        resultPayload.windChill = parseFloat(calc_temp.toFixed(1));
+
+        const temp = resultPayload.windChill;
+        if (temp <= -15) {
+            resultPayload.windChill_message = "매우 위험: 피부 노출 금지";
+            resultPayload.windChill_Color = "#e74c3c";
+        } else if (temp <= -10) {
+            resultPayload.windChill_message = "동상 위험: 외출 자제";
+            resultPayload.windChill_Color = "#e67e22";
+        } else if (temp <= -5) {
+            resultPayload.windChill_message = "손발 시림: 보온장갑 필수";
+            resultPayload.windChill_Color = "#f1c40f";
+        } else {
+            resultPayload.windChill_message = "관심: 쌀쌀한 날씨";
+            resultPayload.windChill_Color = "#3498db";
+        }
+    }
+} else {
+    resultPayload.windChill = null;
+    resultPayload.windChill_message = "풍속 데이터 누락";
+}
+
+// 8. 전송 및 상태 표시
+const nowTs = Date.now();
+resultPayload.updatedAt = nowTs;
+flow.set('seasonal_apparent_latest', {
+    seasonMode: resultPayload.seasonMode,
+    sensibleTemp_Summer: resultPayload.sensibleTemp_Summer,
+    heatRiskMessage: resultPayload.heatRiskMessage,
+    heatRiskColor: resultPayload.heatRiskColor,
+    windChill: resultPayload.windChill,
+    windChill_message: resultPayload.windChill_message,
+    windChill_Color: resultPayload.windChill_Color,
+    windChill_RealTemp: resultPayload.windChill_RealTemp,
+    windChill_RealWind: resultPayload.windChill_RealWind,
+    isWinterCalc: resultPayload.isWinterCalc,
+    updatedAt: nowTs
+});
+msg.payload = resultPayload;
+let statusText = "";
+if (seasonMode === 'summer') {
+    statusText = `[여름모드] 체감 ${resultPayload.sensibleTemp_Summer}°C`;
+} else {
+    statusText = `[겨울모드] ${resultPayload.isWinterCalc ? '체감 ' + resultPayload.windChill : '기온 ' + Ta}°C`;
+}
+
+node.status({ fill: "green", shape: "dot", text: statusText });
+return msg;
+
+
+================================================================================
+=== NODE: 센서 vs API 데이터 비교 (id: 87c1b094a20fdb7e)
+================================================================================
+var WINDOW_MS = 3600000;
+var now = new Date().getTime();
+
+var apiData = msg.payload || {};
+var sensorData = flow.get('latest_sensor_data') || {};
+var locCity = flow.get('current_city');
+var locStr = (locCity && locCity !== 'Unknown') ? locCity : '위치 미확인';
+
+var statsBuffer = flow.get('statsBuffer') || { pm25: [], temp: [], hum: [] };
+
+function addData(type, s, a) {
+    if (typeof s === 'number' && typeof a === 'number') {
+        statsBuffer[type].push({ t: now, s: s, a: a });
+    }
+    var fresh = [];
+    for (var i = 0; i < statsBuffer[type].length; i++) {
+        if (now - statsBuffer[type][i].t <= WINDOW_MS) {
+            fresh.push(statsBuffer[type][i]);
+        }
+    }
+    statsBuffer[type] = fresh;
+}
+
+addData('pm25', sensorData.pm25, apiData.pm25);
+addData('temp', sensorData.temp, apiData.temperature);
+addData('hum', sensorData.humidity, apiData.humidity);
+
+flow.set('statsBuffer', statsBuffer);
+
+function calcStats(arr) {
+    var n = arr.length;
+    if (n < 2) return { rmse: null, r2: null, mape: null, cv: null, n: 0 };
+
+    var sumSqErr = 0;
+    var sumAbsPct = 0;
+    var sumS = 0;
+    var sumA = 0;
+    var sumSS = 0;
+    var sumAA = 0;
+    var sumSA = 0;
+
+    for (var j = 0; j < n; j++) {
+        var s = arr[j].s;
+        var a = arr[j].a;
+        var err = s - a;
+        sumSqErr += (err * err);
+        sumS += s;
+        sumA += a;
+        sumSS += (s * s);
+        sumAA += (a * a);
+        sumSA += (s * a);
+        if (a !== 0) {
+            sumAbsPct += Math.abs(err / a);
+        }
+    }
+
+    var rmse = Math.sqrt(sumSqErr / n);
+    var mape = (sumAbsPct / n) * 100;
+    var meanS = sumS / n;
+    var cv = 0;
+    if (meanS !== 0) {
+        cv = (rmse / meanS) * 100;
+    }
+
+    var numer = (n * sumSA) - (sumS * sumA);
+    var den = Math.sqrt(((n * sumSS) - (sumS * sumS)) * ((n * sumAA) - (sumA * sumA)));
+    var r2 = 0;
+    if (den !== 0) {
+        var r = numer / den;
+        r2 = r * r;
+    } else if (sumSqErr === 0) {
+        r2 = 1;
+    }
+
+    return {
+        rmse: Math.round(rmse * 10) / 10,
+        mape: Math.round(mape * 10) / 10,
+        cv: Math.round(cv * 10) / 10,
+        r2: Math.round(r2 * 100) / 100,
+        n: n
+    };
+}
+
+var stPm = calcStats(statsBuffer.pm25);
+var stTp = calcStats(statsBuffer.temp);
+var stHm = calcStats(statsBuffer.hum);
+
+// ★ Flutter 동기화용: 계산된 통계를 flow context에 저장
+flow.set('sensor_stats_latest', {
+    pm25: stPm,
+    temp: stTp,
+    humidity: stHm,
+    updatedAt: now
+});
+
+function fmt(v) { return (typeof v === 'number') ? v.toFixed(1) : '-'; }
+function fmtStat(v) { return (typeof v === 'number') ? v.toFixed(1) : '-'; }
+function diff(s, a) {
+    if (s == null || a == null) return '-';
+    var d = (s - a).toFixed(1);
+    var sign = d > 0 ? '+' : '';
+    return sign + d;
+}
+
+msg.payload = {
+    display: {
+        title: '센서 정밀 분석',
+        subtitle: locStr,
+        pm25: {
+            s: fmt(sensorData.pm25), a: fmt(apiData.pm25), d: diff(sensorData.pm25, apiData.pm25),
+            stats: { rmse: fmtStat(stPm.rmse), mape: fmtStat(stPm.mape), cv: fmtStat(stPm.cv), r2: stPm.r2 != null ? stPm.r2.toFixed(2) : '-', n: stPm.n }, unit: ''
+        },
+        temp: {
+            s: fmt(sensorData.temp), a: fmt(apiData.temperature), d: diff(sensorData.temp, apiData.temperature),
+            stats: { rmse: fmtStat(stTp.rmse), mape: fmtStat(stTp.mape), cv: fmtStat(stTp.cv), r2: stTp.r2 != null ? stTp.r2.toFixed(2) : '-', n: stTp.n }, unit: 'C'
+        },
+        hum: {
+            s: fmt(sensorData.humidity), a: fmt(apiData.humidity), d: diff(sensorData.humidity, apiData.humidity),
+            stats: { rmse: fmtStat(stHm.rmse), mape: fmtStat(stHm.mape), cv: fmtStat(stHm.cv), r2: stHm.r2 != null ? stHm.r2.toFixed(2) : '-', n: stHm.n }, unit: '%'
+        }
+    }
+};
+
+node.status({
+    fill: stPm.n > 1 ? "green" : "yellow",
+    shape: "dot",
+    text: "오차율 " + (stPm.mape != null ? stPm.mape.toFixed(1) : '-') + "% (n=" + stPm.n + ")"
+});
+
+return msg;
+
+
+================================================================================
+=== NODE: 🔄 새로운 데이터 처리 (id: f1b7d22719d93011)
+================================================================================
+let data = msg.payload;
+const nowTs = Date.now();
+
+// 데이터 유효성 검사
+if (!data || typeof data !== 'object') {
+    node.error('잘못된 데이터 형식', msg);
+    return null;
+}
+
+const rawSnapshot = Object.assign({}, data, { __ts: nowTs });
+flow.set('latest_raw_sensor', rawSnapshot);
+
+const currentTime = new Date(nowTs).toLocaleTimeString('ko-KR');
+
+// AQI 계산 함수
+function calculateAQI(pm25) {
+    if (pm25 <= 12) return Math.round((50 / 12) * pm25);
+    if (pm25 <= 35.4) return Math.round(((100 - 51) / (35.4 - 12.1)) * (pm25 - 12.1) + 51);
+    if (pm25 <= 55.4) return Math.round(((150 - 101) / (55.4 - 35.5)) * (pm25 - 35.5) + 101);
+    if (pm25 <= 150.4) return Math.round(((200 - 151) / (150.4 - 55.5)) * (pm25 - 55.5) + 151);
+    return Math.round(((300 - 201) / (250.4 - 150.5)) * (pm25 - 150.5) + 201);
+}
+
+// AQI 등급 판정
+function getAQILevel(aqi) {
+    if (aqi <= 50) return { level: '좋음', color: '#00E400' };
+    if (aqi <= 100) return { level: '보통', color: '#FFFF00' };
+    if (aqi <= 150) return { level: '나쁨', color: '#FF7E00' };
+    return { level: '매우나쁨', color: '#FF0000' };
+}
+
+const coerceNumber = (value) => {
+    if (value === undefined || value === null) return null;
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+};
+
+// TVOC 데이터 캐싱 처리
+const tvocCache = flow.get('latestTvocValue');
+const tvocSensorValue = coerceNumber(data.tvoc ?? data.tvocIndex ?? data.tvoc_ppb ?? data.voc);
+const TVOC_CACHE_TTL = 5 * 60 * 1000;
+let resolvedTvoc = tvocSensorValue;
+let tvocSource = 'sensor';
+
+if (resolvedTvoc == null && tvocCache && (nowTs - tvocCache.ts) <= TVOC_CACHE_TTL) {
+    resolvedTvoc = tvocCache.value;
+    tvocSource = 'mqtt-cache';
+}
+
+if (resolvedTvoc == null) {
+    resolvedTvoc = 0;
+    tvocSource = 'missing';
+}
+
+if (tvocSource === 'sensor') {
+    flow.set('latestTvocValue', { value: resolvedTvoc, ts: nowTs });
+}
+
+// 데이터 객체 생성
+const processedData = {
+    pm25: data.pm25 || 0,
+    co2: data.co2 || 400,
+    tvoc: resolvedTvoc,
+    nox: data.nox || 0,
+    temp: data.temp || 20,
+    humidity: data.humidity || 50,
+    dewPoint: data.dewPoint || 10,
+    timestamp: nowTs,
+    time_str: currentTime
+};
+
+// AQI 및 추가 정보 계산
+processedData.usAQI = calculateAQI(processedData.pm25);
+processedData.tvocSource = tvocSource;
+processedData.tvocUpdatedAt = new Date(nowTs).toISOString();
+
+const aqiInfo = getAQILevel(processedData.usAQI);
+processedData.aqiLevel = aqiInfo.level;
+processedData.aqiColor = aqiInfo.color;
+
+// 노드 상태 표시
+node.status({
+    fill: processedData.usAQI > 100 ? "red" : "green",
+    shape: "dot",
+    text: `AQI:${processedData.usAQI} 습도:${processedData.humidity}%`
+});
+
+// 1. 고습도(60% 초과) 지속 시간 계산
+let moldState = flow.get("moldMonitor") || { highSince: 0 };
+let durationHours = 0;
+
+if (processedData.humidity > 60) {
+    if (moldState.highSince === 0) {
+        moldState.highSince = Date.now();
+    }
+    durationHours = (Date.now() - moldState.highSince) / (1000 * 60 * 60);
+} else {
+    moldState.highSince = 0;
+}
+flow.set("moldMonitor", moldState);
+processedData.moldDurationHours = durationHours.toFixed(1);
+
+// 2. 곰팡이 위험도 4단계 판정
+let moldRiskLevel = 1;
+let moldRiskMessage = "안전: 곰팡이 위험 낮음 (CDC 기준 60% 미만)";
+let moldRiskColor = "#3498db";
+
+if (durationHours > 24) {
+    moldRiskLevel = 4;
+    moldRiskMessage = "위험: 고습 24시간 이상 지속. 곰팡이 발아 임계 시간 초과!";
+    moldRiskColor = "#e74c3c";
+} else if (processedData.humidity > 70) {
+    moldRiskLevel = 3;
+    moldRiskMessage = "경고: 현재 습도 70% 초과. 곰팡이 성장에 '최적'인 상태입니다.";
+    moldRiskColor = "#e67e22";
+} else if (processedData.humidity > 60 && processedData.pm25 > 35) {
+    moldRiskLevel = 3;
+    moldRiskMessage = "경고: 고습도(60%+) 및 미세먼지 '나쁨'. 곰팡이 증식 가속 위험.";
+    moldRiskColor = "#e67e22";
+} else if (processedData.humidity > 60) {
+    moldRiskLevel = 2;
+    moldRiskMessage = "주의: 습도 60% 초과. 곰팡이 농도 증가 시작 임계점입니다.";
+    moldRiskColor = "#f1c40f";
+}
+
+// 3. 미세먼지 추가 알림
+if (processedData.pm25 > 35 && moldRiskLevel < 3) {
+    processedData.airQualityAlert = " (참고: 미세먼지 수치가 높습니다. 환기 권장)";
+} else {
+    processedData.airQualityAlert = "";
+}
+
+// 4. 최종 데이터 설정 (곰팡이)
+processedData.moldRiskLevel = moldRiskLevel;
+processedData.moldRiskMessage = moldRiskMessage + processedData.airQualityAlert;
+processedData.moldRiskColor = moldRiskColor;
+
+// flow context에 곰팡이 데이터 저장
+flow.set('mold_latest', {
+    riskLevel: moldRiskLevel,
+    riskMessage: moldRiskMessage + processedData.airQualityAlert,
+    riskColor: moldRiskColor,
+    durationHours: Number(durationHours.toFixed(1)),
+    humidity: processedData.humidity,
+    pm25: processedData.pm25
+});
+
+// 최종 데이터 전송
+msg.payload = processedData;
+return msg;
+
+
+================================================================================
+=== NODE: 실시간 데이터 처리 및 변환 (id: 68a8f93bd5138820)
+================================================================================
+
+if (msg.topic !== 'calculate') {
+    let values = context.get('values') || [];
+    if (msg.payload && typeof msg.payload.usAQI === 'number') {
+        values.push(msg.payload.usAQI);
+        context.set('values', values);
+    }
+    return null;
+}
+
+const collectedValues = context.get('values') || [];
+
+let weeklyData = global.get('weeklyData') || {};
+
+if (collectedValues.length > 0) {
+    const sum = collectedValues.reduce((a, b) => a + b, 0);
+    const avg = sum / collectedValues.length;
+
+    const d = new Date();
+    const day = d.getDay();   
+    const hour = d.getHours(); 
+
+    if (!weeklyData[day]) {
+        weeklyData[day] = Array(24).fill(null);
+    }
+    weeklyData[day][hour] = Math.round(avg);
+    
+    global.set('weeklyData', weeklyData);
+}
+
+context.set('values', []);
+
+const days = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
+const payloadData = {
+    days: []
+};
+
+for (let d = 0; d < 7; d++) {
+    const dayData = {
+        name: days[d],
+        values: weeklyData[d] || Array(24).fill(null) 
+    };
+    payloadData.days.push(dayData);
+}
+
+msg.payload = payloadData;
+return msg;
+
+
+================================================================================
+=== NODE: TVOC 병합 (id: 80f63618fa685047)
+================================================================================
+const now = Date.now();
+
+const coerceNumber = (value) => {
+    if (value == null) return null;
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+};
+
+let raw = msg.payload;
+if (raw && typeof raw === 'object' && 'payload' in raw && raw.payload !== undefined) {
+    raw = raw.payload;
+}
+
+let tvocValue = null;
+if (typeof raw === 'number') {
+    tvocValue = coerceNumber(raw);
+} else if (raw && typeof raw === 'object') {
+    tvocValue = coerceNumber(raw.tvocIndex ?? raw.tvoc ?? raw.value ?? raw.ppb);
+}
+
+if (tvocValue == null) {
+    node.status({ fill: 'yellow', shape: 'ring', text: 'TVOC 값 없음' });
+    return null;
+}
+
+flow.set('latestTvocValue', { value: tvocValue, ts: now });
+
+const latestSensor = flow.get('latest_raw_sensor');
+if (!latestSensor) {
+    node.status({ fill: 'blue', shape: 'ring', text: '센서 데이터 대기' });
+    return null;
+}
+
+const ttlMs = 2 * 60 * 1000;
+if (!latestSensor.__ts || now - latestSensor.__ts > ttlMs) {
+    node.status({ fill: 'grey', shape: 'ring', text: '센서 데이터 만료' });
+    return null;
+}
+
+const merged = Object.assign({}, latestSensor, { tvoc: tvocValue, tvocSource: 'mqtt' });
+node.status({ fill: 'green', shape: 'dot', text: 'TVOC ' + tvocValue });
+
+return { payload: merged, topic: 'tvoc' };
+
+
+================================================================================
+=== NODE: 📊 차트 데이터 변환 (id: c5641003c822771b)
+================================================================================
+// 차트용 데이터 변환 및 CSV 데이터 저장
+const data = msg.payload;
+const timestamp = new Date();
+
+const toNumber = (value, fallback = null) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+};
+
+const calculateT50Minutes = (kValue) => {
+    if (kValue == null || !Number.isFinite(kValue) || kValue <= 0) {
+        return null;
+    }
+    return Math.round((Math.log(2) / kValue) * 60);
+};
+
+const resolveKMetrics = () => {
+    const pickMetric = (key, flowKey = key) => {
+        if (data && Object.prototype.hasOwnProperty.call(data, key)) {
+            const fromPayload = toNumber(data[key], null);
+            if (fromPayload !== null) {
+                return fromPayload;
+            }
+        }
+        const fromFlow = flow.get(flowKey);
+        return toNumber(fromFlow, null);
+    };
+
+    const k_pm25 = pickMetric('k_pm25');
+    const k_co2 = pickMetric('k_co2');
+
+    const r2_pm25 = pickMetric('r2_pm25', 'k_pm25_r2');
+    const r2_co2 = pickMetric('r2_co2', 'k_co2_r2');
+
+    return {
+        k_pm25,
+        k_co2,
+        t50_pm25: calculateT50Minutes(k_pm25),
+        t50_co2: calculateT50Minutes(k_co2),
+        r2_pm25,
+        r2_co2
+    };
+};
+
+const kMetrics = resolveKMetrics();
+
+// CSV 데이터 저장을 위한 전역 배열
+let csvData = global.get('csvData') || [];
+
+// 새 데이터 추가
+const newRecord = {
+    timestamp: timestamp.toISOString(),
+    time_str: timestamp.toLocaleString('ko-KR'),
+    pm25: data.pm25 || 0,
+    co2: data.co2 || 400,
+    tvoc: data.tvoc || 0,
+    nox: data.nox || 0,
+    temp: data.temp || 20,
+    humidity: data.humidity || 50,
+    usAQI: data.usAQI || 50,
+    discomfortIndex: data.discomfortIndex || 70,
+    score: data.score || 0,
+    combo: data.combo || 0,
+    airQualityState: data.airQualityState || '보통',
+    k_pm25: kMetrics.k_pm25,
+    k_co2: kMetrics.k_co2,
+    t50_pm25: kMetrics.t50_pm25,
+    t50_co2: kMetrics.t50_co2,
+    r2_pm25: kMetrics.r2_pm25,
+    r2_co2: kMetrics.r2_co2
+};
+
+csvData.push(newRecord);
+
+// 최대 1000개 레코드만 유지 (약 3-4일치)
+if (csvData.length > 130000) {
+    csvData = csvData.slice(-130000);
+}
+
+// 전역 저장
+global.set('csvData', csvData);
+
+// 차트용 메시지 준비
+const chartMessages = [
+    { payload: [{ x: timestamp, y: data.pm25 || 0 }], topic: 'PM2.5' },
+    { payload: [{ x: timestamp, y: data.co2 || 400 }], topic: 'CO2' },
+    { payload: [{ x: timestamp, y: data.temp || 20 }], topic: 'Temperature' },
+    { payload: [{ x: timestamp, y: data.humidity || 50 }], topic: 'Humidity' },
+    { payload: [{ x: timestamp, y: data.tvoc || 0 }], topic: 'TVOC' },
+    { payload: [{ x: timestamp, y: data.nox || 0 }], topic: 'NOx' },
+    { payload: [{ x: timestamp, y: data.usAQI || 50 }], topic: 'AQI' },
+    { payload: [{ x: timestamp, y: data.discomfortIndex || 70 }], topic: 'Discomfort' }
+];
+
+return chartMessages;
+
+
+================================================================================
+=== NODE: 센서 데이터 저장 (id: bf8f7130f6ebcc9e)
+================================================================================
+// 센서 데이터를 flow 컨텍스트에 저장 (비교용)
+// 시간 간격 체크하여 그래프 끊기
+const now = Date.now();
+const lastTime = flow.get('last_chart_time') || 0;
+const timeDiff = now - lastTime;
+
+// 30초 이상 간격이 있으면 그래프를 끊기 위해 빈 배열 먼저 전송
+let clearMsg = null;
+if (timeDiff > 30000 && lastTime > 0) {
+    clearMsg = { payload: [] };
+}
+
+flow.set('last_chart_time', now);
+
+if (msg.payload && typeof msg.payload === 'object') {
+    flow.set('latest_sensor_data', {
+        pm25: msg.payload.pm25,
+        temp: msg.payload.temp,
+        humidity: msg.payload.humidity,
+        timestamp: new Date().toISOString()
+    });
+}
+
+return [msg, clearMsg];
+
+
+
+================================================================================
+=== NODE: PM2.5 차트용 변환 (id: 49a6fe2f7d443eef)
+================================================================================
+msg.payload = msg.payload.pm25;
+return msg;
+
+
+================================================================================
+=== NODE: CO₂ 차트용 변환 (id: 93146fd43e8b4d62)
+================================================================================
+msg.payload = msg.payload.co2;
+return msg;
+
+
+================================================================================
+=== NODE: 온도 차트용 변환 (id: b3a7299d793a6c73)
+================================================================================
+msg.payload = msg.payload.temp;
+return msg;
+
+
+================================================================================
+=== NODE: 습도 차트용 변환 (id: 219fb7ac5bbfe3a1)
+================================================================================
+msg.payload = msg.payload.humidity;
+return msg;
+
+
+================================================================================
+=== NODE: TVOC 차트용 변환 (id: 5d781c0bd7a59a96)
+================================================================================
+msg.payload = msg.payload.tvoc;
+return msg;
+
+
+================================================================================
+=== NODE: NOx 차트용 변환 (id: 4e60c03be7e826e4)
+================================================================================
+msg.payload = msg.payload.nox;
+return msg;
+
+
+================================================================================
+=== NODE: 🤖 AI 추천 시스템 (id: 0fcfd41028745541)
+================================================================================
+// AI 기반 공기질 분석 및 행동 권유 시스템
+const data = msg.payload;
+
+if (!data || typeof data !== 'object') {
+    return null;
+}
+
+// 센서 데이터 추출
+const pm25 = data.pm25 || 0;
+const co2 = data.co2 || 400;
+const temp = data.temp || 20;
+const humidity = data.humidity || 50;
+const aqi = data.usAQI || 50;
+const di = data.discomfortIndex || 70;
+
+// 🤖 AI 분석 및 추천 시스템
+function generateAIRecommendation(pm25, co2, temp, humidity, aqi, di) {
+    let recommendation = '';
+    let icon = '';
+    let urgency = 'normal';
+    let action = '';
+    
+    // 위험도 순으로 체크
+    if (pm25 > 75) {
+        recommendation = 'PM2.5 위험 수준! 즉시 실내로 대피하세요';
+        icon = '🚨';
+        urgency = 'critical';
+        action = '외출 금지, 공기청정기 최대 가동';
+    } else if (co2 > 1500) {
+        recommendation = 'CO₂ 농도 매우 높음! 창문을 열고 환기하세요';
+        icon = '💨';
+        urgency = 'high';
+        action = '즉시 환기, 사람 수 줄이기';
+    } else if (pm25 > 35) {
+        recommendation = '미세먼지 나쁨. 마스크 착용 후 외출하세요';
+        icon = '😷';
+        urgency = 'medium';
+        action = 'KF94 마스크 착용, 공기청정기 가동';
+    } else if (co2 > 1000) {
+        recommendation = '실내 공기가 탁해요. 창문을 열어주세요';
+        icon = '🪟';
+        urgency = 'medium';
+        action = '5-10분 환기, 실내 활동 줄이기';
+    } else if (di > 80) {
+        recommendation = '불쾌지수 높음. 에어컨이나 제습기를 사용하세요';
+        icon = '❄️';
+        urgency = 'medium';
+        action = '냉방 가동, 충분한 수분 섭취';
+    } else if (humidity > 70) {
+        recommendation = '습도가 높아요. 제습기를 켜주세요';
+        icon = '💧';
+        urgency = 'low';
+        action = '제습기 가동, 환기 필요';
+    } else if (humidity < 40) {
+        recommendation = '공기가 건조해요. 가습기를 사용하세요';
+        icon = '🌊';
+        urgency = 'low';
+        action = '가습기 가동, 물 한 잔 마시기';
+    } else if (temp > 28) {
+        recommendation = '온도가 높아요. 시원한 환경을 만들어주세요';
+        icon = '🌡️';
+        urgency = 'low';
+        action = '냉방 가동, 충분한 휴식';
+    } else if (aqi <= 50 && di <= 68 && co2 <= 800) {
+        recommendation = '완벽한 실내 환경이에요! 이 상태를 유지하세요';
+        icon = '✨';
+        urgency = 'good';
+        action = '현재 상태 유지, 규칙적인 환기';
+    } else {
+        recommendation = '실내 환경이 양호합니다. 현 상태를 유지하세요';
+        icon = '👍';
+        urgency = 'normal';
+        action = '정기적인 모니터링 지속';
+    }
+    
+    return { recommendation, icon, urgency, action };
+}
+
+// AI 추천 생성
+const aiResult = generateAIRecommendation(pm25, co2, temp, humidity, aqi, di);
+
+// 색상 결정
+let bgColor, textColor;
+switch (aiResult.urgency) {
+    case 'critical':
+        bgColor = 'linear-gradient(135deg, #ff416c 0%, #ff4757 100%)';
+        textColor = 'white';
+        break;
+    case 'high':
+        bgColor = 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)';
+        textColor = 'white';
+        break;
+    case 'medium':
+        bgColor = 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)';
+        textColor = 'white';
+        break;
+    case 'good':
+        bgColor = 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)';
+        textColor = 'white';
+        break;
+    default:
+        bgColor = 'linear-gradient(135deg, #636e72 0%, #2d3436 100%)';
+        textColor = 'white';
+}
+
+// HTML 생성
+const aiHTML = `
+<div style="
+    background: ${bgColor};
+    color: ${textColor};
+    padding: 16px 20px;
+    border-radius: 14px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 5px 0;
+    transition: all 0.3s ease;
+" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.15)'" >
+    <div style="font-size: 18px; font-weight: 600; margin-bottom: 6px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+        ${aiResult.icon} ${aiResult.recommendation}
+    </div>
+    <div style="font-size: 12px; opacity: 0.9; font-weight: 400; letter-spacing: 0.5px;">
+        권장 행동: ${aiResult.action}
+    </div>
+</div>
+`;
+
+// 노드 상태 표시
+node.status({
+    fill: aiResult.urgency === 'critical' ? 'red' : aiResult.urgency === 'good' ? 'green' : 'blue',
+    shape: 'dot',
+    text: `${aiResult.icon} ${aiResult.urgency}`
+});
+
+msg.payload = {
+    ai_html: aiHTML,
+    urgency: aiResult.urgency,
+    recommendation: aiResult.recommendation,
+    action: aiResult.action
+};
+
+return msg;
+
+
+================================================================================
+=== NODE: 📊 테이블 데이터 변환 (id: 47220b66d5c7ac68)
+================================================================================
+// 센서 데이터를 테이블 형식으로 변환 (강화된 디버깅)
+node.warn('[테이블 변환] 시작 - 입력: ' + JSON.stringify(msg));
+
+const data = msg.payload;
+
+// 강화된 데이터 검증
+if (!msg) {
+    node.error('[테이블 변환] msg 객체 없음');
+    return null;
+}
+
+if (!data) {
+    node.warn('[테이블 변환] payload 없음 - 기본값 사용');
+    const now = new Date().toLocaleTimeString('ko-KR');
+    msg.payload = [
+        {"센서": "🌫️ PM2.5", "측정값": 0, "단위": "µg/m³", "상태": "연결대기", "색상": "#999", "업데이트": now},
+        {"센서": "💨 CO₂", "측정값": 400, "단위": "ppm", "상태": "연결대기", "색상": "#999", "업데이트": now}
+    ];
+    node.status({fill: "yellow", shape: "ring", text: "기본 데이터"});
+    return msg;
+}
+
+if (typeof data !== 'object') {
+    node.error('[테이블 변환] 잘못된 타입: ' + typeof data);
+    return null;
+}
+
+// 상태 기준 및 색상 정의
+function getStatusAndColor(value, ranges) {
+    for (const range of ranges) {
+        if (value <= range.max) {
+            return { 상태: range.label, 색상: range.color };
+        }
+    }
+    return { 상태: ranges[ranges.length - 1].label, 색상: ranges[ranges.length - 1].color };
+}
+
+// 테이블용 데이터 배열 생성
+const tableData = [
+    {
+        "센서": "🌫️ PM2.5",
+        "측정값": data.pm25 || 0,
+        "단위": "µg/m³",
+        ...getStatusAndColor(data.pm25 || 0, [
+            { max: 15, label: "좋음", color: "#00A100" },
+            { max: 35, label: "보통", color: "#FFD700" },
+            { max: 75, label: "나쁨", color: "#FF7E7E" },
+            { max: Infinity, label: "매우나쁨", color: "#FF0000" }
+        ]),
+        "업데이트": data.time_str || new Date().toLocaleTimeString('ko-KR')
+    },
+    {
+        "센서": "💨 CO₂",
+        "측정값": data.co2 || 400,
+        "단위": "ppm",
+        ...getStatusAndColor(data.co2 || 400, [
+            { max: 800, label: "좋음", color: "#00A100" },
+            { max: 1000, label: "보통", color: "#FFD700" },
+            { max: 1500, label: "나쁨", color: "#FF7E7E" },
+            { max: Infinity, label: "매우나쁨", color: "#FF0000" }
+        ]),
+        "업데이트": data.time_str || new Date().toLocaleTimeString('ko-KR')
+    },
+    {
+        "센서": "🧪 TVOC",
+        "측정값": data.tvoc || 0,
+        "단위": "지수",
+        ...getStatusAndColor(data.tvoc || 0, [
+            { max: 100, label: "좋음", color: "#00A100" },
+            { max: 200, label: "보통", color: "#FFD700" },
+            { max: 400, label: "나쁨", color: "#FF7E7E" },
+            { max: Infinity, label: "매우나쁨", color: "#FF0000" }
+        ]),
+        "업데이트": data.time_str || new Date().toLocaleTimeString('ko-KR')
+    },
+    {
+        "센서": "⚗️ NOx",
+        "측정값": data.nox || 0,
+        "단위": "지수",
+        ...getStatusAndColor(data.nox || 0, [
+            { max: 25, label: "좋음", color: "#00A100" },
+            { max: 50, label: "보통", color: "#FFD700" },
+            { max: 75, label: "나쁨", color: "#FF7E7E" },
+            { max: Infinity, label: "매우나쁨", color: "#FF0000" }
+        ]),
+        "업데이트": data.time_str || new Date().toLocaleTimeString('ko-KR')
+    },
+    {
+        "센서": "🌡️ 온도",
+        "측정값": data.temp || 20,
+        "단위": "°C",
+        ...getStatusAndColor(data.temp || 20, [
+            { max: 18, label: "나쁨", color: "#FF7E7E" },
+            { max: 26, label: "좋음", color: "#00A100" },
+            { max: 30, label: "보통", color: "#FFD700" },
+            { max: Infinity, label: "매우나쁨", color: "#FF0000" }
+        ]),
+        "업데이트": data.time_str || new Date().toLocaleTimeString('ko-KR')
+    },
+    {
+        "센서": "💧 습도",
+        "측정값": data.humidity || 50,
+        "단위": "%",
+        ...getStatusAndColor(data.humidity || 50, [
+            { max: 40, label: "보통", color: "#FFD700" },
+            { max: 60, label: "좋음", color: "#00A100" },
+            { max: 70, label: "나쁨", color: "#FF7E7E" },
+            { max: Infinity, label: "매우나쁨", color: "#FF0000" }
+        ]),
+        "업데이트": data.time_str || new Date().toLocaleTimeString('ko-KR')
+    }
+];
+
+msg.payload = tableData;
+return msg;
+
+
+
+================================================================================
+=== NODE: 💾 CSV 데이터 저장 (id: 608e712401a0041a)
+================================================================================
+// 1. MQTT에서 받은 데이터
+const data = msg.payload;
+
+// 데이터가 없으면 무시
+if (!data || typeof data !== 'object') return null;
+
+const toNumber = (value, fallback = null) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+};
+
+const calculateT50Minutes = (kValue) => {
+    if (kValue == null || !Number.isFinite(kValue) || kValue <= 0) {
+        return null;
+    }
+    return Math.round((Math.log(2) / kValue) * 60);
+};
+
+const resolveKMetrics = () => {
+    const pickMetric = (key, flowKey = key) => {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+            const fromPayload = toNumber(data[key], null);
+            if (fromPayload !== null) {
+                return fromPayload;
+            }
+        }
+        const fromFlow = flow.get(flowKey);
+        return toNumber(fromFlow, null);
+    };
+
+    const k_pm25 = pickMetric('k_pm25');
+    const k_co2 = pickMetric('k_co2');
+
+    const r2_pm25 = pickMetric('r2_pm25', 'k_pm25_r2');
+    const r2_co2 = pickMetric('r2_co2', 'k_co2_r2');
+
+    return {
+        k_pm25,
+        k_co2,
+        t50_pm25: calculateT50Minutes(k_pm25),
+        t50_co2: calculateT50Minutes(k_co2),
+        r2_pm25,
+        r2_co2
+    };
+};
+
+const kMetrics = resolveKMetrics();
+const now = new Date();
+
+// 2. 저장소 불러오기
+let csvData = global.get('csvData') || [];
+
+// 3. 실제 데이터를 '가상 데이터'와 똑같은 형식(숫자)으로 변환해 저장
+const newRecord = {
+    timestamp: now.getTime(), // ★ 핵심: 현재 시간을 숫자(ms)로 저장
+    time_str: now.toLocaleString('ko-KR'),
+    
+    // 값들도 모두 숫자로 강제 변환 (오류 방지)
+    pm25: Number(data.pm25) || 0,
+    co2: Number(data.co2) || 400,
+    temp: Number(data.temp) || 0,
+    humidity: Number(data.humidity) || 0,
+    tvoc: Number(data.tvoc) || 0,
+    nox: Number(data.nox) || 0,
+    usAQI: Number(data.usAQI) || 0,
+    discomfortIndex: Number(data.discomfortIndex) || 0,
+    score: Number(data.score) || 0,
+    combo: Number(data.combo) || 0,
+    airQualityState: typeof data.airQualityState === 'string' ? data.airQualityState : '',
+    k_pm25: kMetrics.k_pm25,
+    k_co2: kMetrics.k_co2,
+    t50_pm25: kMetrics.t50_pm25,
+    t50_co2: kMetrics.t50_co2,
+    r2_pm25: kMetrics.r2_pm25,
+    r2_co2: kMetrics.r2_co2
+};
+
+// 4. 저장 및 용량 관리
+csvData.push(newRecord);
+
+// 데이터가 너무 많으면 오래된 것 삭제 (약 일주일치 유지)
+if (csvData.length > 130000) {
+    csvData.shift(); // 가장 오래된 데이터 1개 삭제
+}
+
+global.set('csvData', csvData);
+
+// 5. 다음 노드들(실시간/일간/주간 차트)에게 "새 데이터 왔다!"고 신호 보냄
+return msg;
+
+
+================================================================================
+=== NODE: 평가 (id: 662735f944021ea0)
+================================================================================
+const co2 = Number(msg.payload);
+let text;
+if (co2 < 700)        text = `CO₂ ${co2} ppm — 좋음 (집중하기 매우 좋아요)`;
+else if (co2 < 1000)  text = `CO₂ ${co2} ppm — 보통 (10분 환기를 권장합니다.)`;
+else if (co2 < 1500)  text = `CO₂ ${co2} ppm — 주의 (집중력 저하 가능성이 있습니다)`;
+else                  text = `CO₂ ${co2} ppm — 높음 (반드시 환기하세요!!)`;
+msg.payload = text;
+return msg;
+
+
+================================================================================
+=== NODE: 어린이 모드 → flow 저장 (집중) (id: e39ac33e4f1908a7)
+================================================================================
+const co2 = Number(msg.payload || 0);
+let level, message, action;
+if (co2 < 700) {
+    level = '좋음';
+    message = `CO₂ ${co2} ppm — 좋음 (집중하기 매우 좋아요)`;
+    action = '현재 상태 유지';
+} else if (co2 < 1000) {
+    level = '보통';
+    message = `CO₂ ${co2} ppm — 보통 (10분 환기를 권장합니다.)`;
+    action = '10분 환기 권장';
+} else if (co2 < 1500) {
+    level = '주의';
+    message = `CO₂ ${co2} ppm — 주의 (집중력 저하 가능성이 있습니다)`;
+    action = '즉시 환기';
+} else {
+    level = '높음';
+    message = `CO₂ ${co2} ppm — 높음 (반드시 환기하세요!!)`;
+    action = '반드시 환기';
+}
+flow.set('child_focus_latest', {
+    co2,
+    level,
+    message,
+    recommendedAction: action
+});
+return null;
+
+
+================================================================================
+=== NODE: 상대적 CADR 판단 (id: 63cef691e05ecf01)
+================================================================================
+const c = msg.cadr;
+if (!c) return [null, null, null];
+
+// ※ CADR = k×V×η 이지만, 실내 부피를 몰라도 k(정화속도)만으로 상대적인 정화속도 지표(상대 CADR)를 비교할 수 있습니다.
+
+const hasNumber = (v) => typeof v === 'number' && !Number.isNaN(v);
+
+// ★ 듀얼 k값 및 개별 등급 읽기
+const kPm25 = hasNumber(c.kPm25) ? c.kPm25 : (hasNumber(msg.kPm25) ? msg.kPm25 : 0);
+const kCo2 = hasNumber(c.kCo2) ? c.kCo2 : (hasNumber(msg.kCo2) ? msg.kCo2 : 0);
+const gradePm25 = c.gradePm25 || msg.gradePm25 || 'C';
+const gradeCo2 = c.gradeCo2 || msg.gradeCo2 || 'C';
+const t50Pm25 = hasNumber(c.t50Pm25) ? c.t50Pm25 : 999;
+const t50Co2 = hasNumber(c.t50Co2) ? c.t50Co2 : 999;
+
+const effectiveK = hasNumber(c.kEffective) ? c.kEffective.toFixed(2) : '0.00';
+const trendLabel = c.trend === 'increase' ? '↗ 증가' : '↘ 감소';
+
+// 등급별 메시지
+function getGradeMsg(grade) {
+    switch (grade) {
+        case 'S': return '⚡ 매우 빠름';
+        case 'A': return '🏃 빠름';
+        case 'B': return '🙂 보통';
+        default: return '😒 느림';
+    }
+}
+
+let marketing = '';
+if (c.trend === 'increase') {
+    marketing = '⚠️ 농도 상승 추세 — 오염원 제거 또는 환기 필요';
+} else {
+    const pmMsg = getGradeMsg(gradePm25);
+    const co2Msg = getGradeMsg(gradeCo2);
+    marketing = `PM2.5: ${pmMsg} | CO₂: ${co2Msg}`;
+}
+
+// ★ Output 1: 상대지표 (듀얼 k값 표시)
+const indexLine = `정화속도 지표(=상대 CADR): ${c.index} 단계<br>` +
+    `k_PM=${kPm25.toFixed(2)}, k_CO₂=${kCo2.toFixed(2)} (1/h)<br>` +
+    `t₅₀_PM≈${t50Pm25}분, t₅₀_CO₂≈${t50Co2}분`;
+
+// ★ Output 2: 등급 (듀얼 등급 표시)
+const gradeLine = `PM2.5: "${gradePm25}등급" | CO₂: "${gradeCo2}등급"`;
+
+// Output 3: 평가 메시지
+const messageLine = marketing;
+
+return [
+    { payload: indexLine },
+    { payload: gradeLine },
+    { payload: messageLine }
+];
+
+
+================================================================================
+=== NODE: 상세 데이터 리셋 (id: ee6ec77277218bd1)
+================================================================================
+// 1) 저장된 센서/통계 버퍼 초기화
+flow.set('pm', null);
+flow.set('co2', null);
+flow.set('tvoc', null);
+flow.set('temp', null);
+flow.set('humidity', null);
+flow.set('last_detail_chart_time', 0);
+flow.set('statsBuffer', null);
+context.set('pm120sBuffer', null);
+context.set('co2120sBuffer', null);
+flow.set('ach_pm_latest', null);
+flow.set('ach_co2_latest', null);
+flow.set('hybridAchState', null);
+
+// CSV 데이터(상세 차트 원본) 초기화
+global.set('csvData', []);
+
+// 2) Insight 위젯에 히스토리 삭제 명령 전달
+const resetMsg = {
+    topic: 'insight:reset',
+    payload: { resetHistory: true, timestamp: Date.now() }
+};
+
+return [resetMsg];
+
+
+
+================================================================================
+=== NODE: k 게이지 분리 구현  (id: 68c5a36f7846c264)
+================================================================================
+// k값을 PM2.5 게이지와 CO2 게이지로 분리
+const kPm25 = msg.kPm25 ?? (msg.cadr ? msg.cadr.kPm25 : 0);
+const kCo2 = msg.kCo2 ?? (msg.cadr ? msg.cadr.kCo2 : 0);
+const gradePm25 = msg.gradePm25 || 'C';
+const gradeCo2 = msg.gradeCo2 || 'C';
+
+// Output 1: PM2.5 게이지용
+const msgPm = {
+    payload: Math.max(0, kPm25),
+    grade: gradePm25
+};
+
+// Output 2: CO2 게이지용
+const msgCo2 = {
+    payload: Math.max(0, kCo2),
+    grade: gradeCo2
+};
+
+return [msgPm, msgCo2];
+
+

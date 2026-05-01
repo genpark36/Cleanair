@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>센서 위치 등록</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#00677d",
+              "surface-bright": "#f5fafd",
+              "outline-variant": "#bcc9ce",
+              "on-secondary": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed": "#001f27",
+              "on-secondary-container": "#3d6977",
+              "surface-container-high": "#e3e9ec",
+              "surface-tint": "#00677d",
+              "tertiary-container": "#eb8f3b",
+              "surface-dim": "#d5dbde",
+              "outline": "#6d797e",
+              "surface-container-highest": "#dee3e6",
+              "surface-variant": "#dee3e6",
+              "on-secondary-fixed": "#001f27",
+              "on-primary": "#ffffff",
+              "on-secondary-fixed-variant": "#1e4c5a",
+              "error": "#ba1a1a",
+              "tertiary-fixed-dim": "#ffb77d",
+              "tertiary": "#914d00",
+              "on-tertiary-container": "#5d2f00",
+              "on-error-container": "#93000a",
+              "on-primary-container": "#00414f",
+              "error-container": "#ffdad6",
+              "on-background": "#171c1f",
+              "secondary-fixed-dim": "#a1cddd",
+              "on-primary-fixed-variant": "#004e5f",
+              "secondary-container": "#bae7f7",
+              "tertiary-fixed": "#ffdcc3",
+              "primary-fixed-dim": "#4cd6fb",
+              "on-surface": "#171c1f",
+              "background": "#f5fafd",
+              "surface": "#f5fafd",
+              "surface-container": "#e9eff1",
+              "surface-container-lowest": "#ffffff",
+              "primary-container": "#00b4d8",
+              "inverse-primary": "#4cd6fb",
+              "on-tertiary-fixed-variant": "#6e3900",
+              "inverse-on-surface": "#ecf2f4",
+              "on-error": "#ffffff",
+              "secondary": "#396472",
+              "primary-fixed": "#b3ebff",
+              "surface-container-low": "#eff4f7",
+              "inverse-surface": "#2b3134",
+              "secondary-fixed": "#bdeafa",
+              "on-tertiary-fixed": "#2f1500",
+              "on-surface-variant": "#3d494d"
+            },
+            fontFamily: {
+              sans: ['Pretendard', 'Inter', 'sans-serif'],
+              headline: ['Pretendard', 'Inter', 'sans-serif'],
+              display: ['Pretendard', 'Inter', 'sans-serif'],
+              body: ['Pretendard', 'Inter', 'sans-serif'],
+              label: ['Pretendard', 'Inter', 'sans-serif']
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Pretendard', 'Inter', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col max-w-[390px] mx-auto overflow-x-hidden relative shadow-2xl">
+<!-- TopAppBar -->
+<header class="bg-[#f5fafd]/80 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-sm">
+<div class="flex justify-between items-center w-full px-6 py-4">
+<button aria-label="Go back" class="text-on-surface hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-['Pretendard','Inter'] font-semibold text-lg tracking-tight text-[#171c1f]">위치 등록</h1>
+<button aria-label="Help" class="text-on-surface hover:opacity-80 transition-opacity active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow px-6 pt-8 pb-24 flex flex-col gap-8">
+<!-- Header Text -->
+<section>
+<h2 class="text-[2rem] leading-tight font-bold tracking-tight mb-2 text-on-surface">센서 위치 등록</h2>
+<p class="text-secondary text-base leading-relaxed break-keep">이상 상황 발생 시 이 위치가 알림에 표시됩니다.</p>
+</section>
+<!-- Selected Sensor Card -->
+<section class="bg-surface-container-lowest rounded-2xl p-6 relative overflow-hidden group">
+<div class="flex items-start justify-between relative z-10 mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" data-icon="sensors" style="font-variation-settings: 'FILL' 1;">sensors</span>
+</div>
+<div>
+<h3 class="font-bold text-lg text-on-surface">Cleanair-01</h3>
+<p class="text-secondary text-sm font-medium">정상 연결</p>
+</div>
+</div>
+<div class="flex items-center gap-1 text-outline text-xs font-medium bg-surface-container px-2 py-1 rounded-full">
+<span class="w-2 h-2 rounded-full bg-primary-container inline-block"></span>
+<span>5초 전 업데이트</span>
+</div>
+</div>
+<!-- Asymmetrical decoration -->
+<div class="absolute -right-8 -bottom-8 w-32 h-32 bg-secondary-container/30 rounded-full blur-2xl z-0 pointer-events-none"></div>
+</section>
+<!-- Address Search -->
+<section class="flex flex-col gap-2">
+<label class="text-sm font-bold text-on-surface" for="address-search">주소 또는 건물명 검색</label>
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline" data-icon="search">search</span>
+</div>
+<input class="w-full bg-surface-container-highest border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder-outline focus:ring-0 focus:border-b-2 focus:border-primary transition-all shadow-sm" id="address-search" placeholder="예: 새싹어린이집, 테헤란로 123" type="text"/>
+</div>
+</section>
+<div class="mt-auto flex justify-center pb-8 pt-10">
+<button class="text-primary font-semibold hover:opacity-80 transition-opacity underline underline-offset-4 decoration-primary/30 hover:decoration-primary px-4 py-2">나중에 하기</button>
+</div>
+</main>
+</body></html>

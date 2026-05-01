@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Facility Safety - Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed": "#001f27",
+              "secondary-fixed": "#bdeafa",
+              "surface-dim": "#d5dbde",
+              "tertiary": "#914d00",
+              "on-primary-fixed-variant": "#004e5f",
+              "on-primary-container": "#00414f",
+              "background": "#f5fafd",
+              "surface-container-low": "#eff4f7",
+              "tertiary-fixed-dim": "#ffb77d",
+              "on-surface-variant": "#3d494d",
+              "primary-fixed": "#b3ebff",
+              "surface": "#f5fafd",
+              "tertiary-fixed": "#ffdcc3",
+              "outline": "#6d797e",
+              "primary": "#00677d",
+              "surface-container": "#e9eff1",
+              "on-secondary-container": "#3d6977",
+              "on-secondary": "#ffffff",
+              "surface-bright": "#f5fafd",
+              "on-error-container": "#93000a",
+              "on-error": "#ffffff",
+              "surface-variant": "#dee3e6",
+              "outline-variant": "#bcc9ce",
+              "on-primary": "#ffffff",
+              "surface-tint": "#00677d",
+              "on-background": "#171c1f",
+              "on-tertiary-fixed-variant": "#6e3900",
+              "on-secondary-fixed": "#001f27",
+              "secondary-fixed-dim": "#a1cddd",
+              "on-tertiary-container": "#5d2f00",
+              "on-secondary-fixed-variant": "#1e4c5a",
+              "on-tertiary-fixed": "#2f1500",
+              "on-surface": "#171c1f",
+              "primary-container": "#00b4d8",
+              "inverse-on-surface": "#ecf2f4",
+              "primary-fixed-dim": "#4cd6fb",
+              "error-container": "#ffdad6",
+              "surface-container-lowest": "#ffffff",
+              "secondary": "#396472",
+              "inverse-surface": "#2b3134",
+              "tertiary-container": "#eb8f3b",
+              "surface-container-highest": "#dee3e6",
+              "surface-container-high": "#e3e9ec",
+              "secondary-container": "#bae7f7",
+              "error": "#ba1a1a",
+              "inverse-primary": "#4cd6fb"
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px"
+            },
+            fontFamily: {
+              sans: ['Pretendard', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+<style>
+      body {
+        font-family: 'Pretendard', sans-serif;
+        background-color: #f5fafd;
+        color: #171c1f;
+      }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24 pt-16">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md text-cyan-600 dark:text-cyan-400 font-['Pretendard'] font-bold text-lg tracking-tight no-border shadow-none bg-opacity-70 flex justify-between items-center px-6 py-4 max-w-full mx-auto">
+<button class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined">location_on</span>
+</button>
+<div class="text-xl font-black text-slate-900 dark:text-slate-50">Facility Safety</div>
+<button class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined">notifications_active</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-4xl mx-auto px-4 md:px-6 pt-10">
+<!-- Header Section -->
+<section class="mb-10 text-center md:text-left">
+<h1 class="text-[2rem] font-bold text-on-surface leading-tight mb-2">이상 징후 분석</h1>
+<p class="text-on-surface-variant text-body-lg">최근 환경 데이터 패턴을 분석한 결과입니다.</p>
+</section>
+<!-- Status Summary Alert -->
+<section class="bg-tertiary-container/20 rounded-xl p-6 mb-8 flex flex-col md:flex-row items-center md:items-start gap-4">
+<div class="bg-tertiary-container text-on-tertiary-container rounded-full p-3 flex-shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="flex-1 text-center md:text-left">
+<h2 class="text-xl font-bold text-on-tertiary-container mb-1">주의 징후 감지</h2>
+<div class="flex flex-wrap justify-center md:justify-start gap-3 mt-3">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-surface-container-lowest text-on-surface-variant shadow-sm border border-outline-variant/20">
+                        화재 의심도: <strong class="ml-1 text-primary">낮음</strong>
+</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-surface-container-lowest text-on-surface-variant shadow-sm border border-outline-variant/20">
+                        오경보 가능성: <strong class="ml-1 text-tertiary">높음</strong>
+</span>
+</div>
+</div>
+</section>
+<!-- Analysis Cards (Bento Grid Style) -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+<!-- Rationale Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10 hover:shadow-md transition-shadow">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">analytics</span>
+<h3 class="text-lg font-bold text-on-surface">주요 관측</h3>
+</div>
+<p class="text-on-surface-variant mb-4">PM2.5와 TVOC가 함께 상승 중입니다.</p>
+<div class="h-24 w-full bg-surface-container rounded-lg overflow-hidden relative" data-alt="A detailed, abstract line graph illustration showing two lines rising simultaneously against a very light, clean background. The visual style is modern, technical, and serene, fitting a light-mode editorial dashboard. Soft teal and subtle gray lines denote the data trends. High key lighting, minimalist aesthetic.">
+<!-- Placeholder for Chart -->
+<div class="absolute inset-0 flex items-center justify-center text-outline text-sm">Trend Visualization</div>
+</div>
+</div>
+<!-- Rationale Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10 hover:shadow-md transition-shadow">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<h3 class="text-lg font-bold text-on-surface">분석 결과</h3>
+</div>
+<p class="text-on-surface-variant mb-4">요리 연기 또는 환기 부족 가능성이 있습니다.</p>
+<div class="flex flex-wrap gap-2 mt-auto">
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">PM2.5 급상승</span>
+<span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">TVOC 동시 상승</span>
+<span class="bg-surface-container-highest text-on-surface-variant px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">온도 변화 안정</span>
+</div>
+</div>
+</section>
+<!-- Action Items -->
+<section class="mb-10">
+<h3 class="text-lg font-bold text-on-surface mb-6">권장 조치</h3>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="flex-1 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full py-4 px-6 font-bold text-center hover:opacity-90 transition-opacity shadow-md">
+                    환기 권장
+                </button>
+<button class="flex-1 bg-surface-container-lowest border border-outline-variant/30 text-primary rounded-full py-4 px-6 font-bold text-center hover:bg-surface-container-low transition-colors">
+                    5분 후 재확인
+                </button>
+</div>
+</section>
+<!-- Timeline -->
+<section class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<h3 class="text-lg font-bold text-on-surface mb-6">최근 변화 타임라인</h3>
+<div class="relative pl-6 border-l-2 border-surface-container-highest space-y-6">
+<div class="relative">
+<div class="absolute -left-[31px] bg-primary rounded-full w-4 h-4 border-4 border-surface-container-lowest"></div>
+<div class="text-sm text-outline font-semibold mb-1">10:15 AM</div>
+<div class="text-on-surface font-medium">TVOC 수치 서서히 증가 시작</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[31px] bg-primary rounded-full w-4 h-4 border-4 border-surface-container-lowest"></div>
+<div class="text-sm text-outline font-semibold mb-1">10:20 AM</div>
+<div class="text-on-surface font-medium">PM2.5 수치 급격한 상승 감지 (주의 단계 도달)</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[31px] bg-tertiary rounded-full w-4 h-4 border-4 border-surface-container-lowest"></div>
+<div class="text-sm text-outline font-semibold mb-1">10:22 AM</div>
+<div class="text-on-surface font-bold text-tertiary">경고 알림 발송 및 분석 시작</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[2rem] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl text-cyan-600 dark:text-cyan-400 font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider no-border shadow-[0_-8px_32px_rgba(23,28,31,0.04)] shadow-xl flex justify-around items-center px-4 pb-6 pt-3 md:hidden">
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span>Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl px-3 py-1.5 scale-90 duration-150">
+<span class="material-symbols-outlined mb-1">analytics</span>
+<span>Analysis</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all">
+<span class="material-symbols-outlined mb-1">warning</span>
+<span>Alerts</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all">
+<span class="material-symbols-outlined mb-1">settings_remote</span>
+<span>Devices</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span>Settings</span>
+</button>
+</nav>
+<!-- Desktop SideNav Placeholder (hidden on mobile, visible on md+) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-outline-variant/10 py-8 px-4 z-40">
+<button class="flex items-center text-slate-400 hover:text-cyan-500 transition-all py-3 px-4 rounded-lg mb-2">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-semibold text-sm">Home</span>
+</button>
+<button class="flex items-center text-cyan-600 bg-cyan-50 rounded-lg py-3 px-4 mb-2">
+<span class="material-symbols-outlined mr-3">analytics</span>
+<span class="font-semibold text-sm">Analysis</span>
+</button>
+<button class="flex items-center text-slate-400 hover:text-cyan-500 transition-all py-3 px-4 rounded-lg mb-2">
+<span class="material-symbols-outlined mr-3">warning</span>
+<span class="font-semibold text-sm">Alerts</span>
+</button>
+<button class="flex items-center text-slate-400 hover:text-cyan-500 transition-all py-3 px-4 rounded-lg mb-2">
+<span class="material-symbols-outlined mr-3">settings_remote</span>
+<span class="font-semibold text-sm">Devices</span>
+</button>
+<button class="flex items-center text-slate-400 hover:text-cyan-500 transition-all py-3 px-4 rounded-lg mb-2 mt-auto">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-semibold text-sm">Settings</span>
+</button>
+</aside>
+</body></html>

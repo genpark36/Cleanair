@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CleanAir Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "on-secondary-container": "#506873",
+                    "on-tertiary-fixed": "#2f1500",
+                    "on-surface": "#191c1d",
+                    "inverse-on-surface": "#eff1f2",
+                    "surface-container-highest": "#e1e3e4",
+                    "tertiary-container": "#eb8f3b",
+                    "on-secondary-fixed": "#051e28",
+                    "on-primary": "#ffffff",
+                    "surface-dim": "#d8dadb",
+                    "surface-bright": "#f8fafb",
+                    "on-background": "#191c1d",
+                    "surface-container-low": "#f2f4f5",
+                    "on-surface-variant": "#3d494d",
+                    "on-secondary-fixed-variant": "#334a55",
+                    "on-primary-container": "#00414f",
+                    "surface-container-high": "#e6e8e9",
+                    "surface-tint": "#00677d",
+                    "secondary-container": "#cde6f4",
+                    "tertiary": "#914d00",
+                    "primary-fixed": "#b3ebff",
+                    "surface-variant": "#e1e3e4",
+                    "primary-container": "#00b4d8",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed-variant": "#004e5f",
+                    "on-tertiary-container": "#5d2f00",
+                    "inverse-primary": "#4cd6fb",
+                    "primary-fixed-dim": "#4cd6fb",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "error": "#ba1a1a",
+                    "secondary": "#4a626d",
+                    "error-container": "#ffdad6",
+                    "surface": "#f8fafb",
+                    "secondary-fixed": "#cde6f4",
+                    "inverse-surface": "#2e3132",
+                    "primary": "#00677d",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-fixed": "#ffdcc3",
+                    "on-tertiary": "#ffffff",
+                    "background": "#f8fafb",
+                    "outline-variant": "#bcc9ce",
+                    "on-primary-fixed": "#001f27",
+                    "outline": "#6d797e",
+                    "on-error-container": "#93000a",
+                    "surface-container": "#eceeef",
+                    "on-error": "#ffffff",
+                    "secondary-fixed-dim": "#b1cad7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Pretendard"],
+                    "body": ["Pretendard"],
+                    "label": ["Pretendard"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .aqi-gauge-mask {
+            clip-path: polygon(0% 100%, 100% 100%, 100% 0%, 0% 0%);
+        }
+        .tap-highlight-transparent { -webkit-tap-highlight-color: transparent; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-700 dark:text-cyan-400" data-icon="air">air</span>
+<h1 class="text-xl font-extrabold text-cyan-800 dark:text-cyan-300 tracking-tight">CleanAir</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-500" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-500" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<main class="mt-16 px-4 md:px-8 max-w-7xl mx-auto space-y-6">
+<!-- Location Section -->
+<section class="pt-4 flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="location_on">location_on</span>
+<span class="text-sm font-semibold">강남구 역삼동</span>
+</section>
+<!-- Hero Section: IAQI Gauge & AI Analysis -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Large Gauge Widget -->
+<section class="lg:col-span-7 bg-surface-container-lowest rounded-[2rem] p-8 relative overflow-hidden flex flex-col items-center justify-center min-h-[400px]">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none"></div>
+<div class="relative w-64 h-64 flex items-center justify-center">
+<!-- The AQI Aura -->
+<div class="absolute inset-0 bg-primary/10 rounded-full blur-3xl opacity-50"></div>
+<!-- Gauge SVG -->
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle class="text-surface-container-high" cx="50" cy="50" fill="none" r="45" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-tertiary-container" cx="50" cy="50" fill="none" r="45" stroke="currentColor" stroke-dasharray="282.7" stroke-dashoffset="118.7" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-1">통합 공기질 지수 (IAQI)</span>
+<span class="text-7xl font-extrabold text-on-surface leading-tight">58</span>
+<span class="px-4 py-1 bg-tertiary-container/20 text-on-tertiary-container rounded-full text-sm font-bold">보통</span>
+</div>
+</div>
+<!-- Horizontal Status Bar -->
+<div class="w-full max-w-md mt-10 space-y-2">
+<div class="flex justify-between px-1 text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-tighter">
+<span>좋음</span>
+<span>보통</span>
+<span>나쁨</span>
+</div>
+<div class="relative h-3 w-full flex gap-1">
+<div class="flex-1 bg-emerald-500 rounded-l-full"></div>
+<div class="flex-1 bg-yellow-400 relative">
+<!-- Pointer -->
+<div class="absolute left-[16%] -top-1 w-1 h-5 bg-on-surface rounded-full shadow-lg z-10"></div>
+</div>
+<div class="flex-1 bg-orange-500"></div>
+<div class="flex-1 bg-red-500"></div>
+<div class="flex-1 bg-purple-600"></div>
+<div class="flex-1 bg-fuchsia-800 rounded-r-full"></div>
+</div>
+<div class="flex justify-between px-1 text-[10px] font-mono text-on-surface-variant">
+<span>0</span>
+<span>50</span>
+<span>100</span>
+<span>150</span>
+<span>200</span>
+<span>300</span>
+</div>
+</div>
+</section>
+<!-- AI Analysis & Trend -->
+<div class="lg:col-span-5 flex flex-col gap-6">
+<!-- AI Analysis Widget -->
+<section class="bg-inverse-surface text-inverse-on-surface rounded-[2rem] p-6 flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<h2 class="font-bold text-lg tracking-tight">AI 건강 인사이트</h2>
+</div>
+<p class="text-sm leading-relaxed opacity-90 font-medium">
+                        현재 상태는 보통입니다. 실외 미세먼지 증가 시 창문을 닫으세요. 짧은 환기를 권장합니다.
+                    </p>
+<div class="mt-2 flex gap-2">
+<button class="px-3 py-1 bg-white/10 rounded-lg text-[11px] font-semibold hover:bg-white/20 transition-colors">미세먼지 알림</button>
+<button class="px-3 py-1 bg-white/10 rounded-lg text-[11px] font-semibold hover:bg-white/20 transition-colors">환기 정보</button>
+</div>
+</section>
+<!-- Real-time Trend Sparkline -->
+<section class="bg-surface-container-low rounded-[2rem] p-6 flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">실시간 추세</h3>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-xl font-extrabold">수치: 58</span>
+<span class="text-xs font-bold text-tertiary">상태: 보통</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="trending_up">trending_up</span>
+</div>
+<div class="flex-1 w-full min-h-[80px] flex items-end gap-1 px-2">
+<!-- Mock Sparkline -->
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[40%]"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[55%]"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[45%]"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[60%]"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[75%]"></div>
+<div class="flex-1 bg-primary/40 rounded-t-sm h-[65%]"></div>
+<div class="flex-1 bg-primary h-[58%] rounded-t-sm"></div>
+</div>
+</section>
+</div>
+</div>
+<!-- Integrated Graph Widget -->
+<section class="bg-surface-container-low rounded-[2rem] p-8">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-extrabold tracking-tight">오염 물질 분석</h2>
+<div class="flex bg-surface-container-high p-1 rounded-xl">
+<button class="px-4 py-1.5 bg-surface-container-lowest rounded-lg text-xs font-bold shadow-sm">선형</button>
+<button class="px-4 py-1.5 text-xs font-bold text-on-surface-variant">막대</button>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex bg-surface-container-high p-1 rounded-xl">
+<button class="px-4 py-1.5 bg-surface-container-lowest rounded-lg text-xs font-bold shadow-sm">24시간</button>
+<button class="px-4 py-1.5 text-xs font-bold text-on-surface-variant">주간</button>
+<button class="px-4 py-1.5 text-xs font-bold text-on-surface-variant">월간</button>
+</div>
+<button class="p-2 rounded-xl bg-surface-container-high text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="open_in_full">open_in_full</span>
+</button>
+<button class="p-2 rounded-xl bg-surface-container-high text-on-surface-variant">
+<span class="material-symbols-outlined text-[20px]" data-icon="zoom_in">zoom_in</span>
+</button>
+</div>
+</div>
+<!-- Main Chart Area -->
+<div class="h-64 w-full relative flex items-end">
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-10">
+<div class="w-full h-px bg-on-surface"></div>
+<div class="w-full h-px bg-on-surface"></div>
+<div class="w-full h-px bg-on-surface"></div>
+<div class="w-full h-px bg-on-surface"></div>
+</div>
+<div class="w-full h-full flex items-end gap-2 md:gap-4 px-4 overflow-hidden">
+<div class="flex-1 bg-primary/10 h-[40%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[45%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[55%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[60%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[75%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[82%] rounded-t-xl transition-all hover:bg-primary/30 border-t-2 border-primary"></div>
+<div class="flex-1 bg-primary/10 h-[70%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[50%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[41%] rounded-t-xl transition-all hover:bg-primary/30 border-t-2 border-primary-container"></div>
+<div class="flex-1 bg-primary/10 h-[55%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[65%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+<div class="flex-1 bg-primary/10 h-[58%] rounded-t-xl transition-all hover:bg-primary/30"></div>
+</div>
+</div>
+<div class="mt-8 flex justify-between items-center px-4 py-4 bg-surface-container-lowest/50 rounded-2xl border border-outline-variant/10">
+<div class="flex gap-12">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">최대 82</span>
+<span class="text-xl font-extrabold text-error">82 <span class="text-xs font-medium text-on-surface-variant">µg/m³</span></span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">최소 41</span>
+<span class="text-xl font-extrabold text-emerald-600">41 <span class="text-xs font-medium text-on-surface-variant">µg/m³</span></span>
+</div>
+</div>
+<div class="text-[10px] font-bold text-on-surface-variant/60 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                    지난 24시간
+                </div>
+</div>
+</section>
+<!-- Monthly Heatmap Widget -->
+<section class="bg-surface-container-lowest rounded-[2rem] p-8">
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-xl font-extrabold tracking-tight">월간 공기질 히트맵</h2>
+<div class="flex items-center gap-2 text-sm font-bold text-on-surface-variant">
+<span class="material-symbols-outlined text-lg" data-icon="calendar_month">calendar_month</span>
+                    2023년 10월
+                </div>
+</div>
+<div class="grid grid-cols-7 gap-2 md:gap-4 mb-8">
+<!-- Days of week -->
+<div class="text-center text-[10px] font-bold text-on-surface-variant/40 py-2">일</div>
+<div class="text-center text-[10px] font-bold text-on-surface-variant/40 py-2">월</div>
+<div class="text-center text-[10px] font-bold text-on-surface-variant/40 py-2">화</div>
+<div class="text-center text-[10px] font-bold text-on-surface-variant/40 py-2">수</div>
+<div class="text-center text-[10px] font-bold text-on-surface-variant/40 py-2">목</div>
+<div class="text-center text-[10px] font-bold text-on-surface-variant/40 py-2">금</div>
+<div class="text-center text-[10px] font-bold text-on-surface-variant/40 py-2">토</div>
+<!-- Calendar Grid (Example data) -->
+<div class="aspect-square rounded-xl bg-emerald-500/80 flex flex-col items-center justify-center text-white">
+<span class="text-[10px] font-bold">1</span>
+<span class="text-xs font-extrabold">22</span>
+</div>
+<div class="aspect-square rounded-xl bg-emerald-500/80 flex flex-col items-center justify-center text-white">
+<span class="text-[10px] font-bold">2</span>
+<span class="text-xs font-extrabold">34</span>
+</div>
+<div class="aspect-square rounded-xl bg-yellow-400 flex flex-col items-center justify-center text-on-surface">
+<span class="text-[10px] font-bold">3</span>
+<span class="text-xs font-extrabold">58</span>
+</div>
+<div class="aspect-square rounded-xl bg-orange-500/80 flex flex-col items-center justify-center text-white">
+<span class="text-[10px] font-bold">4</span>
+<span class="text-xs font-extrabold">112</span>
+</div>
+<div class="aspect-square rounded-xl bg-yellow-400 flex flex-col items-center justify-center text-on-surface">
+<span class="text-[10px] font-bold">5</span>
+<span class="text-xs font-extrabold">64</span>
+</div>
+<div class="aspect-square rounded-xl bg-emerald-500/80 flex flex-col items-center justify-center text-white">
+<span class="text-[10px] font-bold">6</span>
+<span class="text-xs font-extrabold">42</span>
+</div>
+<div class="aspect-square rounded-xl bg-emerald-500/80 flex flex-col items-center justify-center text-white">
+<span class="text-[10px] font-bold">7</span>
+<span class="text-xs font-extrabold">38</span>
+</div>
+<!-- Row 2 -->
+<div class="aspect-square rounded-xl bg-yellow-400 flex flex-col items-center justify-center text-on-surface">
+<span class="text-[10px] font-bold">8</span>
+<span class="text-xs font-extrabold">71</span>
+</div>
+<div class="aspect-square rounded-xl bg-red-500/80 flex flex-col items-center justify-center text-white">
+<span class="text-[10px] font-bold">9</span>
+<span class="text-xs font-extrabold">156</span>
+</div>
+<div class="aspect-square rounded-xl bg-purple-600/80 flex flex-col items-center justify-center text-white">
+<span class="text-[10px] font-bold">10</span>
+<span class="text-xs font-extrabold">205</span>
+</div>
+<div class="aspect-square rounded-xl bg-yellow-400 flex flex-col items-center justify-center text-on-surface ring-4 ring-primary ring-offset-2 ring-offset-white">
+<span class="text-[10px] font-bold">11</span>
+<span class="text-xs font-extrabold">58</span>
+</div>
+<div class="aspect-square rounded-xl bg-surface-container-high border border-outline-variant/30 flex flex-col items-center justify-center text-on-surface-variant/40">
+<span class="text-[10px] font-bold">12</span>
+<span class="text-xs font-extrabold">--</span>
+</div>
+<div class="aspect-square rounded-xl bg-surface-container-high/50 border border-dashed border-outline-variant/30"></div>
+<div class="aspect-square rounded-xl bg-surface-container-high/50 border border-dashed border-outline-variant/30"></div>
+</div>
+<!-- Heatmap Legend -->
+<div class="flex flex-wrap items-center gap-6 pt-6 border-t border-outline-variant/10">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+<span class="text-[10px] font-bold text-on-surface-variant">좋음</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+<span class="text-[10px] font-bold text-on-surface-variant">보통</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-orange-500"></div>
+<span class="text-[10px] font-bold text-on-surface-variant">나쁨</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-red-500"></div>
+<span class="text-[10px] font-bold text-on-surface-variant">매우 나쁨</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-purple-600"></div>
+<span class="text-[10px] font-bold text-on-surface-variant">위험</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pt-3 pb-8 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-md rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+<button class="flex flex-col items-center justify-center text-cyan-700 dark:text-cyan-300 font-bold bg-cyan-50 dark:bg-cyan-900/30 rounded-2xl px-5 py-2 tap-highlight-transparent transition-all duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[11px] font-medium tracking-wide">대시보드</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-cyan-600 dark:hover:text-cyan-200 tap-highlight-transparent transition-all duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="insights">insights</span>
+<span class="text-[11px] font-medium tracking-wide">분석</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-cyan-600 dark:hover:text-cyan-200 tap-highlight-transparent transition-all duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="tune">tune</span>
+<span class="text-[11px] font-medium tracking-wide">제어</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-cyan-600 dark:hover:text-cyan-200 tap-highlight-transparent transition-all duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span class="text-[11px] font-medium tracking-wide">설정</span>
+</button>
+</nav>
+</body></html>

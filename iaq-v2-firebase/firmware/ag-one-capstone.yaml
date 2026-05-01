@@ -1,0 +1,54 @@
+# AirGradient ONE - Board v9
+# https://www.airgradient.com/open-airgradient/instructions/overview/
+
+substitutions:
+  name: "ag-one"
+  friendly_name: "AirGradient ONE"
+  config_version: 2.0.0
+  name_add_mac_suffix: "true"  # Must have quotes around value
+  capstone_ingest_url: "https://us-central1-capstone-air-quality-yu25.cloudfunctions.net/ingest"
+  capstone_generate_code_url: "https://us-central1-capstone-air-quality-yu25.cloudfunctions.net/generateDeviceCode"
+  capstone_upload_interval: 5s
+  capstone_api_key: "capstone-iaq-2026-secure-key"
+
+# Enable Home Assistant API
+api:  # Add encryption key as desired
+
+ota:  # Add password as desired
+
+wifi:
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+
+esp32_improv:  # Uses around 30% of available flash space due to loading BLE stack
+  authorizer: none
+
+# The captive portal is a fallback mechanism for when connecting to the configured WiFi fails.
+# https://esphome.io/components/captive_portal.html
+captive_portal:
+
+dashboard_import:
+  package_import_url: github://airgradienthq/esphome/airgradient-one.yaml
+  import_full_config: false
+
+packages:
+  board: github://airgradienthq/esphome/packages/airgradient_esp32-c3_board.yaml
+  pm_2.5: github://airgradienthq/esphome/packages/sensor_pms5003.yaml
+  co2: github://airgradienthq/esphome/packages/sensor_s8.yaml
+  temp_humidity: github://airgradienthq/esphome/packages/sensor_sht40.yaml
+  tvoc: github://airgradienthq/esphome/packages/sensor_sgp41.yaml
+  display: !include display_local.yaml
+  led: !include led.yaml
+  led_co2: !include led_co2.yaml
+  airgradient_api: !include airgradient_api_esp32-c3.yaml
+  hardware_watchdog: !include watchdog.yaml
+  config_button: github://airgradienthq/esphome/packages/config_button.yaml
+  wifi: github://airgradienthq/esphome/packages/sensor_wifi.yaml
+  mac_address: github://airgradienthq/esphome/packages/sensor_mac_address.yaml
+  uptime: github://airgradienthq/esphome/packages/sensor_uptime.yaml
+  safe_mode: github://airgradienthq/esphome/packages/switch_safe_mode.yaml
+
+binary_sensor:
+  - id: !extend config_button
+    pin:
+      ignore_strapping_warning: true  # Acknowledging that this is a strapping pin and should not have external pullup/down resistors  https://esphome.io/guides/faq.html#why-am-i-getting-a-warning-about-strapping-pins

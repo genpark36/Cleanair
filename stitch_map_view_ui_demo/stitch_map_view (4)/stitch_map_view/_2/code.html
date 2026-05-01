@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Facility Safety Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed": "#001f27",
+                      "secondary-fixed": "#bdeafa",
+                      "surface-dim": "#d5dbde",
+                      "tertiary": "#914d00",
+                      "on-primary-fixed-variant": "#004e5f",
+                      "on-primary-container": "#00414f",
+                      "background": "#f5fafd",
+                      "surface-container-low": "#eff4f7",
+                      "tertiary-fixed-dim": "#ffb77d",
+                      "on-surface-variant": "#3d494d",
+                      "primary-fixed": "#b3ebff",
+                      "surface": "#f5fafd",
+                      "tertiary-fixed": "#ffdcc3",
+                      "outline": "#6d797e",
+                      "primary": "#00677d",
+                      "surface-container": "#e9eff1",
+                      "on-secondary-container": "#3d6977",
+                      "on-secondary": "#ffffff",
+                      "surface-bright": "#f5fafd",
+                      "on-error-container": "#93000a",
+                      "on-error": "#ffffff",
+                      "surface-variant": "#dee3e6",
+                      "outline-variant": "#bcc9ce",
+                      "on-primary": "#ffffff",
+                      "surface-tint": "#00677d",
+                      "on-background": "#171c1f",
+                      "on-tertiary-fixed-variant": "#6e3900",
+                      "on-secondary-fixed": "#001f27",
+                      "secondary-fixed-dim": "#a1cddd",
+                      "on-tertiary-container": "#5d2f00",
+                      "on-secondary-fixed-variant": "#1e4c5a",
+                      "on-tertiary-fixed": "#2f1500",
+                      "on-surface": "#171c1f",
+                      "primary-container": "#00b4d8",
+                      "inverse-on-surface": "#ecf2f4",
+                      "primary-fixed-dim": "#4cd6fb",
+                      "error-container": "#ffdad6",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#396472",
+                      "inverse-surface": "#2b3134",
+                      "tertiary-container": "#eb8f3b",
+                      "surface-container-highest": "#dee3e6",
+                      "surface-container-high": "#e3e9ec",
+                      "secondary-container": "#bae7f7",
+                      "error": "#ba1a1a",
+                      "inverse-primary": "#4cd6fb"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "body": [
+                              "Inter"
+                      ],
+                      "label": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f5fafd; color: #171c1f; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col pt-[72px] pb-[96px] md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md">
+<div class="flex justify-between items-center px-6 py-4 max-w-full mx-auto">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-cyan-600 dark:text-cyan-400">location_on</span>
+<span class="font-['Pretendard'] font-bold text-lg tracking-tight text-slate-900 dark:text-slate-50">Facility Safety</span>
+</div>
+<button class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined text-cyan-600 dark:text-cyan-400">notifications_active</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow container mx-auto px-6 py-8 md:px-12 md:py-16 max-w-7xl">
+<!-- Dashboard Header Info -->
+<section class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="text-4xl md:text-[3.5rem] font-bold tracking-tight text-on-surface mb-2 leading-tight">새싹어린이집 1층</h1>
+<p class="text-lg text-secondary flex items-center gap-2 font-medium">
+<span class="w-3 h-3 rounded-full bg-[#00b4d8]"></span> 센서 상태: 정상 작동 중
+                </p>
+</div>
+<div class="bg-surface-container-low px-4 py-2 rounded-full inline-flex items-center gap-2 self-start md:self-end text-sm font-semibold text-on-surface-variant">
+<span class="material-symbols-outlined text-base">update</span>
+                마지막 업데이트: 5초 전
+            </div>
+</section>
+<!-- Large Safety Status Card (Asymmetric Design) -->
+<section class="mb-16">
+<div class="bg-surface-container-lowest rounded-2xl p-8 md:p-12 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
+<!-- Decorative Background Glow -->
+<div class="absolute -right-20 -top-20 w-64 h-64 bg-primary-fixed rounded-full blur-[80px] opacity-50 pointer-events-none"></div>
+<div class="flex-shrink-0 bg-primary-container/20 p-6 rounded-full relative z-10">
+<span class="material-symbols-outlined text-[6rem] text-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="relative z-10 flex-grow text-center md:text-left">
+<h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-4">현재 이상 징후 없음</h2>
+<p class="text-xl text-on-surface-variant font-medium leading-relaxed">
+                        실내 상태가 안정적입니다.<br/>
+                        모든 환경 지표가 권장 기준치 이내를 유지하고 있습니다.
+                    </p>
+</div>
+</div>
+</section>
+<!-- Air Quality Summary Cards (Bento Grid) -->
+<section class="mb-16">
+<h3 class="text-2xl font-bold text-on-surface mb-8">환경 요약</h3>
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+<!-- PM2.5 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 flex flex-col justify-between">
+<span class="text-sm font-bold text-secondary uppercase tracking-wider mb-2">PM2.5</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-on-surface">12</span>
+<span class="text-sm text-on-surface-variant">µg/m³</span>
+</div>
+</div>
+<!-- CO2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 flex flex-col justify-between">
+<span class="text-sm font-bold text-secondary uppercase tracking-wider mb-2">CO2</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-on-surface">450</span>
+<span class="text-sm text-on-surface-variant">ppm</span>
+</div>
+</div>
+<!-- TVOC -->
+<div class="bg-surface-container-lowest rounded-xl p-6 flex flex-col justify-between">
+<span class="text-sm font-bold text-secondary uppercase tracking-wider mb-2">TVOC</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-on-surface">0.1</span>
+<span class="text-sm text-on-surface-variant">mg/m³</span>
+</div>
+</div>
+<!-- Temperature -->
+<div class="bg-surface-container-lowest rounded-xl p-6 flex flex-col justify-between">
+<span class="text-sm font-bold text-secondary uppercase tracking-wider mb-2">온도</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-on-surface">22.5</span>
+<span class="text-sm text-on-surface-variant">°C</span>
+</div>
+</div>
+<!-- Humidity -->
+<div class="bg-surface-container-lowest rounded-xl p-6 flex flex-col justify-between">
+<span class="text-sm font-bold text-secondary uppercase tracking-wider mb-2">습도</span>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-bold text-on-surface">45</span>
+<span class="text-sm text-on-surface-variant">%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Quick Actions -->
+<section>
+<h3 class="text-2xl font-bold text-on-surface mb-8">빠른 실행</h3>
+<div class="flex flex-wrap gap-4">
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-8 py-4 rounded-full font-bold text-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+<span class="material-symbols-outlined">campaign</span> 책임자 알림
+                </button>
+<button class="bg-surface-container-highest text-on-surface px-8 py-4 rounded-full font-bold text-lg hover:bg-surface-variant transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">analytics</span> 상세 분석
+                </button>
+<button class="bg-surface-container-highest text-on-surface px-8 py-4 rounded-full font-bold text-lg hover:bg-surface-variant transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">settings_remote</span> 장치 제어
+                </button>
+<button class="bg-surface-container-highest text-on-surface px-8 py-4 rounded-full font-bold text-lg hover:bg-surface-variant transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">history</span> 상황 기록
+                </button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-[2rem] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-[0_-8px_32px_rgba(23,28,31,0.04)]">
+<div class="flex justify-around items-center w-full px-4 pb-6 pt-3">
+<button class="flex flex-col items-center justify-center text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl px-3 py-1.5 transition-all scale-90">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all">
+<span class="material-symbols-outlined mb-1">analytics</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Analysis</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all">
+<span class="material-symbols-outlined mb-1">warning</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Alerts</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all">
+<span class="material-symbols-outlined mb-1">settings_remote</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Devices</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Settings</span>
+</button>
+</div>
+</nav>
+</body></html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>상황 기록</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001f27",
+                        "secondary-fixed": "#bdeafa",
+                        "surface-dim": "#d5dbde",
+                        "tertiary": "#914d00",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "on-primary-container": "#00414f",
+                        "background": "#f5fafd",
+                        "surface-container-low": "#eff4f7",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-surface-variant": "#3d494d",
+                        "primary-fixed": "#b3ebff",
+                        "surface": "#f5fafd",
+                        "tertiary-fixed": "#ffdcc3",
+                        "outline": "#6d797e",
+                        "primary": "#00677d",
+                        "surface-container": "#e9eff1",
+                        "on-secondary-container": "#3d6977",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#f5fafd",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#dee3e6",
+                        "outline-variant": "#bcc9ce",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#00677d",
+                        "on-background": "#171c1f",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "on-secondary-fixed": "#001f27",
+                        "secondary-fixed-dim": "#a1cddd",
+                        "on-tertiary-container": "#5d2f00",
+                        "on-secondary-fixed-variant": "#1e4c5a",
+                        "on-tertiary-fixed": "#2f1500",
+                        "on-surface": "#171c1f",
+                        "primary-container": "#00b4d8",
+                        "inverse-on-surface": "#ecf2f4",
+                        "primary-fixed-dim": "#4cd6fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#396472",
+                        "inverse-surface": "#2b3134",
+                        "tertiary-container": "#eb8f3b",
+                        "surface-container-highest": "#dee3e6",
+                        "surface-container-high": "#e3e9ec",
+                        "secondary-container": "#bae7f7",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#4cd6fb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Pretendard", "sans-serif"],
+                        "display": ["Pretendard", "sans-serif"],
+                        "body": ["Pretendard", "sans-serif"],
+                        "label": ["Pretendard", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .glass-header {
+            background: rgba(245, 250, 253, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased pb-24 min-h-screen relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 glass-header no-border shadow-none">
+<div class="flex justify-between items-center px-6 py-4 max-w-full mx-auto text-cyan-600 dark:text-cyan-400">
+<button class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-['Pretendard'] font-bold text-lg tracking-tight">상황 기록</h1>
+<div class="w-10"></div> <!-- Placeholder for balance -->
+</div>
+</header>
+<main class="pt-24 px-6 max-w-3xl mx-auto">
+<!-- Filter Chips -->
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-6">
+<button class="whitespace-nowrap px-5 py-2 rounded-full bg-primary text-on-primary font-semibold text-sm shadow-[0_4px_12px_rgba(0,103,125,0.2)]">전체</button>
+<button class="whitespace-nowrap px-5 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-medium text-sm hover:bg-surface-container-low transition-colors shadow-sm">이상 징후</button>
+<button class="whitespace-nowrap px-5 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-medium text-sm hover:bg-surface-container-low transition-colors shadow-sm">알림</button>
+<button class="whitespace-nowrap px-5 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-medium text-sm hover:bg-surface-container-low transition-colors shadow-sm">장치</button>
+<button class="whitespace-nowrap px-5 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-medium text-sm hover:bg-surface-container-low transition-colors shadow-sm">오경보</button>
+</div>
+<!-- Timeline List -->
+<div class="relative mt-4">
+<!-- Vertical Line -->
+<div class="absolute left-[39px] top-4 bottom-0 w-0.5 bg-surface-container-highest"></div>
+<!-- Item: 14:38 -->
+<div class="relative flex gap-6 mb-8 items-start group cursor-pointer">
+<div class="w-16 flex-shrink-0 text-right pt-2">
+<span class="text-sm font-bold text-on-surface-variant">14:38</span>
+</div>
+<div class="absolute left-[34px] top-3 w-3 h-3 rounded-full bg-surface border-2 border-primary-container z-10 group-hover:scale-125 transition-transform"></div>
+<div class="flex-grow bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_24px_rgba(23,28,31,0.02)] hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-center mb-2">
+<span class="px-2 py-1 rounded-md bg-secondary-container text-on-secondary-container text-xs font-bold uppercase tracking-wider">완료</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<h3 class="text-base font-bold text-on-surface mb-1">오경보 처리</h3>
+<p class="text-sm text-on-surface-variant line-clamp-2">관리자 확인 결과 특이사항 없음으로 처리 완료.</p>
+</div>
+</div>
+<!-- Item: 14:34 -->
+<div class="relative flex gap-6 mb-8 items-start group cursor-pointer">
+<div class="w-16 flex-shrink-0 text-right pt-2">
+<span class="text-sm font-bold text-on-surface-variant">14:34</span>
+</div>
+<div class="absolute left-[34px] top-3 w-3 h-3 rounded-full bg-surface border-2 border-primary z-10 group-hover:scale-125 transition-transform"></div>
+<div class="flex-grow bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_24px_rgba(23,28,31,0.02)] hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-center mb-2">
+<span class="px-2 py-1 rounded-md bg-primary-container text-on-primary-container text-xs font-bold uppercase tracking-wider">장치</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<h3 class="text-base font-bold text-on-surface mb-1">사이렌 플러그 작동</h3>
+<p class="text-sm text-on-surface-variant">경고 알람 활성화됨.</p>
+</div>
+</div>
+<!-- Item: 14:33 -->
+<div class="relative flex gap-6 mb-8 items-start group cursor-pointer">
+<div class="w-16 flex-shrink-0 text-right pt-2">
+<span class="text-sm font-bold text-on-surface-variant">14:33</span>
+</div>
+<div class="absolute left-[34px] top-3 w-3 h-3 rounded-full bg-surface border-2 border-tertiary-container z-10 group-hover:scale-125 transition-transform"></div>
+<div class="flex-grow bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_24px_rgba(23,28,31,0.02)] hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-center mb-2">
+<span class="px-2 py-1 rounded-md bg-tertiary-fixed text-on-tertiary-fixed text-xs font-bold uppercase tracking-wider">알림</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<h3 class="text-base font-bold text-on-surface mb-1">책임자 알림 발송</h3>
+<p class="text-sm text-on-surface-variant">해당 구역 담당자에게 SMS 및 푸시 알림 발송 완료.</p>
+</div>
+</div>
+<!-- Item: 14:32 -->
+<div class="relative flex gap-6 mb-8 items-start group cursor-pointer">
+<div class="w-16 flex-shrink-0 text-right pt-2">
+<span class="text-sm font-bold text-error">14:32</span>
+</div>
+<div class="absolute left-[34px] top-3 w-3 h-3 rounded-full bg-error z-10 animate-pulse"></div>
+<div class="flex-grow bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_32px_rgba(186,26,26,0.08)] border-l-4 border-error hover:bg-surface-container-low transition-colors">
+<div class="flex justify-between items-center mb-2">
+<span class="px-2 py-1 rounded-md bg-error-container text-on-error-container text-xs font-bold uppercase tracking-wider">위험</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-error transition-colors">chevron_right</span>
+</div>
+<h3 class="text-lg font-bold text-error mb-2">화재 의심 패턴 감지</h3>
+<div class="bg-surface p-4 rounded-lg flex gap-4 items-center">
+<div class="bg-error-container p-3 rounded-full">
+<span class="material-symbols-outlined text-on-error-container" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface">온도 급상승 및 연기 감지</p>
+<p class="text-xs text-on-surface-variant mt-1">센서 ID: TH-042 | 구역: A동 물류창고 2층</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

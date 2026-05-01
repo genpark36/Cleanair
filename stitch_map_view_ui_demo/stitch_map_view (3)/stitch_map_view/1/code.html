@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .headline-lg {
+            font-size: 2rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        .label-md {
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+
+        /* Editorial Float Logic */
+        .editorial-float {
+            position: relative;
+            z-index: 1;
+        }
+        .editorial-float::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: -10%;
+            width: 100%;
+            height: 100%;
+            background: #eff4f7;
+            z-index: -1;
+            border-radius: 1rem;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "surface-dim": "#d5dbde",
+                        "surface-container-low": "#eff4f7",
+                        "background": "#f5fafd",
+                        "tertiary-container": "#eb8f3b",
+                        "primary-fixed-dim": "#4cd6fb",
+                        "primary-fixed": "#b3ebff",
+                        "tertiary-fixed": "#ffdcc3",
+                        "surface-container": "#e9eff1",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "on-background": "#171c1f",
+                        "outline": "#6d797e",
+                        "tertiary": "#914d00",
+                        "surface-container-high": "#e3e9ec",
+                        "inverse-primary": "#4cd6fb",
+                        "on-tertiary-fixed": "#2f1500",
+                        "surface-container-highest": "#dee3e6",
+                        "on-surface-variant": "#3d494d",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#bcc9ce",
+                        "secondary-container": "#bae7f7",
+                        "primary": "#00677d",
+                        "on-primary-fixed": "#001f27",
+                        "surface-variant": "#dee3e6",
+                        "inverse-surface": "#2b3134",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#00677d",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#00414f",
+                        "secondary-fixed-dim": "#a1cddd",
+                        "secondary-fixed": "#bdeafa",
+                        "secondary": "#396472",
+                        "on-tertiary-container": "#5d2f00",
+                        "surface-bright": "#f5fafd",
+                        "surface": "#f5fafd",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#1e4c5a",
+                        "on-secondary-container": "#3d6977",
+                        "on-surface": "#171c1f",
+                        "on-secondary-fixed": "#001f27",
+                        "inverse-on-surface": "#ecf2f4",
+                        "error": "#ba1a1a",
+                        "primary-container": "#00b4d8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex items-center px-6 h-16 bg-[#f5fafd]/80 backdrop-blur-md">
+<div class="flex items-center gap-4 w-full max-w-2xl mx-auto">
+<button class="transition-opacity duration-200 active:opacity-70 text-[#00677d]">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-['Pretendard'] headline-lg tracking-tight text-[#171c1f] text-xl font-bold">신규 플러그 등록</h1>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-24 pb-32 px-6 flex flex-col items-center">
+<div class="w-full max-w-2xl">
+<!-- Step Indicator -->
+<div class="mb-10 flex items-center gap-2">
+<span class="text-secondary label-md font-bold tracking-widest">STEP 1 / 4</span>
+<div class="flex-grow h-[2px] bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full w-1/4 bg-primary transition-all duration-500"></div>
+</div>
+</div>
+<!-- Asymmetric Editorial Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+<!-- Text Column -->
+<div class="md:col-span-7 order-2 md:order-1">
+<h2 class="font-['Pretendard'] headline-lg text-on-background mb-6 leading-tight">
+                        전원을 연결해 주세요
+                    </h2>
+<p class="text-on-surface-variant text-lg leading-relaxed mb-8">
+                        Athom 스마트 플러그를 벽면 콘솔에 꽂고 <span class="text-primary font-semibold">파란색 LED가 깜빡일 때까지</span> 기다려 주세요.
+                    </p>
+<!-- Firmware Link Card -->
+<div class="bg-surface-container-low rounded-xl p-5 flex items-start gap-4 mb-10 transition-all hover:bg-surface-container-high">
+<div class="bg-primary-fixed p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined">system_update</span>
+</div>
+<div>
+<span class="text-secondary label-md font-bold block mb-1">FIRMWARE INSTALLATION</span>
+<a class="text-primary underline font-medium break-all" href="https://firmware.cleanair.com">
+                                https://firmware.cleanair.com
+                            </a>
+</div>
+</div>
+</div>
+<!-- Visual Column (Editorial Float) -->
+<div class="md:col-span-5 order-1 md:order-2">
+<div class="editorial-float">
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-[0_8px_32px_rgba(23,28,31,0.04)] relative overflow-hidden aspect-square flex items-center justify-center">
+<img alt="Smart Plug Connection" class="w-full h-full object-contain" data-alt="Minimalist white smart plug being inserted into a clean modern wall socket, soft blue led glowing light, aesthetic lifestyle photography, bright natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDu4FKjUZ7eR3-IJpvgcnzYMJd2tOihragfF2NjSChqmR6SmNBcdQ75sK2Vu0-fiC-Mc_VviP4YEFI15WsxfyTL4_F1-jv1AWVHsq2wfgNYfQ9xJz_caIk74E8SkR4LC5pLN-vpxgqdHkI9jlOeJffm8dZO9bW_h29axkXFkpgWhAFS9B1sg9SI96_Gp37TuBnQUEBb7XAXBswPaF3bS4M6nyNLhz4ccyW3PmBorTf2VFHzNhlIp76aKbaKpfpcZmMwMOIyN8lSsO0"/>
+<!-- Visual Accent -->
+<div class="absolute bottom-4 right-4 bg-primary-container/20 p-3 rounded-full">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Bar (Transactional Suppression of Nav) -->
+<div class="fixed bottom-0 w-full p-6 bg-gradient-to-t from-background via-background/90 to-transparent">
+<div class="max-w-2xl mx-auto">
+<button class="w-full h-14 rounded-full bg-gradient-to-br from-[#00677d] to-[#00b4d8] text-white font-bold text-lg flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform duration-150">
+<span>전원을 켰어요</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</body></html>

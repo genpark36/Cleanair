@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Pretendard Font -->
+<link as="style" crossorigin="" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface": "#f5fafd",
+              "on-tertiary": "#ffffff",
+              "secondary-fixed": "#bdeafa",
+              "inverse-primary": "#4cd6fb",
+              "tertiary-fixed": "#ffdcc3",
+              "primary-fixed": "#b3ebff",
+              "on-secondary-fixed-variant": "#1e4c5a",
+              "surface-variant": "#dee3e6",
+              "surface-container": "#e9eff1",
+              "tertiary-fixed-dim": "#ffb77d",
+              "surface-container-low": "#eff4f7",
+              "on-primary": "#ffffff",
+              "background": "#f5fafd",
+              "outline": "#6d797e",
+              "on-secondary-container": "#3d6977",
+              "primary": "#00677d",
+              "outline-variant": "#bcc9ce",
+              "surface-bright": "#f5fafd",
+              "secondary-container": "#bae7f7",
+              "tertiary": "#914d00",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#eb8f3b",
+              "surface-tint": "#00677d",
+              "on-surface-variant": "#3d494d",
+              "secondary-fixed-dim": "#a1cddd",
+              "primary-container": "#00b4d8",
+              "inverse-on-surface": "#ecf2f4",
+              "on-surface": "#171c1f",
+              "on-primary-fixed-variant": "#004e5f",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed": "#001f27",
+              "secondary": "#396472",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed-variant": "#6e3900",
+              "surface-container-highest": "#dee3e6",
+              "on-tertiary-fixed": "#2f1500",
+              "on-primary-container": "#00414f",
+              "error-container": "#ffdad6",
+              "surface-container-high": "#e3e9ec",
+              "error": "#ba1a1a",
+              "surface-dim": "#d5dbde",
+              "inverse-surface": "#2b3134",
+              "on-primary-fixed": "#001f27",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-container": "#5d2f00",
+              "on-background": "#171c1f",
+              "primary-fixed-dim": "#4cd6fb"
+            },
+            fontFamily: {
+              "headline": ["Pretendard", "Inter", "sans-serif"],
+              "body": ["Pretendard", "Inter", "sans-serif"],
+              "label": ["Pretendard", "Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface w-[390px] h-[884px] mx-auto overflow-hidden flex flex-col relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-[#f5fafd] dark:bg-slate-950/80 backdrop-blur-xl">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#00B4D8]" data-icon="close">close</span>
+</div>
+<h1 class="font-['Pretendard'] font-semibold text-lg tracking-tight text-on-surface">CleanAir Setup</h1>
+<div class="w-6"></div> <!-- Spacer for centering -->
+</header>
+<!-- Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-8 pt-16 pb-32">
+<!-- Step Indicator -->
+<div class="mb-12 flex flex-col items-center gap-3">
+<div class="flex gap-1.5">
+<div class="h-1.5 w-6 rounded-full bg-secondary-container"></div>
+<div class="h-1.5 w-6 rounded-full bg-secondary-container"></div>
+<div class="h-1.5 w-12 rounded-full bg-gradient-to-r from-primary to-primary-container"></div>
+<div class="h-1.5 w-6 rounded-full bg-surface-container-high"></div>
+<div class="h-1.5 w-6 rounded-full bg-surface-container-high"></div>
+<div class="h-1.5 w-6 rounded-full bg-surface-container-high"></div>
+</div>
+<span class="text-secondary font-bold text-xs tracking-widest uppercase">Stage 3/6</span>
+</div>
+<!-- Headline & Editorial Space -->
+<div class="text-center space-y-6">
+<h2 class="text-[2.25rem] font-bold leading-tight tracking-tight text-on-surface">
+                휴대폰을 센서에 연결
+            </h2>
+<p class="text-secondary leading-relaxed text-lg break-keep px-2">
+                휴대폰 Wi-Fi 설정에서 <span class="text-primary font-semibold">AirGradient</span>로 시작하는 네트워크를 선택하여 연결해 주세요.
+            </p>
+</div>
+<!-- Visual Guide (Asymmetric Editorial Element) -->
+<div class="mt-12 w-full aspect-square relative flex items-center justify-center">
+<div class="absolute inset-0 bg-primary-fixed opacity-20 rounded-full scale-75 blur-3xl"></div>
+<div class="relative z-10 w-full bg-surface-container-lowest rounded-xl shadow-[0_8px_32px_rgba(23,28,31,0.04)] p-8 flex flex-col gap-4">
+<div class="flex items-center gap-4 p-4 rounded-lg bg-surface">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="wifi">wifi</span>
+<div class="flex-1 h-2 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-3/4"></div>
+</div>
+</div>
+<div class="space-y-3 pt-2">
+<div class="flex items-center justify-between text-sm">
+<span class="font-medium text-on-surface-variant">Available Networks</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-primary-fixed/30 rounded-lg border-b-2 border-primary">
+<span class="material-symbols-outlined text-primary" data-icon="settings_input_antenna">settings_input_antenna</span>
+<span class="font-bold text-on-primary-fixed-variant">AirGradient_AS92</span>
+<span class="material-symbols-outlined ml-auto text-primary" data-icon="check">check</span>
+</div>
+<div class="flex items-center gap-3 p-3 opacity-40">
+<span class="material-symbols-outlined text-outline" data-icon="wifi">wifi</span>
+<span class="text-on-surface-variant">Home_WiFi_5G</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Help Note -->
+<div class="mt-12 p-5 bg-surface-container-low rounded-xl text-center max-w-[280px]">
+<p class="text-sm text-secondary leading-normal">
+                자동 페이지가 안 뜨면 브라우저에서 <br/>
+<span class="font-bold text-primary">192.168.4.1</span> 접속
+            </p>
+</div>
+</main>
+<!-- BottomNavBar (Execution of style_shell_layout and style_component_shape) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-between items-center px-8 pb-10 pt-4 bg-[#f5fafd]/70 dark:bg-slate-950/70 backdrop-blur-xl rounded-t-3xl shadow-[0_-8px_32px_rgba(23,28,31,0.04)]">
+<!-- Back Button (Inactive Navigation Style) -->
+<button class="flex flex-col items-center justify-center text-[#396472] dark:text-slate-400 px-6 py-3 hover:brightness-110 transition-all active:scale-90 duration-200">
+<span class="material-symbols-outlined mb-1" data-icon="arrow_back">arrow_back</span>
+<span class="font-['Pretendard'] font-bold text-xs uppercase tracking-widest">Back</span>
+</button>
+<!-- Next/CTA Button (Active Navigation Style) -->
+<button class="flex flex-col items-center justify-center bg-gradient-to-br from-[#00677d] to-[#00B4D8] text-white rounded-full px-8 py-3 hover:brightness-110 transition-all active:scale-90 duration-200 shadow-lg shadow-primary-container/20">
+<div class="flex items-center gap-2">
+<span class="font-['Pretendard'] font-bold text-sm tracking-wide">연결 완료</span>
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</button>
+</nav>
+</body></html>

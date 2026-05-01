@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>센서 위치 등록 - Cleanair</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-fixed-dim": "#4cd6fb",
+                      "surface-container-highest": "#dee3e6",
+                      "on-tertiary-fixed": "#2f1500",
+                      "on-error-container": "#93000a",
+                      "tertiary-fixed": "#ffdcc3",
+                      "tertiary": "#914d00",
+                      "tertiary-fixed-dim": "#ffb77d",
+                      "on-tertiary-container": "#5d2f00",
+                      "surface-container-high": "#e3e9ec",
+                      "surface-container-low": "#eff4f7",
+                      "on-surface-variant": "#3d494d",
+                      "on-primary-fixed-variant": "#004e5f",
+                      "outline": "#6d797e",
+                      "secondary-fixed": "#bdeafa",
+                      "on-secondary": "#ffffff",
+                      "surface-tint": "#00677d",
+                      "inverse-surface": "#2b3134",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed": "#b3ebff",
+                      "on-background": "#171c1f",
+                      "inverse-on-surface": "#ecf2f4",
+                      "surface-variant": "#dee3e6",
+                      "tertiary-container": "#eb8f3b",
+                      "background": "#f5fafd",
+                      "on-secondary-fixed-variant": "#1e4c5a",
+                      "surface-dim": "#d5dbde",
+                      "outline-variant": "#bcc9ce",
+                      "on-tertiary": "#ffffff",
+                      "surface": "#f5fafd",
+                      "on-error": "#ffffff",
+                      "surface-bright": "#f5fafd",
+                      "surface-container": "#e9eff1",
+                      "secondary": "#396472",
+                      "on-primary-fixed": "#001f27",
+                      "on-primary": "#ffffff",
+                      "on-secondary-container": "#3d6977",
+                      "inverse-primary": "#4cd6fb",
+                      "secondary-fixed-dim": "#a1cddd",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-fixed-variant": "#6e3900",
+                      "on-primary-container": "#00414f",
+                      "on-secondary-fixed": "#001f27",
+                      "secondary-container": "#bae7f7",
+                      "primary-container": "#00b4d8",
+                      "primary": "#00677d",
+                      "on-surface": "#171c1f",
+                      "error": "#ba1a1a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "1rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                  "3": "1rem",
+                  "4": "1.4rem",
+                  "6": "2rem",
+                  "10": "3.5rem"
+              },
+              "fontFamily": {
+                      "headline": [
+                              "Pretendard", "Inter"
+                      ],
+                      "display": [
+                              "Pretendard", "Inter"
+                      ],
+                      "body": [
+                              "Pretendard", "Inter"
+                      ],
+                      "label": [
+                              "Pretendard", "Inter"
+                      ]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+      </script>
+<style>
+        body { font-family: 'Pretendard', 'Inter', sans-serif; background-color: #f5fafd; color: #171c1f; }
+        .glass-header { background: rgba(245, 250, 253, 0.8); backdrop-filter: blur(12px); }
+        .primary-gradient { background: linear-gradient(135deg, #00677d, #00b4d8); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="w-[390px] h-[884px] mx-auto bg-surface overflow-hidden relative flex flex-col">
+<!-- TopAppBar -->
+<header class="docked full-width top-0 z-50 no-border shadow-none bg-opacity-70 flex justify-between items-center px-6 py-4 w-full bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl">
+<button class="text-slate-400 dark:text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors Active: opacity-70 scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="arrow_back" data-weight="fill" style="font-variation-settings: 'FILL' 1;">arrow_back</span>
+</button>
+<span class="font-['Pretendard','Inter'] text-lg font-bold tracking-tight text-xl font-black text-slate-900 dark:text-slate-50 tracking-tighter">Cleanair</span>
+<button class="text-slate-400 dark:text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors Active: opacity-70 scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="notifications" data-weight="fill" style="font-variation-settings: 'FILL' 1;">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto hide-scrollbar px-6 pb-[120px] pt-4 flex flex-col gap-10">
+<!-- Header Text -->
+<div class="mt-4">
+<h1 class="text-[2rem] leading-tight font-bold text-on-surface mb-2 tracking-tight">센서 위치 등록</h1>
+<p class="text-[1rem] leading-[1.6] text-on-surface-variant">측정기의 위치를 정확하게 등록하면<br/>더욱 의미 있는 분석 리포트를 제공받을 수 있습니다.</p>
+</div>
+<!-- Selected Sensor Card (Level 2) -->
+<div class="bg-surface-container-lowest rounded-lg p-6 flex items-center gap-4 relative">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary-fixed" data-icon="sensors" data-weight="fill" style="font-variation-settings: 'FILL' 1;">sensors</span>
+</div>
+<div>
+<p class="text-[0.75rem] font-bold text-secondary mb-1">연결된 기기</p>
+<p class="text-[1rem] font-semibold text-on-surface">Cleanair-01</p>
+</div>
+<div class="absolute right-6 top-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined text-primary-container" data-icon="check_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+<!-- Form Fields Layering -->
+<div class="flex flex-col gap-6">
+<!-- Space Name Input -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary">공간 이름 (필수)</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-highest border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 text-[1rem] text-on-surface py-3 px-4 rounded-t-DEFAULT transition-all" placeholder="예: 거실, 아이방" type="text" value="새싹어린이집 1층 복도"/>
+</div>
+</div>
+<!-- Building Name Input -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary">건물 이름</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-highest border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 text-[1rem] text-on-surface py-3 px-4 rounded-t-DEFAULT transition-all" placeholder="예: 은마아파트 101동" type="text" value="새싹어린이집 본관"/>
+</div>
+</div>
+<!-- Facility Type Chips -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary">시설 유형</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">가정</button>
+<button class="px-4 py-2 rounded-full primary-gradient text-on-primary text-[0.875rem] font-medium shadow-md">어린이집</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">요양원</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">작업장</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">매장</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">소형 공장</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">기타</button>
+</div>
+</div>
+<!-- Floor Selection Chips -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary">설치 층수</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">지하 1층</button>
+<button class="px-4 py-2 rounded-full primary-gradient text-on-primary text-[0.875rem] font-medium shadow-md">1층</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">2층</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">3층</button>
+<button class="px-4 py-2 rounded-full border border-outline-variant text-on-surface-variant text-[0.875rem] font-medium hover:bg-surface-container-high transition-colors">직접 입력</button>
+</div>
+</div>
+<!-- Detailed Location Input -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary">상세 위치</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-highest border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 text-[1rem] text-on-surface py-3 px-4 rounded-t-DEFAULT transition-all" placeholder="예: 창가 옆, 책상 위" type="text" value="조리실 앞 복도"/>
+</div>
+</div>
+<!-- Installation Memo Input -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary">설치 메모</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-highest border-0 border-b-2 border-transparent focus:border-primary focus:ring-0 text-[1rem] text-on-surface py-3 px-4 rounded-t-DEFAULT transition-all" placeholder="기타 참고사항" type="text" value="천장 근처 콘센트 옆"/>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Area (Glassmorphism Overlay) -->
+<div class="absolute bottom-0 left-0 w-full px-6 py-6 glass-header flex flex-col gap-4 border-t border-outline-variant border-opacity-20 z-40">
+<button class="w-full primary-gradient text-on-primary rounded-full py-4 text-[1rem] font-semibold flex justify-center items-center gap-2 shadow-lg hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" data-icon="save" data-weight="fill" style="font-variation-settings: 'FILL' 1;">save</span>
+            위치 저장
+        </button>
+<button class="w-full text-primary font-semibold text-[1rem] py-2 hover:underline decoration-2 underline-offset-4 text-center">
+            나중에 하기
+        </button>
+</div>
+</body></html>

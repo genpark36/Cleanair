@@ -1,0 +1,98 @@
+substitutions:
+  capstone_ingest_url: "https://us-central1-capstone-air-quality-yu25.cloudfunctions.net/ingest"
+  capstone_generate_code_url: "https://us-central1-capstone-air-quality-yu25.cloudfunctions.net/generateDeviceCode"
+  capstone_upload_interval: 5s
+  capstone_api_key: "CHANGE_ME"
+
+globals:
+  - id: pairing_pin
+    type: std::string
+    restore_value: no
+    initial_value: '""'
+  - id: pin_display_until
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+  - id: pin_requested
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+text_sensor:
+  - platform: template
+    name: "Serial ID"
+    id: serial_id
+    icon: "mdi:identifier"
+    lambda: |-
+      return "airgradient:" + get_mac_address();
+    update_interval: 60s
+
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      id: wifi_ip
+      internal: true
+
+interval:
+  # ── 센서 데이터 업로드 (WiFi 연결 시에만) ──
+  - interval: ${capstone_upload_interval}
+    then:
+      - if:
+          condition:
+            wifi.connected:
+          then:
+            - http_request.post:
+                url: ${capstone_ingest_url}
+                request_headers:
+                  Content-Type: application/json
+                  X-API-Key: ${capstone_api_key}
+                json:
+                  serial: !lambda |-
+                    return "airgradient:" + get_mac_address();
+                  pm25: !lambda return to_string(id(pm_2_5).state);
+                  co2: !lambda return to_string(id(co2).state);
+                  tvoc: !lambda return to_string(id(voc).state);
+                  nox: !lambda return to_string(id(nox).state);
+                  temp: !lambda return to_string(id(temp).state);
+                  humidity: !lambda return to_string(id(humidity).state);
+                  firmware: !lambda return "capstone-1.1";
+                  ip: !lambda return id(wifi_ip).state;
+
+  # ── WiFi 연결 직후 1회: PIN 코드 생성 (부팅 당 1번) ──
+  - interval: 3s
+    then:
+      - if:
+          condition:
+            and:
+              - wifi.connected:
+              - lambda: 'return !id(pin_requested);'
+          then:
+            - lambda: 'id(pin_requested) = true;'
+            - logger.log: "Requesting pairing PIN from server"
+            - http_request.post:
+                url: ${capstone_generate_code_url}
+                capture_response: true
+                max_response_buffer_size: 512
+                request_headers:
+                  Content-Type: application/json
+                  X-API-Key: ${capstone_api_key}
+                json:
+                  sensorId: !lambda |-
+                    return "airgradient:" + get_mac_address();
+                on_response:
+                  then:
+                    - lambda: |-
+                        if (response->status_code == 200 && body.length() > 0) {
+                          // body 에서 "code":"123456" 파싱
+                          auto idx = body.find("\"code\":\"");
+                          if (idx != std::string::npos) {
+                            std::string pin = body.substr(idx + 8, 6);
+                            id(pairing_pin) = pin;
+                            id(pin_display_until) = millis() + 120000; // 2분간 표시
+                            ESP_LOGI("pairing", "PIN generated: %s", pin.c_str());
+                          }
+                        }
+
+http_request:
+  verify_ssl: false
+  watchdog_timeout: 120s

@@ -1,0 +1,4 @@
+scenario,p50,p90,over_alert_on_strict_good_%,bad_but_m_lt_1_%(formula_aligned)
+m_orig,3.0,3.0,0.0,0.0
+m_no_k,0.388,1.261,0.0,0.0
+m_no_k_th,0.813,1.261,0.0,0.0

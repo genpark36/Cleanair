@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>CleanAir - Onboarding Step 2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#00677d",
+              "on-primary": "#ffffff",
+              "surface": "#ffffff",
+              "on-surface": "#171c1f",
+              "secondary": "#396472",
+              "outline-variant": "#bcc9ce",
+            },
+            fontFamily: {
+              "sans": ["Pretendard", "Inter", "sans-serif"]
+            },
+          },
+        },
+      }
+    </script>
+<style>
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Prevent scroll on mobile while ensuring visibility */
+        body {
+            height: 100dvh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-white text-on-surface flex flex-col">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-6 py-5">
+<div class="flex items-center gap-2">
+<span class="text-xl font-bold text-[#171c1f] tracking-tight">CleanAir</span>
+</div>
+<div class="text-lg font-bold tracking-tight text-[#00677d]">
+            2/3
+        </div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col items-center justify-center px-8 text-center -mt-10">
+<!-- Centered Icon Section -->
+<div class="relative mb-10">
+<div class="w-28 h-28 rounded-full bg-[#b3ebff] flex items-center justify-center relative z-10">
+<span class="material-symbols-outlined text-[#00677d] text-6xl">bolt</span>
+</div>
+<!-- Decorative circle -->
+<div class="absolute -top-3 -right-3 w-14 h-14 bg-[#bdeafa] rounded-full opacity-60 z-0"></div>
+</div>
+<div class="max-w-xs space-y-4">
+<h1 class="text-[28px] font-extrabold text-on-surface tracking-tight leading-tight">
+                끊김 없는 모니터링
+            </h1>
+<p class="text-secondary font-medium leading-relaxed">
+                백그라운드 활동을 허용하면 실시간으로<br/>오염도를 감시할 수 있습니다
+            </p>
+</div>
+<!-- Compact Feature Card -->
+<div class="mt-8 p-6 bg-[#eff4f7] rounded-2xl w-full max-w-sm text-left flex items-start gap-4">
+<span class="material-symbols-outlined text-[#00677d]">battery_charging_full</span>
+<div>
+<p class="text-[15px] font-bold text-[#00677d] mb-1">배터리 최적화 제외</p>
+<p class="text-[13px] text-[#3d494d] leading-normal">
+                    전력 효율을 유지하면서도 공기질 변화에 즉각 대응하는 최소한의 자원만 사용합니다.
+                </p>
+</div>
+</div>
+</main>
+<!-- Bottom Action Shell -->
+<footer class="pb-10 px-6 flex flex-col gap-3 w-full max-w-md mx-auto">
+<!-- Active Action: Teal Gradient Button -->
+<button class="w-full py-4 bg-gradient-to-r from-[#0089A3] to-[#00B4D8] text-white rounded-full flex items-center justify-center shadow-lg active:scale-[0.98] transition-all duration-150 text-[16px] font-bold">
+<span>최적화 제외 설정</span>
+<span class="material-symbols-outlined ml-2 text-xl">arrow_forward</span>
+</button>
+<!-- Inactive Action -->
+<button class="w-full py-3 text-[#396472] flex items-center justify-center font-bold active:opacity-60 transition-opacity duration-150 text-[16px]">
+            나중에 하기
+        </button>
+</footer>
+</body></html>

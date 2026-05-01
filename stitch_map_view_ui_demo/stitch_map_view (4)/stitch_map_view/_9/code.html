@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>자동 제어 규칙</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#ffffff",
+                      "on-primary-fixed": "#001f27",
+                      "secondary-fixed": "#bdeafa",
+                      "surface-dim": "#d5dbde",
+                      "tertiary": "#914d00",
+                      "on-primary-fixed-variant": "#004e5f",
+                      "on-primary-container": "#00414f",
+                      "background": "#f5fafd",
+                      "surface-container-low": "#eff4f7",
+                      "tertiary-fixed-dim": "#ffb77d",
+                      "on-surface-variant": "#3d494d",
+                      "primary-fixed": "#b3ebff",
+                      "surface": "#f5fafd",
+                      "tertiary-fixed": "#ffdcc3",
+                      "outline": "#6d797e",
+                      "primary": "#00677d",
+                      "surface-container": "#e9eff1",
+                      "on-secondary-container": "#3d6977",
+                      "on-secondary": "#ffffff",
+                      "surface-bright": "#f5fafd",
+                      "on-error-container": "#93000a",
+                      "on-error": "#ffffff",
+                      "surface-variant": "#dee3e6",
+                      "outline-variant": "#bcc9ce",
+                      "on-primary": "#ffffff",
+                      "surface-tint": "#00677d",
+                      "on-background": "#171c1f",
+                      "on-tertiary-fixed-variant": "#6e3900",
+                      "on-secondary-fixed": "#001f27",
+                      "secondary-fixed-dim": "#a1cddd",
+                      "on-tertiary-container": "#5d2f00",
+                      "on-secondary-fixed-variant": "#1e4c5a",
+                      "on-tertiary-fixed": "#2f1500",
+                      "on-surface": "#171c1f",
+                      "primary-container": "#00b4d8",
+                      "inverse-on-surface": "#ecf2f4",
+                      "primary-fixed-dim": "#4cd6fb",
+                      "error-container": "#ffdad6",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#396472",
+                      "inverse-surface": "#2b3134",
+                      "tertiary-container": "#eb8f3b",
+                      "surface-container-highest": "#dee3e6",
+                      "surface-container-high": "#e3e9ec",
+                      "secondary-container": "#bae7f7",
+                      "error": "#ba1a1a",
+                      "inverse-primary": "#4cd6fb"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": ["Pretendard"],
+                      "display": ["Pretendard"],
+                      "body": ["Pretendard"],
+                      "label": ["Pretendard"]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased pb-24 md:pb-0 pt-[72px]">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md shadow-none no-border bg-opacity-70">
+<div class="flex justify-between items-center px-6 py-4 max-w-full mx-auto">
+<div class="flex items-center gap-3">
+<button aria-label="Back" class="text-cyan-600 dark:text-cyan-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full p-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-['Pretendard'] font-bold text-lg tracking-tight text-slate-900 dark:text-slate-50">자동 제어 규칙</h1>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Notifications" class="text-cyan-600 dark:text-cyan-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full p-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications_active</span>
+</button>
+</div>
+</div>
+</header>
+<main class="max-w-3xl mx-auto px-6 py-8 flex flex-col gap-8">
+<!-- Header / Device Info -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center gap-3 bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_32px_rgba(23,28,31,0.04)] relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="h-12 w-12 rounded-full bg-surface-container flex items-center justify-center text-primary relative z-10">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">volume_up</span>
+</div>
+<div class="flex-1 relative z-10">
+<p class="text-[0.75rem] font-bold text-secondary uppercase tracking-wider mb-1">대상 장치</p>
+<h2 class="text-2xl font-bold text-on-surface">1층 복도 사이렌</h2>
+</div>
+</div>
+</section>
+<!-- Rule Settings Card -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0_8px_32px_rgba(23,28,31,0.04)] flex flex-col gap-8">
+<h3 class="text-xl font-bold text-on-surface pb-4 border-b border-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">settings</span>
+                규칙 설정
+            </h3>
+<!-- Auto Control Toggle -->
+<div class="flex items-center justify-between">
+<div>
+<h4 class="text-lg font-semibold text-on-surface">자동 제어 사용</h4>
+<p class="text-sm text-outline">설정된 조건에 따라 장치를 자동으로 켜고 끕니다.</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-14 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="h-px bg-surface-variant w-full"></div>
+<!-- Conditions Form -->
+<div class="flex flex-col gap-6">
+<!-- Activation Condition -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary uppercase tracking-wider">작동 기준</label>
+<div class="flex items-center gap-4 bg-surface-container-low rounded-lg p-4">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+<div class="flex-1 flex items-center justify-between">
+<span class="font-medium text-on-surface">PM2.5 지수</span>
+<div class="flex items-center gap-2">
+<input class="w-20 bg-surface-container-highest border-none rounded-md text-center font-bold text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent" type="number" value="55"/>
+<span class="text-on-surface-variant">이상</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Deactivation Condition -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary uppercase tracking-wider">해제 기준</label>
+<div class="flex items-center gap-4 bg-surface-container-low rounded-lg p-4">
+<span class="material-symbols-outlined text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">trending_down</span>
+<div class="flex-1 flex items-center justify-between">
+<span class="font-medium text-on-surface">PM2.5 지수</span>
+<div class="flex items-center gap-2">
+<input class="w-20 bg-surface-container-highest border-none rounded-md text-center font-bold text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent" type="number" value="35"/>
+<span class="text-on-surface-variant">이하</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Timers Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+<!-- Min Duration -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary uppercase tracking-wider">최소 유지 시간</label>
+<div class="flex items-center gap-2 bg-surface-container-low rounded-lg p-4 justify-between">
+<span class="material-symbols-outlined text-outline" style="font-variation-settings: 'FILL' 0;">timer</span>
+<div class="flex items-center gap-2">
+<input class="w-16 bg-surface-container-highest border-none rounded-md text-center font-bold text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent" type="number" value="3"/>
+<span class="text-on-surface-variant">분</span>
+</div>
+</div>
+</div>
+<!-- Cool down -->
+<div class="flex flex-col gap-2">
+<label class="text-[0.75rem] font-bold text-secondary uppercase tracking-wider">재작동 대기 시간</label>
+<div class="flex items-center gap-2 bg-surface-container-low rounded-lg p-4 justify-between">
+<span class="material-symbols-outlined text-outline" style="font-variation-settings: 'FILL' 0;">hourglass_empty</span>
+<div class="flex items-center gap-2">
+<input class="w-16 bg-surface-container-highest border-none rounded-md text-center font-bold text-on-surface focus:ring-2 focus:ring-primary focus:border-transparent" type="number" value="10"/>
+<span class="text-on-surface-variant">분</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Notification Settings Card -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0_8px_32px_rgba(23,28,31,0.04)] flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="h-10 w-10 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">notifications</span>
+</div>
+<div>
+<h4 class="text-lg font-semibold text-on-surface">작동 시 책임자에게 알림 발송</h4>
+<p class="text-sm text-outline">규칙이 트리거될 때 푸시 알림을 보냅니다.</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-14 h-7 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</section>
+<!-- Save Button Area -->
+<div class="pt-6 pb-12 flex justify-end">
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold py-4 px-10 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transform hover:-translate-y-0.5 transition-all w-full md:w-auto">
+                규칙 저장
+            </button>
+</div>
+</main>
+<!-- BottomNavBar (Hidden on Web) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-[2rem] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl no-border shadow-[0_-8px_32px_rgba(23,28,31,0.04)]">
+<div class="flex justify-around items-center w-full px-4 pb-6 pt-3">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">analytics</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Analysis</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">warning</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl px-3 py-1.5 hover:text-cyan-500 transition-all scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">settings_remote</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Devices</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">settings</span>
+<span class="font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider">Settings</span>
+</a>
+</div>
+</nav>
+</body></html>

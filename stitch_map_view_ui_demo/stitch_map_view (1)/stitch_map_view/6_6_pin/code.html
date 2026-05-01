@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link as="style" crossorigin="" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "surface-container-low": "#eff4f7",
+            "secondary-fixed-dim": "#a1cddd",
+            "error": "#ba1a1a",
+            "on-primary-fixed-variant": "#004e5f",
+            "on-error": "#ffffff",
+            "on-primary-fixed": "#001f27",
+            "on-background": "#171c1f",
+            "secondary-container": "#bae7f7",
+            "on-tertiary-container": "#5d2f00",
+            "on-surface": "#171c1f",
+            "surface-container-highest": "#dee3e6",
+            "primary-fixed-dim": "#4cd6fb",
+            "on-error-container": "#93000a",
+            "outline": "#6d797e",
+            "tertiary-container": "#eb8f3b",
+            "secondary-fixed": "#bdeafa",
+            "secondary": "#396472",
+            "primary-fixed": "#b3ebff",
+            "inverse-primary": "#4cd6fb",
+            "outline-variant": "#bcc9ce",
+            "surface-dim": "#d5dbde",
+            "tertiary-fixed": "#ffdcc3",
+            "on-secondary-fixed": "#001f27",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed-dim": "#ffb77d",
+            "on-primary": "#ffffff",
+            "on-surface-variant": "#3d494d",
+            "background": "#f5fafd",
+            "on-secondary-fixed-variant": "#1e4c5a",
+            "surface-variant": "#dee3e6",
+            "on-tertiary-fixed": "#2f1500",
+            "tertiary": "#914d00",
+            "on-secondary-container": "#3d6977",
+            "inverse-surface": "#2b3134",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-high": "#e3e9ec",
+            "surface-bright": "#f5fafd",
+            "primary-container": "#00b4d8",
+            "inverse-on-surface": "#ecf2f4",
+            "primary": "#00677d",
+            "on-tertiary": "#ffffff",
+            "on-primary-container": "#00414f",
+            "surface": "#f5fafd",
+            "surface-tint": "#00677d",
+          },
+          fontFamily: {
+            "headline": ["Pretendard", "Inter", "sans-serif"],
+            "body": ["Pretendard", "Inter", "sans-serif"],
+            "label": ["Pretendard", "Inter", "sans-serif"]
+          },
+          borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    body { font-family: 'Pretendard', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .pin-input:focus {
+      border-bottom: 2px solid #00677d;
+      outline: none;
+    }
+    .editorial-float {
+        transform: translate(12px, -12px);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col overflow-hidden">
+<header class="bg-[#f5fafd]/80 dark:bg-[#171c1f]/80 backdrop-blur-xl flex items-center justify-between px-6 py-4 w-full docked full-width top-0 sticky z-50">
+<div class="flex items-center gap-4">
+<button class="tap-highlight-none active:scale-95 transition-transform text-[#396472] dark:text-[#bcc9ce] hover:opacity-70 transition-opacity">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+<h1 class="font-['Pretendard'] font-semibold text-lg tracking-tight text-[#00677d] dark:text-[#00b4d8]">Step 6 of 6</h1>
+</div>
+<div class="w-10"></div>
+</header>
+<main class="flex-1 flex flex-col px-8 pt-12 pb-24 max-w-2xl mx-auto w-full relative">
+<div class="mb-12">
+<div class="w-16 h-1 bg-primary-fixed rounded-full mb-8">
+<div class="w-full h-full bg-primary rounded-full"></div>
+</div>
+<h2 class="text-[2rem] font-bold leading-tight tracking-tight text-on-surface mb-4">
+        6자리 PIN 번호 입력
+      </h2>
+<p class="text-secondary leading-relaxed text-lg">
+        센서 디스플레이 상단에 표시된 6자리 숫자를 입력해 주세요. (2분간 표시)
+      </p>
+</div>
+<div class="flex-1 flex flex-col">
+<div class="grid grid-cols-6 gap-3 mb-10">
+<input class="pin-input w-full text-center text-3xl font-bold py-4 bg-transparent border-0 border-b-2 border-surface-container-highest text-primary transition-all" maxlength="1" placeholder="·" type="number"/>
+<input class="pin-input w-full text-center text-3xl font-bold py-4 bg-transparent border-0 border-b-2 border-surface-container-highest text-primary transition-all" maxlength="1" placeholder="·" type="number"/>
+<input class="pin-input w-full text-center text-3xl font-bold py-4 bg-transparent border-0 border-b-2 border-surface-container-highest text-primary transition-all" maxlength="1" placeholder="·" type="number"/>
+<input class="pin-input w-full text-center text-3xl font-bold py-4 bg-transparent border-0 border-b-2 border-surface-container-highest text-primary transition-all" maxlength="1" placeholder="·" type="number"/>
+<input class="pin-input w-full text-center text-3xl font-bold py-4 bg-transparent border-0 border-b-2 border-surface-container-highest text-primary transition-all" maxlength="1" placeholder="·" type="number"/>
+<input class="pin-input w-full text-center text-3xl font-bold py-4 bg-transparent border-0 border-b-2 border-surface-container-highest text-primary transition-all" maxlength="1" placeholder="·" type="number"/>
+</div>
+<div class="flex flex-col items-center gap-6 mt-4">
+<div class="bg-surface-container-low p-6 rounded-xl flex items-center gap-4 w-full relative overflow-hidden">
+<div class="flex-1 z-10">
+<span class="text-xs font-bold text-secondary tracking-widest uppercase mb-1 block">Help Center</span>
+<p class="text-on-surface-variant font-medium">센서가 안 잡히나요?</p>
+<button class="text-primary font-bold mt-2 hover:underline decoration-2 underline-offset-4 flex items-center gap-1">
+              자동 감지 다시 시도
+              <span class="material-symbols-outlined text-sm" data-icon="refresh">refresh</span>
+</button>
+</div>
+<div class="w-24 h-24 bg-primary-fixed-dim/30 rounded-full blur-2xl absolute -right-4 -bottom-4"></div>
+<div class="w-16 h-16 bg-surface-container-highest rounded-lg editorial-float border border-white/50 shadow-sm flex items-center justify-center rotate-3">
+<span class="material-symbols-outlined text-primary-container text-3xl" data-icon="sensors">sensors</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-4 mt-auto">
+<div class="bg-surface-container-low rounded-xl p-4 flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" data-icon="info">info</span>
+<span class="text-sm text-secondary font-medium">등록을 완료하면 앱에서 실시간 데이터를 확인할 수 있습니다.</span>
+</div>
+</div>
+</main>
+<footer class="bg-[#f5fafd]/80 dark:bg-[#171c1f]/80 backdrop-blur-xl fixed bottom-0 w-full z-50 pb-safe shadow-[0_8px_32px_rgba(23,28,31,0.04)] flex justify-between items-center px-6 border-none">
+<button class="flex flex-row items-center justify-center text-[#396472] dark:text-[#bcc9ce] font-medium px-8 py-3 my-4 mx-2 hover:brightness-110 transition-all active:scale-[0.98] duration-200 ease-out">
+<span class="material-symbols-outlined mr-2" data-icon="arrow_back">arrow_back</span>
+      Back
+    </button>
+<button class="flex flex-row-reverse items-center justify-center bg-gradient-to-br from-[#00677d] to-[#00b4d8] text-white rounded-full px-8 py-3 my-4 mx-2 min-w-[140px] shadow-lg font-['Pretendard'] font-bold text-sm tracking-widest uppercase hover:brightness-110 transition-all active:scale-[0.98] duration-200 ease-out">
+<span class="material-symbols-outlined ml-2" data-icon="arrow_forward">arrow_forward</span>
+      Next
+    </button>
+</footer>
+<div class="fixed inset-0 pointer-events-none z-[-1] opacity-40">
+<div class="absolute top-1/4 -right-20 w-80 h-80 bg-primary-fixed-dim rounded-full blur-[120px]"></div>
+<div class="absolute bottom-1/4 -left-20 w-80 h-80 bg-secondary-fixed rounded-full blur-[120px]"></div>
+</div>
+</body></html>

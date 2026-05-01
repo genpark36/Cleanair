@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed": "#051e28",
+                        "on-surface": "#191c1d",
+                        "error": "#ba1a1a",
+                        "primary-container": "#00b4d8",
+                        "inverse-on-surface": "#eff1f2",
+                        "on-secondary-fixed-variant": "#334a55",
+                        "on-secondary-container": "#506873",
+                        "surface": "#f8fafb",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#b1cad7",
+                        "secondary-fixed": "#cde6f4",
+                        "surface-tint": "#00677d",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#00414f",
+                        "on-tertiary-container": "#5d2f00",
+                        "surface-bright": "#f8fafb",
+                        "secondary": "#4a626d",
+                        "primary": "#00677d",
+                        "on-primary-fixed": "#001f27",
+                        "surface-variant": "#e1e3e4",
+                        "inverse-surface": "#2e3132",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#cde6f4",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#bcc9ce",
+                        "on-tertiary-fixed": "#2f1500",
+                        "tertiary": "#914d00",
+                        "surface-container-high": "#e6e8e9",
+                        "inverse-primary": "#4cd6fb",
+                        "surface-container-highest": "#e1e3e4",
+                        "on-surface-variant": "#3d494d",
+                        "primary-fixed-dim": "#4cd6fb",
+                        "primary-fixed": "#b3ebff",
+                        "on-background": "#191c1d",
+                        "outline": "#6d797e",
+                        "tertiary-fixed": "#ffdcc3",
+                        "surface-container": "#eceeef",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "tertiary-container": "#eb8f3b",
+                        "surface-dim": "#d8dadb",
+                        "surface-container-low": "#f2f4f5",
+                        "background": "#f8fafb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope", "Pretendard", "sans-serif"],
+                        "body": ["Manrope", "Pretendard", "sans-serif"],
+                        "label": ["Inter", "Pretendard", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .map-gradient-overlay {
+            background: linear-gradient(to bottom, rgba(248, 250, 251, 1) 0%, rgba(248, 250, 251, 0) 15%, rgba(248, 250, 251, 0) 85%, rgba(248, 250, 251, 1) 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased flex justify-center items-center min-h-screen">
+<!-- Main Device Wrapper -->
+<main class="w-[390px] h-[884px] bg-surface relative flex flex-col overflow-hidden shadow-2xl">
+<!-- Top Navigation -->
+<header class="z-30 px-4 pt-4 pb-2 bg-surface">
+<div class="flex items-center gap-4 mb-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-xl font-headline font-bold tracking-tight">위치 설정</h1>
+</div>
+<!-- Search Bar Section -->
+<div class="relative group">
+<div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline text-[20px]">search</span>
+</div>
+<input class="w-full h-14 pl-12 pr-4 bg-surface-container-highest border-none rounded-full text-sm font-label focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-lowest transition-all placeholder:text-on-surface-variant/60" placeholder="도로명, 건물명 또는 지번으로 검색" type="text"/>
+</div>
+<button class="mt-4 w-full h-12 flex items-center justify-center gap-2 bg-surface-container-low rounded-full text-primary font-label text-sm font-semibold hover:bg-secondary-container transition-colors">
+<span class="material-symbols-outlined text-[20px]">my_location</span>
+                현재 위치로 설정
+            </button>
+</header>
+<!-- Map Area -->
+<section class="flex-1 relative overflow-hidden">
+<!-- Simulated Map Image -->
+<div class="absolute inset-0 bg-slate-200">
+<img class="w-full h-full object-cover" data-alt="Detailed minimalist city map showing streets and blocks of a modern urban area with a clean blue and gray aesthetic" data-location="Gangnam-gu Yeoksam-dong Seoul" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3y4Yz6ug1bh0QV3k1ir9fL6ElxOzZI5o4DJoc9mRRaokBcULWLmg_Gw0U9Iaar169VEOIw4IWU59BIs39_K0O0MPbaYPAeNGT_ImZA-6QIKlgPAt_WQB0hjYjxsDaMiQVlT7Ntbo_KTwpc3dk3HpQ2IKiq6uBnfdHdAio1_VQOVq5XznbvhfVCm0Ptrsu0VdVwZwolGQrTYxdZJmw6lRqij1GfSt5nk5JwmTQ7JPMM3Kc04SGHcj6-xApVd7Wpa_GXJTWt3Hq2ww"/>
+<div class="absolute inset-0 map-gradient-overlay pointer-events-none"></div>
+</div>
+<!-- Center Pin -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none">
+<div class="relative">
+<!-- Pin Shadow -->
+<div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-1 bg-on-surface/20 rounded-full blur-[1px]"></div>
+<!-- Main Pin -->
+<span class="material-symbols-outlined text-primary text-[48px] drop-shadow-lg" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+<!-- Animated Pulse Effect Simulation -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full border-2 border-primary/30 opacity-50"></div>
+</div>
+<!-- Confirm Button Floating -->
+<div class="absolute bottom-6 left-0 w-full px-8">
+<button class="w-full py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-lg shadow-[0_8px_24px_rgba(0,103,125,0.25)] active:scale-95 transition-transform">
+                    이 위치로 설정
+                </button>
+</div>
+</section>
+<!-- Bottom Sheet (Recent Search) -->
+<section class="bg-surface-container-lowest rounded-t-[32px] pt-6 pb-12 px-6 shadow-[0_-12px_48px_rgba(0,0,0,0.08)] z-20">
+<div class="w-12 h-1.5 bg-surface-variant rounded-full mx-auto mb-6"></div>
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-sm font-headline font-bold text-on-surface-variant">최근 검색한 위치</h2>
+<button class="text-xs font-label text-outline hover:text-primary transition-colors">전체 삭제</button>
+</div>
+<div class="space-y-1">
+<!-- Location Item 1 -->
+<div class="group flex items-center justify-between py-3 cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-outline group-hover:bg-primary-container/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</div>
+<div>
+<p class="font-headline font-semibold text-on-surface">역삼동</p>
+<p class="text-xs font-label text-on-surface-variant">서울특별시 강남구 역삼동</p>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center text-outline-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Location Item 2 -->
+<div class="group flex items-center justify-between py-3 cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-outline group-hover:bg-primary-container/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</div>
+<div>
+<p class="font-headline font-semibold text-on-surface">서초동</p>
+<p class="text-xs font-label text-on-surface-variant">서울특별시 서초구 서초동</p>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center text-outline-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Location Item 3 -->
+<div class="group flex items-center justify-between py-3 cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-outline group-hover:bg-primary-container/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</div>
+<div>
+<p class="font-headline font-semibold text-on-surface">삼성역</p>
+<p class="text-xs font-label text-on-surface-variant">서울특별시 강남구 삼성로 512</p>
+</div>
+</div>
+<button class="w-8 h-8 flex items-center justify-center text-outline-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bottom Navigation Spacer (Matches layout height requirements) -->
+<div class="h-6 bg-surface-container-lowest"></div>
+</main>
+</body></html>

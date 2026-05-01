@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>센서 설정</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;900&amp;family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#4cd6fb",
+                    "surface-container-highest": "#dee3e6",
+                    "on-tertiary-fixed": "#2f1500",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed": "#ffdcc3",
+                    "tertiary": "#914d00",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "on-tertiary-container": "#5d2f00",
+                    "surface-container-high": "#e3e9ec",
+                    "surface-container-low": "#eff4f7",
+                    "on-surface-variant": "#3d494d",
+                    "on-primary-fixed-variant": "#004e5f",
+                    "outline": "#6d797e",
+                    "secondary-fixed": "#bdeafa",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#00677d",
+                    "inverse-surface": "#2b3134",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed": "#b3ebff",
+                    "on-background": "#171c1f",
+                    "inverse-on-surface": "#ecf2f4",
+                    "surface-variant": "#dee3e6",
+                    "tertiary-container": "#eb8f3b",
+                    "background": "#f5fafd",
+                    "on-secondary-fixed-variant": "#1e4c5a",
+                    "surface-dim": "#d5dbde",
+                    "outline-variant": "#bcc9ce",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f5fafd",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#f5fafd",
+                    "surface-container": "#e9eff1",
+                    "secondary": "#396472",
+                    "on-primary-fixed": "#001f27",
+                    "on-primary": "#ffffff",
+                    "on-secondary-container": "#3d6977",
+                    "inverse-primary": "#4cd6fb",
+                    "secondary-fixed-dim": "#a1cddd",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "on-primary-container": "#00414f",
+                    "on-secondary-fixed": "#001f27",
+                    "secondary-container": "#bae7f7",
+                    "primary-container": "#00b4d8",
+                    "primary": "#00677d",
+                    "on-surface": "#171c1f",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": ["Pretendard", "Inter"],
+                    "display": ["Pretendard", "Inter"],
+                    "body": ["Pretendard", "Inter"],
+                    "label": ["Pretendard", "Inter"]
+            },
+            "fontSize": {}
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Pretendard', 'Inter', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-background h-[884px] w-[390px] mx-auto relative overflow-hidden flex flex-col">
+<!-- TopAppBar (Semantic Shell Suppressed as this is a Settings/Details screen with Back action) -->
+<header class="flex justify-between items-center px-6 py-4 w-full bg-surface-container-lowest/80 backdrop-blur-xl z-50">
+<button class="text-on-background hover:bg-surface-container-high/50 p-2 rounded-full transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline text-lg font-bold tracking-tight text-on-background">센서 설정</h1>
+<div class="w-10"></div> <!-- Placeholder for balance -->
+</header>
+<main class="flex-1 overflow-y-auto px-6 pt-4 pb-24 flex flex-col gap-8">
+<!-- Sensor Card -->
+<section class="bg-surface-container-lowest rounded-xl p-6 relative overflow-hidden flex flex-col gap-6">
+<div class="flex justify-between items-start">
+<div>
+<span class="font-label text-xs font-bold text-secondary tracking-wider block mb-1">REGISTERED DEVICE</span>
+<h2 class="font-headline text-2xl font-bold text-on-background">Cleanair-01</h2>
+</div>
+<div class="flex items-center gap-1.5 bg-primary-container/20 px-3 py-1.5 rounded-full">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label text-[11px] font-bold text-primary">정상 연결</span>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<span class="font-body text-sm text-on-surface-variant">마지막 업데이트</span>
+<span class="font-body text-sm font-medium text-on-background">5초 전</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body text-sm text-on-surface-variant">로컬 IP</span>
+<span class="font-body text-sm font-medium text-on-background font-mono">192.168.0.31</span>
+</div>
+</div>
+<div class="absolute -right-6 -bottom-6 opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-9xl">sensors</span>
+</div>
+</section>
+<!-- Actions -->
+<section class="flex flex-col gap-4">
+<!-- Web Setup Area -->
+<div class="bg-surface-container-low rounded-xl p-1">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-lg p-4 flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">public</span>
+<span class="font-headline font-semibold text-base">센서 웹 설정 열기</span>
+</div>
+<span class="material-symbols-outlined text-on-primary/70">chevron_right</span>
+</button>
+<div class="flex flex-col gap-1 p-2 pt-3">
+<button class="w-full text-left px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors font-body text-sm text-on-surface flex justify-between items-center">
+                        앱에서 열기
+                        <span class="material-symbols-outlined text-outline-variant text-sm">open_in_new</span>
+</button>
+<button class="w-full text-left px-4 py-3 rounded-lg hover:bg-surface-container-high transition-colors font-body text-sm text-on-surface flex justify-between items-center">
+                        외부 브라우저로 열기
+                        <span class="material-symbols-outlined text-outline-variant text-sm">launch</span>
+</button>
+</div>
+</div>
+<div class="w-full h-[1px] bg-outline-variant/20 my-2"></div>
+<!-- Management Buttons -->
+<button class="w-full bg-surface-container-lowest rounded-lg p-4 flex items-center gap-4 hover:bg-surface-container-high transition-colors shadow-sm">
+<div class="bg-secondary-container/50 p-2 rounded-full text-secondary">
+<span class="material-symbols-outlined">wifi_tethering</span>
+</div>
+<div class="flex flex-col items-start">
+<span class="font-headline font-semibold text-on-background">연결 테스트</span>
+<span class="font-body text-xs text-secondary mt-0.5">센서 연결 성공</span>
+</div>
+</button>
+<button class="w-full bg-surface-container-lowest rounded-lg p-4 flex items-center gap-4 hover:bg-surface-container-high transition-colors shadow-sm">
+<div class="bg-surface-container-highest p-2 rounded-full text-on-surface-variant">
+<span class="material-symbols-outlined">lightbulb</span>
+</div>
+<span class="font-headline font-semibold text-on-background">LED 설정</span>
+</button>
+<button class="w-full bg-surface-container-lowest rounded-lg p-4 flex items-center gap-4 hover:bg-surface-container-high transition-colors shadow-sm">
+<div class="bg-surface-container-highest p-2 rounded-full text-on-surface-variant">
+<span class="material-symbols-outlined">tune</span>
+</div>
+<span class="font-headline font-semibold text-on-background">CO2 수동 교정</span>
+</button>
+<div class="mt-8 flex justify-center">
+<button class="font-headline font-semibold text-error bg-transparent hover:bg-error-container/50 px-6 py-3 rounded-full transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">link_off</span>
+                    센서 연결 해제
+                </button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Suppressed due to Task-Focused page intent) -->
+</body></html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>방재 장치 연결</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#4cd6fb",
+                    "surface-container-highest": "#dee3e6",
+                    "on-tertiary-fixed": "#2f1500",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed": "#ffdcc3",
+                    "tertiary": "#914d00",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "on-tertiary-container": "#5d2f00",
+                    "surface-container-high": "#e3e9ec",
+                    "surface-container-low": "#eff4f7",
+                    "on-surface-variant": "#3d494d",
+                    "on-primary-fixed-variant": "#004e5f",
+                    "outline": "#6d797e",
+                    "secondary-fixed": "#bdeafa",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#00677d",
+                    "inverse-surface": "#2b3134",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed": "#b3ebff",
+                    "on-background": "#171c1f",
+                    "inverse-on-surface": "#ecf2f4",
+                    "surface-variant": "#dee3e6",
+                    "tertiary-container": "#eb8f3b",
+                    "background": "#f5fafd",
+                    "on-secondary-fixed-variant": "#1e4c5a",
+                    "surface-dim": "#d5dbde",
+                    "outline-variant": "#bcc9ce",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f5fafd",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#f5fafd",
+                    "surface-container": "#e9eff1",
+                    "secondary": "#396472",
+                    "on-primary-fixed": "#001f27",
+                    "on-primary": "#ffffff",
+                    "on-secondary-container": "#3d6977",
+                    "inverse-primary": "#4cd6fb",
+                    "secondary-fixed-dim": "#a1cddd",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "on-primary-container": "#00414f",
+                    "on-secondary-fixed": "#001f27",
+                    "secondary-container": "#bae7f7",
+                    "primary-container": "#00b4d8",
+                    "primary": "#00677d",
+                    "on-surface": "#171c1f",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "safe": "env(safe-area-inset-bottom)"
+            },
+            "fontFamily": {
+                    "headline": ["Pretendard", "Inter", "sans-serif"],
+                    "display": ["Pretendard", "Inter", "sans-serif"],
+                    "body": ["Pretendard", "Inter", "sans-serif"],
+                    "label": ["Pretendard", "Inter", "sans-serif"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Pretendard', 'Inter', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface w-[390px] h-[884px] mx-auto overflow-hidden relative shadow-2xl flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl docked full-width top-0 z-50 flex justify-between items-center px-6 py-4 w-full no-border shadow-none bg-opacity-70">
+<button class="text-cyan-500 dark:text-cyan-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full p-2 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<div class="font-['Pretendard','Inter'] text-lg font-bold tracking-tight text-xl font-black text-slate-900 dark:text-slate-50 tracking-tighter">
+            Cleanair
+        </div>
+<button class="text-cyan-500 dark:text-cyan-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-full p-2 flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">notifications</span>
+</button>
+</header>
+<!-- Main Content Canvas (Scrollable area within the fixed container) -->
+<main class="flex-1 overflow-y-auto px-6 pt-6 pb-32 space-y-8">
+<!-- Page Title -->
+<div>
+<h1 class="text-2xl font-bold tracking-tight text-on-surface mb-2">방재 장치 연결</h1>
+<p class="text-on-surface-variant text-sm">새로운 스마트 플러그 또는 제어 장치를 등록합니다.</p>
+</div>
+<!-- Form Elements -->
+<div class="space-y-6">
+<!-- 장치 이름 -->
+<div class="space-y-2">
+<label class="block text-xs font-bold text-secondary uppercase tracking-wider">장치 이름</label>
+<input class="w-full bg-surface-container-highest text-on-surface border-none rounded-t-md px-4 py-3 focus:ring-0 focus:border-b-2 focus:border-b-primary transition-all shadow-sm" type="text" value="1층 복도 사이렌"/>
+</div>
+<!-- 장치 유형 -->
+<div class="space-y-2">
+<label class="block text-xs font-bold text-secondary uppercase tracking-wider">장치 유형</label>
+<select class="w-full bg-surface-container-highest text-on-surface border-none rounded-t-md px-4 py-3 focus:ring-0 focus:border-b-2 focus:border-b-primary transition-all shadow-sm appearance-none">
+<option selected="">사이렌</option>
+<option>환기팬</option>
+<option>경광등</option>
+<option>스마트 플러그</option>
+<option>밸브 제어 장치</option>
+<option>기타</option>
+</select>
+</div>
+<!-- 제어 방식 & IP -->
+<div class="p-6 bg-surface-container-lowest rounded-xl shadow-[0_8px_32px_rgba(23,28,31,0.04)] space-y-5">
+<div class="space-y-2">
+<label class="block text-xs font-bold text-secondary uppercase tracking-wider">제어 방식</label>
+<select class="w-full bg-surface text-on-surface border-none rounded-md px-4 py-3 focus:ring-0 shadow-sm appearance-none">
+<option selected="">로컬 IP 제어</option>
+<option>MQTT 제어</option>
+<option>클라우드 제어</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="block text-xs font-bold text-secondary uppercase tracking-wider">플러그 IP</label>
+<div class="flex gap-2">
+<input class="flex-1 bg-surface-container-highest text-on-surface border-none rounded-t-md px-4 py-3 focus:ring-0 focus:border-b-2 focus:border-b-primary transition-all" type="text" value="192.168.0.24"/>
+<button class="bg-surface-container-high hover:bg-surface-dim text-on-surface-variant font-medium px-4 rounded-md transition-colors text-sm whitespace-nowrap">
+                            웹 설정 열기
+                        </button>
+</div>
+</div>
+<div class="flex gap-3 pt-2">
+<button class="flex-1 bg-surface border border-outline-variant/20 text-primary font-medium py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">wifi_tethering</span>
+                        연결 테스트
+                    </button>
+<button class="flex-1 bg-surface border border-outline-variant/20 text-primary font-medium py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]">power_settings_new</span>
+                        켜기/끄기
+                    </button>
+</div>
+</div>
+</div>
+<!-- Setup Helper Card -->
+<div class="bg-primary/5 rounded-xl p-5 border border-primary/10">
+<div class="flex items-start gap-3 mb-4">
+<div class="bg-primary-container text-on-primary-container p-2 rounded-full">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">새 플러그 설정이 필요한가요?</h3>
+<p class="text-xs text-on-surface-variant mt-1">Tasmota 기기를 처음 연결하는 방법입니다.</p>
+</div>
+</div>
+<ul class="space-y-3 text-sm text-on-surface-variant">
+<li class="flex gap-2"><span class="text-primary font-bold">1.</span> 플러그를 콘센트에 꽂습니다.</li>
+<li class="flex gap-2"><span class="text-primary font-bold">2.</span> Wi-Fi 설정에서 'tasmota-xxxx' 네트워크에 연결합니다.</li>
+<li class="flex gap-2"><span class="text-primary font-bold">3.</span> 브라우저에서 192.168.4.1로 접속하여 Wi-Fi 정보를 입력합니다.</li>
+<li class="flex gap-2"><span class="text-primary font-bold">4.</span> 할당받은 새 IP 주소를 위에 입력하세요.</li>
+</ul>
+</div>
+</main>
+<!-- Bottom Actions -->
+<div class="fixed bottom-0 w-full bg-surface/90 backdrop-blur-xl border-t border-outline-variant/10 p-6 z-40 pb-safe">
+<div class="flex gap-3 max-w-sm mx-auto">
+<button class="flex-1 py-3.5 px-4 font-semibold text-primary hover:bg-surface-container-low rounded-full transition-colors text-center">
+                나중에 하기
+            </button>
+<button class="flex-[2] bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold py-3.5 px-6 rounded-full shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity text-center">
+                등록하기
+            </button>
+</div>
+</div>
+</body></html>

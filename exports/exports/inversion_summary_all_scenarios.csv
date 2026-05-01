@@ -1,0 +1,13 @@
+dataset,scenario,rows_total,good_base_count,inversion_count,inversion_ratio_total_%,inversion_ratio_within_good_%
+dataset_1_previous_recomputed,orig_air_only,15705,641,627,3.992,97.816
+dataset_1_previous_recomputed,orig_full_good,15705,48,48,0.306,100.0
+dataset_1_previous_recomputed,no_k_air_only,15705,641,0,0.0,0.0
+dataset_1_previous_recomputed,no_k_full_good,15705,48,0,0.0,0.0
+dataset_1_previous_recomputed,no_k_th_air_only,15705,641,593,3.776,92.512
+dataset_1_previous_recomputed,no_k_th_full_good,15705,48,0,0.0,0.0
+dataset_2_latest_since_cleanup,orig_air_only,1061,0,0,0.0,0.0
+dataset_2_latest_since_cleanup,orig_full_good,1061,0,0,0.0,0.0
+dataset_2_latest_since_cleanup,no_k_air_only,1061,0,0,0.0,0.0
+dataset_2_latest_since_cleanup,no_k_full_good,1061,0,0,0.0,0.0
+dataset_2_latest_since_cleanup,no_k_th_air_only,1061,0,0,0.0,0.0
+dataset_2_latest_since_cleanup,no_k_th_full_good,1061,0,0,0.0,0.0

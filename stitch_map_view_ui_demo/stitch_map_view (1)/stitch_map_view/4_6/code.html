@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface": "#f5fafd",
+              "on-tertiary": "#ffffff",
+              "secondary-fixed": "#bdeafa",
+              "inverse-primary": "#4cd6fb",
+              "tertiary-fixed": "#ffdcc3",
+              "primary-fixed": "#b3ebff",
+              "on-secondary-fixed-variant": "#1e4c5a",
+              "surface-variant": "#dee3e6",
+              "surface-container": "#e9eff1",
+              "tertiary-fixed-dim": "#ffb77d",
+              "surface-container-low": "#eff4f7",
+              "on-primary": "#ffffff",
+              "background": "#f5fafd",
+              "outline": "#6d797e",
+              "on-secondary-container": "#3d6977",
+              "primary": "#00677d",
+              "outline-variant": "#bcc9ce",
+              "surface-bright": "#f5fafd",
+              "secondary-container": "#bae7f7",
+              "tertiary": "#914d00",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#eb8f3b",
+              "surface-tint": "#00677d",
+              "on-surface-variant": "#3d494d",
+              "secondary-fixed-dim": "#a1cddd",
+              "primary-container": "#00b4d8",
+              "inverse-on-surface": "#ecf2f4",
+              "on-surface": "#171c1f",
+              "on-primary-fixed-variant": "#004e5f",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed": "#001f27",
+              "secondary": "#396472",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed-variant": "#6e3900",
+              "surface-container-highest": "#dee3e6",
+              "on-tertiary-fixed": "#2f1500",
+              "on-primary-container": "#00414f",
+              "error-container": "#ffdad6",
+              "surface-container-high": "#e3e9ec",
+              "error": "#ba1a1a",
+              "surface-dim": "#d5dbde",
+              "inverse-surface": "#2b3134",
+              "on-primary-fixed": "#001f27",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-container": "#5d2f00",
+              "on-background": "#171c1f",
+              "primary-fixed-dim": "#4cd6fb"
+            },
+            fontFamily: {
+              "sans": ["Pretendard", "Inter", "sans-serif"],
+              "headline": ["Pretendard", "Inter", "sans-serif"],
+              "body": ["Pretendard", "Inter", "sans-serif"],
+              "label": ["Pretendard", "Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface flex items-center justify-center min-h-screen">
+<div class="w-[390px] h-[884px] bg-surface relative flex flex-col overflow-hidden shadow-2xl">
+<!-- TopAppBar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-[#f5fafd] dark:bg-slate-950/80 backdrop-blur-[20px]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#00B4D8]" data-icon="close">close</span>
+</div>
+<h1 class="font-['Pretendard'] font-semibold text-lg tracking-tight text-[#00677d] dark:text-[#00B4D8]">CleanAir Setup</h1>
+<div class="w-6"></div> <!-- Spacer for centering -->
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col px-8 pt-32 pb-24 items-center text-center">
+<!-- Progress Indicator -->
+<div class="mb-10 w-full flex flex-col items-center">
+<div class="text-secondary font-bold text-sm tracking-[0.2em] mb-4">STEP 04 / 06</div>
+<div class="flex gap-2 w-32 h-1">
+<div class="flex-1 bg-primary-container rounded-full"></div>
+<div class="flex-1 bg-primary-container rounded-full"></div>
+<div class="flex-1 bg-primary-container rounded-full"></div>
+<div class="flex-1 bg-primary-container rounded-full"></div>
+<div class="flex-1 bg-surface-container-highest rounded-full"></div>
+<div class="flex-1 bg-surface-container-highest rounded-full"></div>
+</div>
+</div>
+<!-- Typography Header -->
+<div class="mb-12">
+<h2 class="text-[2rem] font-bold text-on-surface leading-tight tracking-tight mb-4">센서 인터넷 설정</h2>
+<p class="text-secondary text-base leading-relaxed break-keep">
+                    센서가 사용할 Wi-Fi 정보를 입력해 주세요.<br/>저장 후 센서가 재부팅됩니다.
+                </p>
+</div>
+<!-- Input Fields - Following Design System Surface Hierarchy -->
+<div class="w-full space-y-6 text-left">
+<div class="group">
+<label class="block text-xs font-bold text-secondary tracking-widest uppercase mb-2 ml-1">Wi-Fi SSID</label>
+<div class="relative">
+<input class="w-full h-14 px-5 bg-surface-container-highest border-none rounded-xl focus:ring-0 text-on-surface placeholder:text-outline-variant transition-all" placeholder="네트워크 이름을 입력하세요" type="text"/>
+<div class="absolute bottom-0 left-0 w-0 h-[2px] bg-primary group-focus-within:w-full transition-all duration-300"></div>
+</div>
+</div>
+<div class="group">
+<label class="block text-xs font-bold text-secondary tracking-widest uppercase mb-2 ml-1">Password</label>
+<div class="relative">
+<input class="w-full h-14 px-5 bg-surface-container-highest border-none rounded-xl focus:ring-0 text-on-surface placeholder:text-outline-variant transition-all" placeholder="비밀번호를 입력하세요" type="password"/>
+<div class="absolute bottom-0 left-0 w-0 h-[2px] bg-primary group-focus-within:w-full transition-all duration-300"></div>
+</div>
+</div>
+<!-- Critical Note -->
+<div class="mt-8 p-4 bg-surface-container-low rounded-xl flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-xl" data-icon="info">info</span>
+<p class="text-sm text-secondary leading-snug">
+                        반드시 <span class="font-bold text-primary">2.4GHz</span> 네트워크를 사용해야 합니다. 5GHz는 지원하지 않습니다.
+                    </p>
+</div>
+</div>
+<!-- Primary CTA - Editorial Layout -->
+<div class="mt-auto w-full pt-10">
+<button class="w-full h-16 rounded-full bg-gradient-to-br from-primary to-primary-container text-white font-bold text-lg shadow-[0_8px_32px_rgba(0,180,216,0.2)] active:scale-95 transition-transform">
+                    저장 및 재부팅
+                </button>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component - Contextually adjusted for onboarding flow) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-between items-center px-8 pb-10 pt-4 bg-[#f5fafd]/70 dark:bg-slate-950/70 backdrop-blur-[20px] shadow-[0_-8px_32px_rgba(23,28,31,0.04)] rounded-t-3xl">
+<button class="flex flex-col items-center justify-center text-[#396472] dark:text-slate-400 px-6 py-3 hover:brightness-110 transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+<span class="font-['Pretendard'] font-bold text-xs uppercase tracking-widest mt-1">Back</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-gradient-to-br from-[#00677d] to-[#00B4D8] text-white rounded-full px-8 py-3 hover:brightness-110 transition-all active:scale-90">
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+<span class="font-['Pretendard'] font-bold text-xs uppercase tracking-widest mt-1">Next</span>
+</button>
+</nav>
+</div>
+</body></html>

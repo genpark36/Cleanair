@@ -1,0 +1,2 @@
+source_csv,window_start_kst,window_end_kst,rows,strict_good_ratio_%,not_bad_formula_ratio_%,legacy_non_high_ratio_%,co2_median,pm25_median,tvoc_median
+c:\Users\박건우\Desktop\capstoneapp\exports\sensor_d83bda1d5960_history_since_cleanup_2026-04-13_002101733Z.csv,2026-04-13 00:00:00+09:00,2026-04-13 12:00:00+09:00,1075,0.0,69.209,100.0,668.667,19.333,138.75

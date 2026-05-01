@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── sensors ──────────────────────────────────────────────
+    // Cloud Function (Admin SDK) handles writes.
+    // Flutter app needs read access for onSnapshot real-time listener.
+    match /sensors/{sensorId} {
+      allow read: if true;
+      allow write: if false; // Only Admin SDK (Cloud Functions)
+
+      match /history/{historyId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // ── devices ──────────────────────────────────────────────
+    // Flutter app reads its own device doc (keyed by FCM token).
+    // Writes go through Cloud Function endpoints (registerDevice, updatePreferences).
+    match /devices/{deviceId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── device_codes ─────────────────────────────────────────
+    // 6-digit pairing codes. Read-only for checking expiry on client.
+    // Writes via Cloud Function (generateDeviceCode, claimDevice).
+    match /device_codes/{code} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── alerts ───────────────────────────────────────────────
+    // Alert history. Read-only for Flutter app display.
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── Deny everything else ─────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

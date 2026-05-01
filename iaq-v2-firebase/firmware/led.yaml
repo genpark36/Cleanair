@@ -1,0 +1,42 @@
+light:
+    # https://esphome.io/components/light/esp32_rmt_led_strip.html
+  - platform: esp32_rmt_led_strip
+    rgb_order: GRB
+    pin: GPIO10  # Pin 16
+    num_leds: 11
+    chipset: ws2812
+    name: "LED Strip"
+    id: led_strip
+    restore_mode: RESTORE_DEFAULT_OFF
+    # Classify this as primary entity so that it shows up on the Home Assistant
+    # pre-populated default dashboard so `entity_category` is intentionally not
+    # set.
+
+number:
+  - platform: template
+    # https://esphome.io/components/number/template.html
+    name: "LED Brightness %"
+    icon: "mdi:lightbulb"
+    id: led_brightness
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 100
+    optimistic: true
+    restore_value: true
+    mode: slider
+    entity_category: config
+
+  - platform: template
+    # https://esphome.io/components/number/template.html
+    name: "LED Fade %"
+    icon: "mdi:lightbulb"
+    id: led_fade
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 20
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config

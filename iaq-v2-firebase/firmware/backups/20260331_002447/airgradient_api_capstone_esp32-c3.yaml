@@ -1,0 +1,27 @@
+substitutions:
+  capstone_ingest_url: "https://us-central1-capstone-air-quality-yu25.cloudfunctions.net/ingest"
+  capstone_upload_interval: 5s
+  capstone_api_key: "CHANGE_ME"
+
+interval:
+  - interval: ${capstone_upload_interval}
+    then:
+      - http_request.post:
+          url: ${capstone_ingest_url}
+          request_headers:
+            Content-Type: application/json
+            X-API-Key: ${capstone_api_key}
+          json:
+            serial: !lambda |-
+              return "airgradient:" + get_mac_address();
+            pm25: !lambda return to_string(id(pm_2_5).state);
+            co2: !lambda return to_string(id(co2).state);
+            tvoc: !lambda return to_string(id(voc).state);
+            nox: !lambda return to_string(id(nox).state);
+            temp: !lambda return to_string(id(temp).state);
+            humidity: !lambda return to_string(id(humidity).state);
+            firmware: !lambda return "capstone-1.0";
+
+http_request:
+  verify_ssl: false
+  watchdog_timeout: 120s

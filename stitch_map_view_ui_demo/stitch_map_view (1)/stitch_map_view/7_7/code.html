@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=390, height=884, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error-container": "#93000a",
+              "on-secondary-container": "#3d6977",
+              "surface-container-highest": "#dee3e6",
+              "on-secondary-fixed-variant": "#1e4c5a",
+              "tertiary": "#914d00",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-container": "#eb8f3b",
+              "on-tertiary-fixed-variant": "#6e3900",
+              "tertiary-fixed-dim": "#ffb77d",
+              "surface": "#f5fafd",
+              "outline": "#6d797e",
+              "on-secondary-fixed": "#001f27",
+              "on-background": "#171c1f",
+              "inverse-surface": "#2b3134",
+              "secondary": "#396472",
+              "secondary-fixed": "#bdeafa",
+              "on-tertiary": "#ffffff",
+              "inverse-on-surface": "#ecf2f4",
+              "tertiary-fixed": "#ffdcc3",
+              "on-surface": "#171c1f",
+              "on-primary": "#ffffff",
+              "surface-container": "#e9eff1",
+              "outline-variant": "#bcc9ce",
+              "on-surface-variant": "#3d494d",
+              "on-tertiary-container": "#5d2f00",
+              "surface-tint": "#00677d",
+              "on-primary-container": "#00414f",
+              "primary-fixed": "#b3ebff",
+              "on-secondary": "#ffffff",
+              "on-primary-fixed": "#001f27",
+              "error": "#ba1a1a",
+              "secondary-container": "#bae7f7",
+              "primary-fixed-dim": "#4cd6fb",
+              "surface-container-low": "#eff4f7",
+              "on-primary-fixed-variant": "#004e5f",
+              "background": "#f5fafd",
+              "on-error": "#ffffff",
+              "primary-container": "#00b4d8",
+              "on-tertiary-fixed": "#2f1500",
+              "secondary-fixed-dim": "#a1cddd",
+              "surface-variant": "#dee3e6",
+              "inverse-primary": "#4cd6fb",
+              "surface-container-high": "#e3e9ec",
+              "error-container": "#ffdad6",
+              "primary": "#00677d",
+              "surface-bright": "#f5fafd",
+              "surface-dim": "#d5dbde"
+            },
+            fontFamily: {
+              "headline": ["Pretendard", "Inter", "sans-serif"],
+              "body": ["Pretendard", "Inter", "sans-serif"],
+              "label": ["Pretendard", "Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            width: 390px;
+            height: 884px;
+            margin: 0 auto;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-background bg-white flex flex-col relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none">
+<div class="flex items-center">
+<span class="material-symbols-outlined text-cyan-500 dark:text-cyan-400 cursor-pointer hover:opacity-80 transition-opacity active:scale-95 duration-150">arrow_back</span>
+</div>
+<h1 class="font-['Pretendard'] text-lg font-bold tracking-tight text-on-surface">Onboarding 7/7</h1>
+<div class="w-6"></div> <!-- Spacer for center alignment -->
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col items-center justify-center px-8 pt-16 pb-32">
+<!-- Editorial Float Content Area -->
+<div class="w-full flex flex-col items-center">
+<!-- Success Illustration & Sensor Image -->
+<div class="relative mb-12 w-full flex justify-center items-center">
+<!-- Decorative Layered Circle -->
+<div class="absolute w-64 h-64 bg-primary-fixed opacity-30 rounded-full blur-3xl"></div>
+<div class="relative z-10 flex flex-col items-center">
+<!-- Sensor Device Card (Glassmorphism) -->
+<div class="w-48 h-48 bg-surface-container-lowest rounded-full shadow-2xl flex items-center justify-center p-4 relative">
+<img alt="Modern air quality sensor device" class="w-32 h-32 object-contain rounded-xl" data-alt="Modern minimalist white cylindrical air quality sensor device on a clean white table with soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCARBsfDnvMTKhtjDVELEgxJapc_T6YJP_3QKEkShXCBSkQSel7Cg-WNeg1_EH-3xTjK8psnyEDAyGGfTp6zVxiM0l_hwJyEnyyaAlNblVPoXHeP__7QyytTpJJl_cGQeNGr-OfkLJAOR5KKBuETD4gUk0JHb0U0WHGKcMN-tq-QUPN7z8jmI7OSwXdxbkCzbxjjxyvEK7qE0CWDM33ZbN2eNjljNV6umP8PmzAihSrN_CaAI5ymB0QhudXVSlhrDqWz1BsqKt_yeY"/>
+<!-- Success Checkmark Badge -->
+<div class="absolute -bottom-2 -right-2 w-16 h-16 bg-gradient-to-br from-[#00677d] to-[#00B4D8] rounded-full flex items-center justify-center text-white border-4 border-white shadow-lg">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Text Content -->
+<div class="text-center space-y-4">
+<h2 class="text-on-surface font-['Pretendard'] font-extrabold text-[2rem] leading-tight tracking-tight">
+                    연결 완료
+                </h2>
+<p class="text-secondary font-['Pretendard'] text-[1.125rem] leading-relaxed break-keep font-medium">
+                    센서가 성공적으로 연결되었습니다.<br/>이제 실시간 데이터를 확인할 수 있습니다.
+                </p>
+</div>
+<!-- Feature Summary (Bento-lite Layout) -->
+<div class="mt-12 w-full grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">air</span>
+<span class="text-sm font-semibold text-on-surface-variant">공기질 분석</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+<span class="text-sm font-semibold text-on-surface-variant">실시간 알림</span>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Customized as Onboarding Finish) -->
+<footer class="fixed bottom-0 left-0 w-full z-50 flex flex-row gap-4 justify-between items-center bg-transparent max-w-[390px] mx-auto pb-8 px-6 h-auto">
+<div class="w-full flex">
+<!-- Active State Navigation Logic Applied to Primary CTA -->
+<button class="w-full flex-1 flex flex-row items-center justify-center gap-2 bg-gradient-to-br from-[#00677d] to-[#00B4D8] text-white rounded-full py-4 px-8 shadow-lg shadow-cyan-500/20 font-['Pretendard'] text-sm font-semibold uppercase tracking-wider hover:brightness-110 hover:shadow-cyan-500/40 transition-all active:scale-[0.98]">
+<span>홈으로 이동</span>
+<span class="material-symbols-outlined text-white" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</footer>
+</body></html>

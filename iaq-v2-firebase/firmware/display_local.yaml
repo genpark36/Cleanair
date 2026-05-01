@@ -1,0 +1,366 @@
+font:
+  - file: "fonts/OpenSans-Regular.ttf"
+    id: open_sans_14
+    size: 14
+    glyphs: '!"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/µ³'
+  - file: "fonts/OpenSans-Regular.ttf"
+    id: open_sans_9
+    size: 9
+    glyphs: '!"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/µ³'
+  - file: "fonts/OpenSans-Regular.ttf"
+    id: open_sans_20
+    size: 20
+    glyphs: '!"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/µ³'
+  - file: "fonts/OpenSans-Regular.ttf"
+    id: open_sans_34
+    size: 34
+    glyphs: '!"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz/µ³'
+
+
+display:
+  - platform: ssd1306_i2c
+    model: "SH1106 128x64"
+    id: oled_display
+    address: 0x3C
+    pages:
+      - id: pairing_pin_page
+        lambda: |-
+          if (id(pairing_pin).length() == 6 && millis() < id(pin_display_until)) {
+            // PIN 표시 (open_sans_20 사용 — 128x64에 맞는 크기)
+            it.printf(64, 0, id(open_sans_9), TextAlign::TOP_CENTER, "PIN CODE");
+            it.line(0, 12, 128, 12);
+            it.printf(64, 20, id(open_sans_20), TextAlign::TOP_CENTER, "%s", id(pairing_pin).c_str());
+            it.printf(64, 50, id(open_sans_9), TextAlign::TOP_CENTER, "Enter in app");
+          } else if (!wifi::global_wifi_component->is_connected()) {
+            // AP 안내
+            it.printf(64, 0, id(open_sans_9), TextAlign::TOP_CENTER, "WiFi Setup");
+            it.line(0, 12, 128, 12);
+            it.printf(0, 15, id(open_sans_9), "1.Open phone WiFi");
+            it.printf(0, 27, id(open_sans_9), "2.Connect to:");
+            it.printf(0, 39, id(open_sans_9), " AirGradient-Setup");
+            it.printf(0, 51, id(open_sans_9), "3.Set your WiFi");
+          } else {
+            // 연결됨
+            it.printf(64, 8, id(open_sans_14), TextAlign::TOP_CENTER, "Connected");
+            it.printf(64, 28, id(open_sans_9), TextAlign::TOP_CENTER, "%s", id(wifi_ip).state.c_str());
+            it.printf(64, 42, id(open_sans_9), TextAlign::TOP_CENTER, "%s", get_mac_address().c_str());
+          }
+      - id: airgradient_default
+        lambda: |-
+          if (id(display_in_f).state) {
+            it.printf(0, 0, id(open_sans_14), "%.1f°F", id(temp).state*9/5+32);
+          } else {
+            it.printf(0, 0, id(open_sans_14), "%.1f°C", id(temp).state);
+          }
+          it.printf(128, 0, id(open_sans_14), TextAlign::TOP_RIGHT, "%.1f%%", id(humidity).state);
+          it.line(0,17,128,17);
+          it.printf(0,19, id(open_sans_9), "CO2");
+          it.printf(0,27, id(open_sans_20), "%.0f", id(co2).state);
+          it.printf(0,52, id(open_sans_9), "ppm");
+          it.line(50,19,50,64);
+          it.printf(54, 19, id(open_sans_9), "PM2.5");
+          it.printf(54, 27, id(open_sans_20), "%.0f", id(pm_2_5).state);
+          it.printf(54, 52, id(open_sans_9), "µg/m³");
+          it.line(100,19,100,64);
+          it.printf(104,18, id(open_sans_9), "TVOC");
+          it.printf(104,29, id(open_sans_9), "%.0f", id(voc).state);
+          it.printf(104,41, id(open_sans_9), "NOx");
+          it.printf(104,52, id(open_sans_9), "%.0f", id(nox).state);
+      - id: boot
+        lambda: |-
+          it.printf(0, 0, id(open_sans_14), "ID:");
+          it.printf(128, 0, id(open_sans_14), TextAlign::TOP_RIGHT, "%s", get_mac_address().c_str());
+          it.printf(0, 21, id(open_sans_14), "Config Ver: $config_version");
+          it.printf(0, 42, id(open_sans_14), "$friendly_name");
+      - id: summary1
+        lambda: |-
+          it.printf(0, 0, id(open_sans_14), "CO2:");
+          it.printf(128, 0, id(open_sans_14), TextAlign::TOP_RIGHT, "%.0f ppm", id(co2).state);
+          it.printf(0, 16, id(open_sans_14), "PM2.5:");
+          it.printf(128, 16, id(open_sans_14), TextAlign::TOP_RIGHT, "%.0f µg/m³", id(pm_2_5).state);
+          it.printf(0, 32, id(open_sans_14), "Temp:");
+          if (id(display_in_f).state) {
+            it.printf(128, 32, id(open_sans_14), TextAlign::TOP_RIGHT, "%.1f°F", id(temp).state*9/5+32);
+          } else {
+            it.printf(128, 32, id(open_sans_14), TextAlign::TOP_RIGHT, "%.1f°C", id(temp).state);
+          }
+          it.printf(0, 48, id(open_sans_14), "Humidity:");
+          it.printf(128, 48, id(open_sans_14), TextAlign::TOP_RIGHT, "%.1f%%", id(humidity).state);
+      - id: summary2
+        lambda: |-
+          it.printf(0, 0, id(open_sans_14), "CO2:");
+          it.printf(128, 0, id(open_sans_14), TextAlign::TOP_RIGHT, "%.0f ppm", id(co2).state);
+          it.printf(0, 16, id(open_sans_14), "PM2.5:");
+          it.printf(128, 16, id(open_sans_14), TextAlign::TOP_RIGHT, "%.0f µg/m³", id(pm_2_5).state);
+          it.printf(0, 32, id(open_sans_14), "VOC:");
+          it.printf(128, 32, id(open_sans_14), TextAlign::TOP_RIGHT, "%.0f", id(voc).state);
+          it.printf(0, 48, id(open_sans_14), "NOx:");
+          it.printf(128, 48, id(open_sans_14), TextAlign::TOP_RIGHT, "%.0f", id(nox).state);
+      - id: huge_no_units
+        lambda: |-
+          it.printf(0, 0 - 8, id(open_sans_34), TextAlign::TOP_LEFT, "%.0f", id(co2).state);
+          it.printf(it.get_width(), 0 - 8, id(open_sans_34), TextAlign::TOP_RIGHT, "%.0f", id(humidity).state);
+          it.printf(0, 64 + 8, id(open_sans_34), TextAlign::BOTTOM_LEFT, "%.0f", id(pm_2_5).state);
+          if (id(display_in_f).state) {
+            it.printf(it.get_width(), 64 + 8, id(open_sans_34), TextAlign::BOTTOM_RIGHT, "%.1f", id(temp).state*9/5+32);
+          } else {
+            it.printf(it.get_width(), 64 + 8, id(open_sans_34), TextAlign::BOTTOM_RIGHT, "%.1f", id(temp).state);
+          }
+      - id: air_quality
+        lambda: |-
+          it.printf(0, 13, id(open_sans_14), "CO2");
+          it.printf(128, 6, id(open_sans_20), TextAlign::TOP_RIGHT, "%.0f ppm", id(co2).state);
+          it.printf(0, 41, id(open_sans_14), "PM2");
+          it.printf(128, 34, id(open_sans_20), TextAlign::TOP_RIGHT, "%.0f µg/m³", id(pm_2_5).state);
+      - id: air_temp
+        lambda: |-
+          it.printf(0, 13, id(open_sans_14), "Temp");
+          if (id(display_in_f).state) {
+            it.printf(128, 6, id(open_sans_20), TextAlign::TOP_RIGHT, "%.1f°F", id(temp).state*9/5+32);
+          } else {
+            it.printf(128, 6, id(open_sans_20), TextAlign::TOP_RIGHT, "%.1f°C", id(temp).state);
+          }
+          it.printf(0, 41, id(open_sans_14), "Humid");
+          it.printf(128, 34, id(open_sans_20), TextAlign::TOP_RIGHT, "%.1f%%", id(humidity).state);
+      - id: air_voc
+        lambda: |-
+          it.printf(0, 6, id(open_sans_20), "VOC:");
+          it.printf(128, 6, id(open_sans_20), TextAlign::TOP_RIGHT, "%.0f", id(voc).state);
+          it.printf(0, 34, id(open_sans_20), "NOx:");
+          it.printf(128, 34, id(open_sans_20), TextAlign::TOP_RIGHT, "%.0f", id(nox).state);
+      - id: combo
+        lambda: |-
+          if (id(display_in_f).state) {
+            it.printf(0, 0, id(open_sans_14), "%.1f °F", id(temp).state*9/5+32);
+          } else {
+            it.printf(0, 0, id(open_sans_14), "%.1f °C", id(temp).state);
+          }
+          it.printf(128, 0, id(open_sans_14), TextAlign::TOP_RIGHT, "%.1f%%", id(humidity).state);
+          it.printf(0, 16, id(open_sans_14), "%.0f µg/m³", id(pm_2_5).state);
+          it.printf(128, 16, id(open_sans_14), TextAlign::TOP_RIGHT, "%.0f ppm", id(co2).state);
+          it.printf(0, 32, id(open_sans_14), "VOC: %.0f", id(voc).state);
+          it.printf(128, 32, id(open_sans_14), TextAlign::TOP_RIGHT, "NOx: %.0f", id(nox).state);
+          it.printf(0, 48, id(open_sans_14), "AQI: %.0f", id(pm_2_5_aqi).state);
+      - id: blank
+        lambda: |-
+          it.printf(0, 0, id(open_sans_14), " ");
+
+    on_page_change:
+      - to: pairing_pin_page
+        then:
+          - if:
+              condition:
+                # PIN 만료 + WiFi 연결됨 → 이 페이지 건너뜀
+                lambda: |-
+                  return wifi::global_wifi_component->is_connected()
+                    && (id(pairing_pin).length() != 6 || millis() >= id(pin_display_until));
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: airgradient_default
+        then:
+          - if:
+              condition:
+                switch.is_off: display_ag_default_page
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: summary1
+        then:
+          - if:
+              condition:
+                switch.is_off: display_summary_pages
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: summary2
+        then:
+          - if:
+              condition:
+                switch.is_off: display_summary_pages
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: air_quality
+        then:
+          - if:
+              condition:
+                switch.is_off: display_air_quality_page
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: huge_no_units
+        then:
+          - if:
+              condition:
+                switch.is_off: display_huge_no_units_page
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: air_temp
+        then:
+          - if:
+              condition:
+                switch.is_off: display_air_temp_page
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: air_voc
+        then:
+          - if:
+              condition:
+                switch.is_off: display_voc_page
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: combo
+        then:
+          - if:
+              condition:
+                switch.is_off: display_combo_page
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: boot
+        then:
+          - if:
+              condition:
+                switch.is_off: display_boot_page
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+      - to: blank
+        then:
+          - if:
+              condition:
+                switch.is_off: display_blank_page
+              then:
+                - display.page.show_next: oled_display
+                - component.update: oled_display
+
+
+interval:
+  - interval: 10s
+    startup_delay: 1s
+    then:
+      if:
+        condition:
+          switch.is_on: display_boot_page
+        then:
+          switch.turn_off: display_boot_page
+  - interval: 5s
+    then:
+      - if:
+          condition:
+            switch.is_on: display_blank_page
+          then:
+            - display.page.show: blank
+            - component.update: oled_display
+          else:
+            - display.page.show_next: oled_display
+            - component.update: oled_display
+
+
+switch:
+  - platform: template
+    name: "Display Temperature in °F"
+    id: display_in_f
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    entity_category: config
+    icon: "mdi:thermometer"
+
+  - platform: template
+    name: "Display AirGradient Default Page"
+    id: display_ag_default_page
+    restore_mode: RESTORE_DEFAULT_ON
+    optimistic: True
+    entity_category: config
+    icon: "mdi:monitor"
+
+  - platform: template
+    name: "Display Summary Pages"
+    id: display_summary_pages
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    entity_category: config
+    icon: "mdi:monitor"
+
+  - platform: template
+    name: "Display Huge No Units Page"
+    id: display_huge_no_units_page
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    entity_category: config
+    icon: "mdi:numeric"
+
+  - platform: template
+    name: "Display Air Quality Page"
+    id: display_air_quality_page
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    entity_category: config
+    icon: "mdi:monitor"
+
+  - platform: template
+    name: "Display Temp/Hum Page"
+    id: display_air_temp_page
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    entity_category: config
+    icon: "mdi:monitor"
+
+  - platform: template
+    name: "Display VOC Page"
+    id: display_voc_page
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    entity_category: config
+    icon: "mdi:monitor"
+
+  - platform: template
+    name: "Display Combo Page"
+    id: display_combo_page
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    entity_category: config
+    icon: "mdi:monitor"
+
+  - platform: template
+    name: "Display Boot Page"
+    id: display_boot_page
+    restore_mode: ALWAYS_ON
+    optimistic: True
+    entity_category: config
+    icon: "mdi:monitor"
+
+  - platform: template
+    name: "Display Blank Page"
+    id: display_blank_page
+    restore_mode: RESTORE_DEFAULT_OFF
+    optimistic: True
+    entity_category: config
+    icon: "mdi:monitor"
+    on_turn_on:
+      - display.page.show: blank
+      - component.update: oled_display
+    on_turn_off:
+      - display.page.show_next: oled_display
+      - component.update: oled_display
+
+number:
+  - platform: template
+    name: "Display Contrast %"
+    icon: "mdi:lightbulb"
+    id: display_contrast
+    min_value: 0
+    max_value: 100
+    step: 1
+    initial_value: 100
+    optimistic: true
+    restore_value: true
+    mode: slider
+    on_value:
+      then:
+        lambda: id(oled_display).set_contrast(id(display_contrast).state / 100.0);
+    entity_category: config

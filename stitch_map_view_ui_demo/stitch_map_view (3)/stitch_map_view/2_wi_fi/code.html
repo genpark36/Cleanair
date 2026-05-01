@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "surface-dim": "#d5dbde",
+                    "surface-container-low": "#eff4f7",
+                    "background": "#f5fafd",
+                    "tertiary-container": "#eb8f3b",
+                    "primary-fixed-dim": "#4cd6fb",
+                    "primary-fixed": "#b3ebff",
+                    "tertiary-fixed": "#ffdcc3",
+                    "surface-container": "#e9eff1",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "on-background": "#171c1f",
+                    "outline": "#6d797e",
+                    "tertiary": "#914d00",
+                    "surface-container-high": "#e3e9ec",
+                    "inverse-primary": "#4cd6fb",
+                    "on-tertiary-fixed": "#2f1500",
+                    "surface-container-highest": "#dee3e6",
+                    "on-surface-variant": "#3d494d",
+                    "on-primary-fixed-variant": "#004e5f",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#bcc9ce",
+                    "secondary-container": "#bae7f7",
+                    "primary": "#00677d",
+                    "on-primary-fixed": "#001f27",
+                    "surface-variant": "#dee3e6",
+                    "inverse-surface": "#2b3134",
+                    "on-secondary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#00677d",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-container": "#00414f",
+                    "secondary-fixed-dim": "#a1cddd",
+                    "secondary-fixed": "#bdeafa",
+                    "secondary": "#396472",
+                    "on-tertiary-container": "#5d2f00",
+                    "surface-bright": "#f5fafd",
+                    "surface": "#f5fafd",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#1e4c5a",
+                    "on-secondary-container": "#3d6977",
+                    "on-surface": "#171c1f",
+                    "on-secondary-fixed": "#001f27",
+                    "inverse-on-surface": "#ecf2f4",
+                    "error": "#ba1a1a",
+                    "primary-container": "#00b4d8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "1rem",
+                    "xl": "1.25rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Pretendard", "Inter", "sans-serif"],
+                    "body": ["Pretendard", "Inter", "sans-serif"],
+                    "label": ["Pretendard", "Inter", "sans-serif"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        body {
+            font-family: 'Pretendard', sans-serif;
+            word-break: keep-all;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .headline-lg {
+            font-size: 2rem;
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        .label-md {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen flex flex-col">
+<header class="fixed top-0 w-full z-50 flex items-center px-6 h-16 bg-[#f5fafd]/80 dark:bg-[#171c1f]/80 backdrop-blur-md">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#00677d] dark:text-[#00b4d8] cursor-pointer" data-icon="arrow_back">arrow_back</span>
+<h1 class="font-['Pretendard'] text-xl font-bold text-[#171c1f] dark:text-[#ffffff]">신규 플러그 등록</h1>
+</div>
+</header>
+<main class="flex-1 flex flex-col pt-24 pb-32 px-6 max-w-2xl mx-auto w-full">
+<div class="flex justify-between items-end mb-10">
+<div class="space-y-1">
+<span class="text-secondary label-md tracking-wider">STEP 2 OF 4</span>
+<h2 class="font-['Pretendard'] headline-lg tracking-tight text-on-surface">플러그 Wi-Fi에 연결</h2>
+</div>
+<div class="flex gap-1.5 pb-2">
+<div class="w-2 h-2 rounded-full bg-primary-container/30"></div>
+<div class="w-6 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-primary-container/30"></div>
+<div class="w-2 h-2 rounded-full bg-primary-container/30"></div>
+</div>
+</div>
+<section class="mb-12">
+<p class="text-on-surface-variant text-lg leading-relaxed mb-8">
+                휴대폰의 Wi-Fi 설정에서 <span class="text-primary font-bold">'Athom-Tasmota-XXXX'</span> 네트워크를 선택해 주세요.
+            </p>
+<div class="relative group">
+<div class="absolute -inset-1 bg-gradient-to-tr from-primary/10 to-primary-container/20 rounded-[2.5rem] blur-xl opacity-50"></div>
+<div class="relative bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm overflow-hidden flex flex-col items-center">
+<div class="w-full max-w-xs bg-surface-container rounded-3xl overflow-hidden border border-outline-variant/10">
+<div class="bg-surface-container-high px-5 py-4 flex items-center justify-between">
+<span class="text-xs font-bold text-on-surface-variant">Wi-Fi 설정</span>
+<span class="material-symbols-outlined text-sm" data-icon="settings">settings</span>
+</div>
+<div class="p-4 space-y-4">
+<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="wifi">wifi</span>
+<span class="text-sm font-medium">Home_Network_5G</span>
+</div>
+<span class="material-symbols-outlined text-xs text-outline" data-icon="lock">lock</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-xl bg-primary/10 ring-2 ring-primary">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="wifi_tethering">wifi_tethering</span>
+<span class="text-sm font-bold text-primary">Athom-Tasmota-XXXX</span>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low opacity-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="wifi">wifi</span>
+<span class="text-sm font-medium">Guest_Wi-Fi</span>
+</div>
+<span class="material-symbols-outlined text-xs text-outline" data-icon="lock">lock</span>
+</div>
+</div>
+</div>
+<div class="mt-8 flex gap-4 items-center bg-primary-fixed p-4 rounded-2xl w-full">
+<div class="bg-primary text-on-primary w-10 h-10 rounded-full flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" data-icon="info">info</span>
+</div>
+<p class="text-on-primary-fixed-variant text-sm font-medium">
+                            암호 입력창이 나타나면 무시하거나 창을 닫고 다시 시도해 주세요.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<section class="mt-auto">
+<div class="bg-surface-container-low p-6 rounded-2xl mb-8 border-l-4 border-primary">
+<h4 class="font-bold text-on-surface mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="tips_and_updates">tips_and_updates</span>
+                    연결이 안 되시나요?
+                </h4>
+<p class="text-on-surface-variant text-sm">
+                    플러그의 LED가 깜빡이는지 확인해 주세요. 깜빡이지 않는다면 버튼을 5초간 길게 눌러 초기화해 주세요.
+                </p>
+</div>
+<button class="w-full py-4 px-8 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+                연결 완료
+                <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</section>
+</main>
+<footer class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe bg-white/80 dark:bg-[#171c1f]/80 backdrop-blur-md shadow-[0_-8px_32px_rgba(23,28,31,0.04)] rounded-t-2xl md:hidden">
+<div class="flex flex-col items-center justify-center text-[#396472] dark:text-[#bcc9ce]">
+<span class="material-symbols-outlined" data-icon="power">power</span>
+<span class="font-['Pretendard'] label-md font-bold">Devices</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#396472] dark:text-[#bcc9ce]">
+<span class="material-symbols-outlined" data-icon="routine">routine</span>
+<span class="font-['Pretendard'] label-md font-bold">Automation</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#396472] dark:text-[#bcc9ce]">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-['Pretendard'] label-md font-bold">History</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#396472] dark:text-[#bcc9ce]">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Pretendard'] label-md font-bold">Settings</span>
+</div>
+</footer>
+</body></html>

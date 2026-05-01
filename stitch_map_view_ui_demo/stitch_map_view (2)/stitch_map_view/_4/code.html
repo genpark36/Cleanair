@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link as="style" crossorigin="" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#dee3e6",
+                        "surface-tint": "#00677d",
+                        "surface-container": "#e9eff1",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "tertiary-fixed": "#ffdcc3",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "tertiary-container": "#eb8f3b",
+                        "surface-container-low": "#eff4f7",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "background": "#f5fafd",
+                        "primary": "#00677d",
+                        "outline-variant": "#bcc9ce",
+                        "primary-fixed-dim": "#4cd6fb",
+                        "on-primary-container": "#00414f",
+                        "tertiary": "#914d00",
+                        "on-surface": "#171c1f",
+                        "on-tertiary-container": "#5d2f00",
+                        "on-secondary-fixed": "#001f27",
+                        "inverse-on-surface": "#ecf2f4",
+                        "on-surface-variant": "#3d494d",
+                        "on-secondary-fixed-variant": "#1e4c5a",
+                        "outline": "#6d797e",
+                        "surface-bright": "#f5fafd",
+                        "primary-container": "#00b4d8",
+                        "primary-fixed": "#b3ebff",
+                        "secondary-fixed-dim": "#a1cddd",
+                        "on-tertiary-fixed": "#2f1500",
+                        "inverse-primary": "#4cd6fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#dee3e6",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#bdeafa",
+                        "on-background": "#171c1f",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e3e9ec",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#bae7f7",
+                        "secondary": "#396472",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-secondary-container": "#3d6977",
+                        "on-primary-fixed": "#001f27",
+                        "inverse-surface": "#2b3134",
+                        "surface": "#f5fafd",
+                        "surface-dim": "#d5dbde"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.25rem",
+                        "full": "9999px"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface flex items-center justify-center min-h-screen">
+<div class="w-[390px] h-[884px] bg-background relative flex flex-col overflow-hidden shadow-2xl">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-[390px] z-50 bg-[#f5fafd]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(23,28,31,0.04)] flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#00B4D8]">location_on</span>
+<span class="font-['Pretendard'] tracking-tight text-xl font-bold text-[#00B4D8]">CleanAir</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-xs font-bold">P</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 mt-16 px-5 pt-4 pb-24 overflow-hidden flex flex-col gap-4">
+<!-- NavigationDrawer as Tab Selector -->
+<nav class="flex gap-2 p-1.5 bg-surface-container-low rounded-xl">
+<div class="flex-1 py-2 text-center text-slate-600 font-semibold transition-all duration-300 hover:bg-white/50 rounded-lg cursor-pointer">어린이</div>
+<div class="flex-1 py-2 text-center text-slate-600 font-semibold transition-all duration-300 hover:bg-white/50 rounded-lg cursor-pointer">고령자</div>
+<div class="flex-1 py-2 text-center bg-white text-[#00677d] font-semibold rounded-lg shadow-sm">정화지표</div>
+</nav>
+<div class="flex flex-col gap-4">
+<!-- Purification Speed k Card (Log-linear regression) -->
+<section class="bg-surface-container-lowest p-5 rounded-xl flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<h2 class="text-secondary font-bold text-sm tracking-tight">정화속도 k (5분 슬라이딩 윈도우)</h2>
+<span class="text-[10px] bg-primary-fixed px-2 py-0.5 rounded-full text-on-primary-fixed font-bold">REAL-TIME</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] text-outline font-bold">PM k-value</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-extrabold text-primary">0.084</span>
+<span class="text-[10px] text-outline">min⁻¹</span>
+</div>
+<span class="text-[10px] text-primary-container font-medium">R² 0.982</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-outline font-bold">CO₂ k-value</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-extrabold text-secondary">0.031</span>
+<span class="text-[10px] text-outline">min⁻¹</span>
+</div>
+<span class="text-[10px] text-primary-container font-medium">R² 0.945</span>
+</div>
+</div>
+</section>
+<!-- CADR-Index Card -->
+<section class="bg-surface-container-lowest p-5 rounded-xl">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-secondary font-bold text-sm">CADR-Index</h2>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-primary" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-xs font-bold text-primary">GRADE A</span>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex flex-col gap-1">
+<span class="text-[10px] text-outline font-bold">반감기 t₅₀</span>
+<div class="flex items-baseline gap-1">
+<span class="text-xl font-bold text-on-surface">8.25</span>
+<span class="text-[10px] text-outline font-medium">min</span>
+</div>
+</div>
+<div class="h-10 w-px bg-surface-variant/30"></div>
+<div class="flex flex-col items-end gap-1">
+<span class="text-[10px] text-outline font-bold">청정 공기 공급률</span>
+<span class="text-sm font-semibold text-on-surface-variant">정화 모드 최적화</span>
+</div>
+</div>
+<!-- Visual Indicator Gauge (Simplified) -->
+<div class="mt-4 h-1.5 w-full bg-surface-container rounded-full overflow-hidden flex">
+<div class="h-full w-[25%] bg-slate-200"></div>
+<div class="h-full w-[25%] bg-primary-container"></div>
+<div class="h-full w-[25%] bg-slate-200"></div>
+<div class="h-full w-[25%] bg-slate-200"></div>
+</div>
+</section>
+<!-- IPI Risk Index Card -->
+<section class="bg-surface-container-lowest p-5 rounded-xl border-l-4 border-error/20">
+<div class="flex justify-between items-center mb-3">
+<h2 class="text-secondary font-bold text-sm">IPI 위험지수 (바이러스 잔류)</h2>
+<span class="text-[10px] text-error font-bold px-2 py-0.5 bg-error-container rounded-full">CAUTION</span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">90% 제거 시간 (t₉₀)</span>
+<span class="font-bold text-on-surface">22.4 min</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs text-on-surface-variant">잔류 농도 리스크</span>
+<span class="font-bold text-error">LEVEL 3</span>
+</div>
+<p class="text-[11px] leading-relaxed text-outline">CO₂ k값 기반 유추 시 에어로졸 정체 우려. 환기 장치 가동률 상향이 필요합니다.</p>
+</div>
+</section>
+<!-- Ventilation Index Card -->
+<section class="bg-primary/5 p-5 rounded-xl flex flex-col gap-3 border border-primary/10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">air_purifier_gen</span>
+<h2 class="text-primary font-bold text-sm">환기 및 정화 분석</h2>
+</div>
+<div class="bg-white/60 p-3 rounded-lg flex flex-col gap-2">
+<div class="flex justify-between">
+<span class="text-xs font-bold text-secondary">현재 시나리오</span>
+<span class="text-xs font-bold text-primary">Purification Focus</span>
+</div>
+<div class="h-px bg-primary/10 w-full"></div>
+<p class="text-[11px] text-on-surface-variant font-medium leading-normal">
+                            외기 CO₂ 농도 대비 내부 농도 축적 속도가 정화 속도보다 빠릅니다. 정화 위주에서 <span class="text-primary font-bold">강제 환기 2단계</span>로 전환을 권장합니다.
+                        </p>
+</div>
+<div class="flex gap-2 mt-1">
+<button class="flex-1 py-2 bg-primary text-white rounded-full text-[11px] font-bold shadow-lg shadow-primary/20">환기 활성화</button>
+<button class="flex-1 py-2 bg-surface-container-highest text-secondary rounded-full text-[11px] font-bold">상세 해석</button>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<footer class="fixed bottom-0 w-[390px] h-20 bg-[#f5fafd]/80 backdrop-blur-xl z-50 rounded-t-[20px] shadow-[0_-4px_20px_rgba(0,0,0,0.03)] flex justify-around items-center pb-safe px-4">
+<div class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="text-[11px] font-medium">홈</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined mb-1">air</span>
+<span class="text-[11px] font-medium">실시간</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#00677d] scale-110">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="text-[11px] font-bold">분석</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="text-[11px] font-medium">설정</span>
+</div>
+</footer>
+</div>
+</body></html>

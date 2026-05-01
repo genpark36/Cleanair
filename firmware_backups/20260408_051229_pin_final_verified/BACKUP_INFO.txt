@@ -1,0 +1,6 @@
+﻿backup_created_at=2026-04-08T05:13:28.9879803+09:00
+device_port=COM5
+device_mac=d8:3b:da:1d:59:60
+flash_image=sensor_flash_4mb_running.bin
+flash_sha256=82E2F21F3995153D4CC0920863CA8C1A994A57CAF7FE7024A8FA512CC20E7FA1
+source_snapshot=c:\Users\박건우\Desktop\capstoneapp\firmware_backups\20260408_051229_pin_final_verified\source

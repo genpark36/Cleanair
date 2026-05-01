@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=390, height=884, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#a1cddd",
+                    "primary-fixed-dim": "#4cd6fb",
+                    "primary": "#00677d",
+                    "inverse-on-surface": "#ecf2f4",
+                    "secondary-container": "#bae7f7",
+                    "outline": "#6d797e",
+                    "inverse-surface": "#2b3134",
+                    "surface-bright": "#f5fafd",
+                    "tertiary-container": "#eb8f3b",
+                    "surface-container": "#e9eff1",
+                    "tertiary-fixed": "#ffdcc3",
+                    "on-tertiary-container": "#5d2f00",
+                    "on-primary-fixed-variant": "#004e5f",
+                    "inverse-primary": "#4cd6fb",
+                    "surface": "#f5fafd",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "surface-container-low": "#eff4f7",
+                    "primary-fixed": "#b3ebff",
+                    "on-secondary-container": "#3d6977",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#00677d",
+                    "outline-variant": "#bcc9ce",
+                    "surface-container-highest": "#dee3e6",
+                    "surface-variant": "#dee3e6",
+                    "on-surface": "#171c1f",
+                    "on-tertiary-fixed": "#2f1500",
+                    "surface-container-high": "#e3e9ec",
+                    "on-secondary-fixed-variant": "#1e4c5a",
+                    "secondary-fixed": "#bdeafa",
+                    "background": "#f5fafd",
+                    "surface-dim": "#d5dbde",
+                    "on-surface-variant": "#3d494d",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed": "#001f27",
+                    "on-primary-fixed": "#001f27",
+                    "on-background": "#171c1f",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-container": "#00414f",
+                    "primary-container": "#00b4d8",
+                    "secondary": "#396472",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "tertiary": "#914d00",
+                    "error": "#ba1a1a"
+            },
+            "fontFamily": {
+                    "headline": ["Pretendard", "Inter", "sans-serif"],
+                    "body": ["Pretendard", "Inter", "sans-serif"],
+                    "label": ["Pretendard", "Inter", "sans-serif"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .loader-ring {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: inline-block;
+            position: relative;
+            border: 4px solid rgba(0, 180, 216, 0.1);
+            box-sizing: border-box;
+        }
+        .loader-ring::after {
+            content: '';  
+            box-sizing: border-box;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border-left: 4px solid #00b4d8;
+            border-bottom: 4px solid transparent;
+            animation: rotation 2s linear infinite;
+        }
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface w-[390px] h-[884px] mx-auto overflow-hidden flex flex-col relative">
+<!-- TopAppBar -->
+<header class="bg-[#f5fafd]/80 backdrop-blur-xl docked full-width top-0 sticky z-50">
+<div class="flex flex-col w-full max-w-screen-xl mx-auto px-6 pt-4">
+<div class="flex items-center justify-between h-14">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#00677d]" data-icon="cloud">cloud</span>
+<h1 class="text-2xl font-bold text-[#171c1f]">CleanAir</h1>
+</div>
+<button class="scale-95 active:opacity-80 transition-transform">
+<span class="material-symbols-outlined text-[#396472]" data-icon="search">search</span>
+</button>
+</div>
+<!-- Custom TabBar -->
+<nav class="flex items-center justify-between mt-2 px-1">
+<a class="text-[#396472] font-medium py-3 hover:text-[#00b4d8] transition-colors duration-300" href="#">개요</a>
+<a class="text-[#396472] font-medium py-3 hover:text-[#00b4d8] transition-colors duration-300" href="#">모니터링</a>
+<a class="text-[#396472] font-medium py-3 hover:text-[#00b4d8] transition-colors duration-300" href="#">건강</a>
+<a class="text-[#00677d] border-b-2 border-[#00677d] font-semibold py-3" href="#">비교</a>
+</nav>
+</div>
+</header>
+<!-- Main Content: Loading Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center px-8 text-center bg-surface relative">
+<!-- Editorial Background Element -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-primary-fixed opacity-20 blur-[100px] rounded-full -z-10"></div>
+<!-- Loading Visual -->
+<div class="relative mb-12">
+<div class="loader-ring"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined text-primary-container text-4xl animate-pulse" data-icon="aq">aq</span>
+</div>
+</div>
+<!-- Textual Feedback -->
+<div class="space-y-4">
+<h2 class="text-2xl font-bold text-on-surface tracking-tight">
+                외부 데이터 불러오는 중
+            </h2>
+<p class="text-secondary body-lg leading-relaxed max-w-[280px] mx-auto">
+                AQICN(PM2.5), 기상청(온도/습도) 데이터를 조회하고 있습니다. 잠시만 기다려주세요.
+            </p>
+</div>
+<!-- Editorial Float Decoration -->
+<div class="mt-16 w-full max-w-[320px]">
+<div class="bg-surface-container-low rounded-xl p-6 flex items-center gap-4 text-left">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover opacity-60" data-alt="abstract soft focus close up of blue clear sky with light white wispy clouds representing fresh air" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2Xgjb2_-uCDNdUJoNPQpUCTaxvOK5UsLFZvA9kmqxJibiqPUaIGSab629MYdU8oqkVKmf4vs5xL6sZ6zn51voV7gUtAFwW68MiV6ts9zOlOzYUfWGoWU7WO66JT6f3nzaruKeop8c4NDLmGY94Rs5n5o78E5MhLoLSqoO_efRE9X-qlceRw4iV7VP-dywBHzp12ySruSBIy2h5lzrE_hWXx2e8fTn6UQ5G_HAY1QOIm0CebEm8nwKKYf0GrLQZhPIyW8BGs3tdPs"/>
+</div>
+<div class="flex-grow">
+<p class="text-xs font-bold text-secondary-fixed-variant uppercase tracking-widest mb-1">TIP</p>
+<p class="text-sm text-on-surface-variant leading-snug">비교 탭에서는 전국의 대기질 상태를 한눈에 볼 수 있습니다.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[2rem] bg-[#ffffff]/80 backdrop-blur-xl shadow-[0_-8px_32px_rgba(23,28,31,0.04)]">
+<div class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-4">
+<!-- Dashboard (Active because of Analysis/Dashboard context in shell) -->
+<button class="flex flex-col items-center justify-center text-[#396472] px-5 py-2 hover:scale-110 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Pretendard'] text-[11px] font-bold tracking-wider mt-1">Dashboard</span>
+</button>
+<!-- Analysis -->
+<button class="flex flex-col items-center justify-center text-[#00677d] bg-[#eff4f7] rounded-full px-5 py-2 hover:scale-110 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="analytics" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-['Pretendard'] text-[11px] font-bold tracking-wider mt-1">Analysis</span>
+</button>
+<!-- Health -->
+<button class="flex flex-col items-center justify-center text-[#396472] px-5 py-2 hover:scale-110 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="health_and_safety">health_and_safety</span>
+<span class="font-['Pretendard'] text-[11px] font-bold tracking-wider mt-1">Health</span>
+</button>
+<!-- Settings -->
+<button class="flex flex-col items-center justify-center text-[#396472] px-5 py-2 hover:scale-110 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Pretendard'] text-[11px] font-bold tracking-wider mt-1">Settings</span>
+</button>
+</div>
+</nav>
+</body></html>

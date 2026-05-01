@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>센서 위치 등록 완료</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link as="style" crossorigin="" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "primary": "#00677d",
+                            "surface-bright": "#f5fafd",
+                            "outline-variant": "#bcc9ce",
+                            "on-secondary": "#ffffff",
+                            "on-tertiary": "#ffffff",
+                            "on-primary-fixed": "#001f27",
+                            "on-secondary-container": "#3d6977",
+                            "surface-container-high": "#e3e9ec",
+                            "surface-tint": "#00677d",
+                            "tertiary-container": "#eb8f3b",
+                            "surface-dim": "#d5dbde",
+                            "outline": "#6d797e",
+                            "surface-container-highest": "#dee3e6",
+                            "surface-variant": "#dee3e6",
+                            "on-secondary-fixed": "#001f27",
+                            "on-primary": "#ffffff",
+                            "on-secondary-fixed-variant": "#1e4c5a",
+                            "error": "#ba1a1a",
+                            "tertiary-fixed-dim": "#ffb77d",
+                            "tertiary": "#914d00",
+                            "on-tertiary-container": "#5d2f00",
+                            "on-error-container": "#93000a",
+                            "on-primary-container": "#00414f",
+                            "error-container": "#ffdad6",
+                            "on-background": "#171c1f",
+                            "secondary-fixed-dim": "#a1cddd",
+                            "on-primary-fixed-variant": "#004e5f",
+                            "secondary-container": "#bae7f7",
+                            "tertiary-fixed": "#ffdcc3",
+                            "primary-fixed-dim": "#4cd6fb",
+                            "on-surface": "#171c1f",
+                            "background": "#f5fafd",
+                            "surface": "#f5fafd",
+                            "surface-container": "#e9eff1",
+                            "surface-container-lowest": "#ffffff",
+                            "primary-container": "#00b4d8",
+                            "inverse-primary": "#4cd6fb",
+                            "on-tertiary-fixed-variant": "#6e3900",
+                            "inverse-on-surface": "#ecf2f4",
+                            "on-error": "#ffffff",
+                            "secondary": "#396472",
+                            "primary-fixed": "#b3ebff",
+                            "surface-container-low": "#eff4f7",
+                            "inverse-surface": "#2b3134",
+                            "secondary-fixed": "#bdeafa",
+                            "on-tertiary-fixed": "#2f1500",
+                            "on-surface-variant": "#3d494d"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                            "headline": ["'Pretendard Variable'", "Inter"],
+                            "display": ["'Pretendard Variable'", "Inter"],
+                            "body": ["'Pretendard Variable'", "Inter"],
+                            "label": ["'Pretendard Variable'", "Inter"],
+                            "sans": ["'Pretendard Variable'", "Inter", "sans-serif"]
+                    },
+                    "fontSize": {}
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Pretendard Variable', Inter, sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container-low text-on-surface min-h-screen flex items-center justify-center">
+<!-- Mobile Device Container -->
+<main class="w-[390px] h-[884px] bg-surface relative overflow-hidden flex flex-col shadow-2xl rounded-3xl mx-auto">
+<!-- Content Wrapper -->
+<div class="flex-1 flex flex-col px-6 pt-32 pb-32 overflow-y-auto">
+<!-- Success Hero Section -->
+<div class="flex flex-col items-center text-center mb-12">
+<!-- Check Icon with Tonal Depth -->
+<div class="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center mb-8 shadow-[0_8px_32px_rgba(0,180,216,0.25)] relative">
+<!-- Subtle outer ring for editorial spacing -->
+<div class="absolute inset-[-12px] rounded-full border border-primary-container/20"></div>
+<span class="material-symbols-outlined text-on-primary text-[48px]" style="font-variation-settings: 'FILL' 1;">
+                        check
+                    </span>
+</div>
+<h1 class="text-[28px] font-bold text-on-surface mb-4 tracking-tight leading-tight">
+                    센서 위치 등록 완료
+                </h1>
+<p class="text-[16px] text-secondary leading-[1.6] max-w-[280px]">
+                    이상 상황 발생 시 이 위치로<br/>알림이 표시됩니다.
+                </p>
+</div>
+<!-- Summary Card Layering (The Lucid Editorial Style) -->
+<div class="bg-surface-container-lowest rounded-[24px] p-8 shadow-[0_8px_32px_rgba(23,28,31,0.03)] w-full">
+<div class="flex flex-col gap-7">
+<!-- Item: Sensor -->
+<div class="flex flex-col gap-1.5">
+<span class="text-[13px] font-bold text-secondary tracking-wide">
+                            센서
+                        </span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[18px]">sensors</span>
+<span class="text-[16px] text-on-surface font-medium">Cleanair-01</span>
+</div>
+</div>
+<!-- Item: Location -->
+<div class="flex flex-col gap-1.5">
+<span class="text-[13px] font-bold text-secondary tracking-wide">
+                            위치
+                        </span>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[18px]">location_on</span>
+<span class="text-[16px] text-on-surface font-medium">새싹어린이집 1층 복도</span>
+</div>
+</div>
+<!-- Item: Address -->
+<div class="flex flex-col gap-1.5">
+<span class="text-[13px] font-bold text-secondary tracking-wide">
+                            주소
+                        </span>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">map</span>
+<span class="text-[16px] text-on-surface font-medium leading-[1.4]">서울시 강남구 테헤란로 123</span>
+</div>
+</div>
+<!-- Item: Details -->
+<div class="flex flex-col gap-1.5">
+<span class="text-[13px] font-bold text-secondary tracking-wide">
+                            상세
+                        </span>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-primary-container text-[18px] mt-0.5">info</span>
+<span class="text-[16px] text-on-surface font-medium leading-[1.4] text-on-surface-variant">어린이집 · 1층 · 조리실 앞 복도</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Fixed Bottom CTA (Gradient Overlay to blend with surface) -->
+<div class="absolute bottom-0 left-0 w-full px-6 pb-10 pt-16 bg-gradient-to-t from-surface via-surface/90 to-transparent">
+<button class="w-full h-[60px] bg-gradient-to-br from-primary to-primary-container rounded-full flex items-center justify-center shadow-[0_8px_24px_rgba(0,103,125,0.2)] hover:opacity-90 active:scale-[0.98] transition-all">
+<span class="text-on-primary font-bold text-[18px] tracking-wide">홈으로 이동</span>
+</button>
+</div>
+</main>
+</body></html>

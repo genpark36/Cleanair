@@ -1,0 +1,45 @@
+substitutions:
+  name: "ag-one-capstone"
+  friendly_name: "AG One Capstone"
+  name_add_mac_suffix: "false"
+
+  capstone_ingest_url: "https://us-central1-capstone-air-quality-yu25.cloudfunctions.net/ingest"
+  capstone_upload_interval: 5s
+  capstone_api_key: "capstone-iaq-2026-secure-key"
+
+api:
+ota:
+  platform: esphome
+
+# ── WiFi 설정 ──
+# 배포용: 하드코딩된 WiFi 없이 captive_portal만 사용.
+# 최초 전원 인가 시 AP 모드로 부팅 (SSID: "ag-one-capstone").
+# 사용자가 폰/노트북으로 AP에 접속하면 웹페이지에서 WiFi SSID/PW 입력 가능.
+# 입력된 자격증명은 flash에 저장되어 재부팅 후에도 유지됨.
+# WiFi 연결 실패 시 1분 후 자동으로 AP 모드 재활성화.
+# ap: 블록은 captive_portal 패키지에서 자동 생성됨.
+wifi:
+  ap:
+    ssid: "${name}"
+
+# dashboard_import removed — causes config_button to load with display dependency
+# dashboard_import:
+#   package_import_url: github://MallocArray/airgradient_esphome/airgradient-one.yaml
+#   import_full_config: false
+
+packages:
+  board: github://MallocArray/airgradient_esphome/packages/airgradient_esp32-c3_board.yaml
+  captive_portal: github://MallocArray/airgradient_esphome/packages/captive_portal.yaml
+  pm_2.5: github://MallocArray/airgradient_esphome/packages/sensor_pms5003.yaml
+  co2: github://MallocArray/airgradient_esphome/packages/sensor_s8.yaml
+  temp_humidity: github://MallocArray/airgradient_esphome/packages/sensor_sht40.yaml
+  tvoc: github://MallocArray/airgradient_esphome/packages/sensor_sgp41.yaml
+  display: !include display_local.yaml
+  config_button: github://MallocArray/airgradient_esphome/packages/config_button.yaml
+  led: github://MallocArray/airgradient_esphome/packages/led.yaml
+  led_co2: github://MallocArray/airgradient_esphome/packages/led_co2.yaml
+  hardware_watchdog: github://MallocArray/airgradient_esphome/packages/watchdog.yaml
+  wifi_sensor: github://MallocArray/airgradient_esphome/packages/sensor_wifi.yaml
+  uptime: github://MallocArray/airgradient_esphome/packages/sensor_uptime.yaml
+
+  capstone_api: !include airgradient_api_capstone_esp32-c3.yaml

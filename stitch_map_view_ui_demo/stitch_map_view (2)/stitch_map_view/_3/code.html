@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link as="style" crossorigin="" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#dee3e6",
+                        "surface-tint": "#00677d",
+                        "surface-container": "#e9eff1",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "tertiary-fixed": "#ffdcc3",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "tertiary-container": "#eb8f3b",
+                        "surface-container-low": "#eff4f7",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "background": "#f5fafd",
+                        "primary": "#00677d",
+                        "outline-variant": "#bcc9ce",
+                        "primary-fixed-dim": "#4cd6fb",
+                        "on-primary-container": "#00414f",
+                        "tertiary": "#914d00",
+                        "on-surface": "#171c1f",
+                        "on-tertiary-container": "#5d2f00",
+                        "on-secondary-fixed": "#001f27",
+                        "inverse-on-surface": "#ecf2f4",
+                        "on-surface-variant": "#3d494d",
+                        "on-secondary-fixed-variant": "#1e4c5a",
+                        "outline": "#6d797e",
+                        "surface-bright": "#f5fafd",
+                        "primary-container": "#00b4d8",
+                        "primary-fixed": "#b3ebff",
+                        "secondary-fixed-dim": "#a1cddd",
+                        "on-tertiary-fixed": "#2f1500",
+                        "inverse-primary": "#4cd6fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#dee3e6",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#bdeafa",
+                        "on-background": "#171c1f",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e3e9ec",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#bae7f7",
+                        "secondary": "#396472",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-secondary-container": "#3d6977",
+                        "on-primary-fixed": "#001f27",
+                        "inverse-surface": "#2b3134",
+                        "surface": "#f5fafd",
+                        "surface-dim": "#d5dbde"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface w-[390px] h-[884px] overflow-hidden flex flex-col relative">
+<!-- TopAppBar -->
+<header class="bg-[#f5fafd]/80 dark:bg-slate-900/80 backdrop-blur-xl fixed top-0 w-full z-50 shadow-[0_8px_32px_rgba(23,28,31,0.04)] flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#00B4D8]" data-icon="location_on">location_on</span>
+<h1 class="text-xl font-bold text-[#00B4D8] font-['Pretendard'] tracking-tight">CleanAir</h1>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary-container/20 flex items-center justify-center border border-primary-container/30">
+<span class="material-symbols-outlined text-primary text-[20px]" data-icon="person">person</span>
+</div>
+</header>
+<main class="flex-1 mt-16 pb-20 px-4 pt-4 overflow-y-auto space-y-4">
+<!-- Navigation Drawer (Tab Selector) -->
+<nav class="bg-[#eff4f7] dark:bg-slate-800 rounded-2xl flex flex-col gap-4 p-4">
+<div class="flex items-center justify-between">
+<span class="text-lg font-bold text-[#171c1f] font-['Pretendard'] font-semibold">Health Mode</span>
+<span class="material-symbols-outlined text-[#00B4D8]" data-icon="child_care">child_care</span>
+</div>
+<div class="flex gap-2">
+<!-- 어린이 Tab (Active) -->
+<button class="flex-1 py-2 bg-white dark:bg-slate-700 text-[#00677d] rounded-lg font-['Pretendard'] font-semibold transition-all duration-300">어린이</button>
+<button class="flex-1 py-2 text-slate-600 dark:text-slate-400 font-['Pretendard'] font-semibold hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all duration-300">고령자</button>
+<button class="flex-1 py-2 text-slate-600 dark:text-slate-400 font-['Pretendard'] font-semibold hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all duration-300">정화지표</button>
+</div>
+</nav>
+<!-- Respiratory Health Card -->
+<section class="bg-surface-container-lowest rounded-xl p-5 shadow-[0_8px_32px_rgba(23,28,31,0.04)]">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h2 class="text-on-surface-variant text-sm font-semibold mb-1">호흡기 건강 지수</h2>
+<p class="text-xs text-outline leading-relaxed">온도, 습도, TVOC 복합 분석</p>
+</div>
+<div class="text-right">
+<span class="text-4xl font-extrabold text-primary tracking-tighter leading-none">88</span>
+<span class="text-sm font-bold text-primary block mt-1">안전</span>
+</div>
+</div>
+<div class="bg-primary/5 rounded-lg p-3">
+<p class="text-sm text-on-surface leading-snug">
+<span class="text-primary font-bold">적정 습도</span>가 유지되고 있으며, 화학물질 농도가 매우 낮아 영유아 호흡기에 최적입니다.
+                </p>
+</div>
+</section>
+<div class="grid grid-cols-2 gap-4">
+<!-- Immunity Risk Card -->
+<section class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_8px_32px_rgba(23,28,31,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="shield">shield</span>
+<h2 class="text-sm font-bold">면역/감염 위험</h2>
+</div>
+<div class="py-2">
+<span class="text-2xl font-bold text-secondary">낮음</span>
+</div>
+</div>
+<p class="text-[11px] text-outline leading-tight">이산화탄소 농도가 낮아 바이러스 전파 위험이 적습니다.</p>
+</section>
+<!-- Mold Risk Card -->
+<section class="bg-surface-container-lowest rounded-xl p-4 shadow-[0_8px_32px_rgba(23,28,31,0.04)] flex flex-col justify-between border-b-2 border-tertiary/20">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]" data-icon="biotech">biotech</span>
+<h2 class="text-sm font-bold">곰팡이 위험도</h2>
+</div>
+<div class="py-2">
+<span class="text-2xl font-bold text-tertiary">주의</span>
+</div>
+</div>
+<p class="text-[11px] text-outline leading-tight">습도 65% 상태가 2시간 지속되었습니다. 환기를 권장합니다.</p>
+</section>
+</div>
+<!-- Focus Environment Card (Bento Style) -->
+<section class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_8px_32px_rgba(23,28,31,0.04)]">
+<div class="p-5 flex justify-between items-center bg-gradient-to-br from-primary to-primary-container text-white">
+<div>
+<h2 class="text-base font-bold">집중환경 판단</h2>
+<p class="text-xs opacity-90">CO2 기반 학습 환경 데이터</p>
+</div>
+<span class="material-symbols-outlined text-[32px]" data-icon="psychology">psychology</span>
+</div>
+<div class="p-5 space-y-4">
+<div class="flex items-end justify-between">
+<div>
+<span class="text-xs text-outline block mb-1">현재 CO2 농도</span>
+<span class="text-2xl font-bold text-on-surface">640 <span class="text-sm font-normal">ppm</span></span>
+</div>
+<div class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">최적</div>
+</div>
+<!-- Indicator Bar -->
+<div class="relative h-2 bg-surface-container rounded-full overflow-hidden">
+<div class="absolute left-0 top-0 h-full bg-primary" style="width: 42%"></div>
+<div class="absolute left-[700px/2000px*100%] h-full w-[2px] bg-white opacity-50"></div>
+</div>
+<div class="flex justify-between text-[10px] text-outline">
+<span>400</span>
+<span>700 (경계)</span>
+<span>1500</span>
+</div>
+<div class="flex items-start gap-3 pt-2">
+<span class="material-symbols-outlined text-primary" data-icon="info">info</span>
+<p class="text-xs text-on-surface-variant leading-normal">
+                        현재 농도는 아이들의 <span class="font-bold text-primary">집중력 향상</span>에 도움을 주는 쾌적한 수준입니다.
+                    </p>
+</div>
+</div>
+</section>
+<!-- No Data State Example (Hidden or shown as toast) -->
+<div class="hidden bg-surface-container rounded-lg p-4 flex items-center justify-center gap-2 opacity-60">
+<span class="material-symbols-outlined text-outline" data-icon="error">error</span>
+<span class="text-sm font-medium text-outline">데이터 없음</span>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-[#f5fafd]/80 dark:bg-slate-900/80 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-[20px] shadow-[0_-4px_20px_rgba(0,0,0,0.03)] flex justify-around items-center h-20 pb-safe px-4">
+<button class="flex flex-col items-center justify-center text-[#00677d] dark:text-[#00B4D8] scale-110">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[11px] font-['Pretendard'] font-medium">홈</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-[#00B4D8] transition-colors ease-out duration-300">
+<span class="material-symbols-outlined" data-icon="air">air</span>
+<span class="text-[11px] font-['Pretendard'] font-medium">실시간</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-[#00B4D8] transition-colors ease-out duration-300">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="text-[11px] font-['Pretendard'] font-medium">분석</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 hover:text-[#00B4D8] transition-colors ease-out duration-300">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-[11px] font-['Pretendard'] font-medium">설정</span>
+</button>
+</nav>
+</body></html>

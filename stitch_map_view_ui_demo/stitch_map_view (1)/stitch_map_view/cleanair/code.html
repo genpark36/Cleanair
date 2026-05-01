@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CleanAir</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-lowest": "#ffffff",
+                        "on-background": "#191c1d",
+                        "primary": "#00677d",
+                        "primary-container": "#00b4d8",
+                        "background": "#f8fafb",
+                        "on-surface-variant": "#3d494d",
+                        "on-primary": "#ffffff"
+                    },
+                    fontFamily: {
+                        "sans": ["Pretendard", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem",
+                        "button": "1rem"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .aura-glow {
+            background: radial-gradient(circle at center, rgba(0, 180, 216, 0.1) 0%, rgba(248, 250, 251, 0) 70%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col items-center justify-center">
+<main class="w-full max-w-md mx-auto flex flex-col items-center px-8 relative">
+<!-- Background Aura Effect -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] aura-glow -z-10 rounded-full pointer-events-none"></div>
+<!-- Logo/Icon Section -->
+<div class="mb-12 flex flex-col items-center">
+<img alt="CleanAir Logo" class="w-32 h-32 object-contain mb-4" src="https://lh3.googleusercontent.com/aida/ADBb0ug1SDNA9z0prXksa4K8UZg8U2HVpXsnK9JHST5j86t0baWyDN1mWlN8nZqZwmeqeDXL9h1pOLkTaoZ6RjG_bIs9-8fEcdW3qd1DrNFglCKyPvz0e0XX8imgq2cQqawnxLZotw_ibgInMJ0cUDLYfEQKzu_J0jjyUH92ykMg8pk05WSCXmetaE6AWibYvA4Z75rYgcHXbmiZBEloP1tB38EOUaKZw_zOtLi5PlhPdkqfR7tMLwvcawgwSGHrs4sUn-15CqLjamP1"/>
+<span class="font-bold text-primary text-2xl tracking-tight">CleanAir</span>
+</div>
+<!-- Text Content -->
+<div class="text-center space-y-3 mb-20">
+<h1 class="text-3xl font-extrabold text-on-background tracking-tight leading-tight">
+                깨끗한 공기,<br/>스마트한 관리
+            </h1>
+<p class="text-on-surface-variant font-medium text-lg">
+                CleanAir와 함께하세요
+            </p>
+</div>
+<!-- Action Section -->
+<div class="w-full">
+<button class="w-full bg-gradient-to-r from-[#008ba3] to-[#00b4d8] text-on-primary py-5 px-6 rounded-button font-bold text-xl shadow-lg shadow-primary/20 hover:opacity-95 active:scale-[0.98] transition-all duration-200">
+                시작하기
+            </button>
+</div>
+</main>
+</body></html>

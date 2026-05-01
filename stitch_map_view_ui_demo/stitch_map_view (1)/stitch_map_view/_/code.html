@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CleanAir - Splash</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "tertiary-fixed": "#ffdcc3",
+              "on-tertiary": "#ffffff",
+              "on-background": "#191c1d",
+              "tertiary-fixed-dim": "#ffb77d",
+              "surface-variant": "#e1e3e4",
+              "surface-dim": "#d8dadb",
+              "surface-container": "#eceeef",
+              "outline-variant": "#bcc9ce",
+              "tertiary-container": "#eb8f3b",
+              "outline": "#6d797e",
+              "secondary-container": "#cde6f4",
+              "inverse-on-surface": "#eff1f2",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed-variant": "#334a55",
+              "on-tertiary-fixed": "#2f1500",
+              "on-tertiary-fixed-variant": "#6e3900",
+              "on-primary-fixed-variant": "#004e5f",
+              "surface-tint": "#00677d",
+              "background": "#f8fafb",
+              "surface-container-highest": "#e1e3e4",
+              "inverse-primary": "#4cd6fb",
+              "surface-container-high": "#e6e8e9",
+              "inverse-surface": "#2e3132",
+              "tertiary": "#914d00",
+              "on-primary-fixed": "#001f27",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#cde6f4",
+              "on-error": "#ffffff",
+              "secondary-fixed-dim": "#b1cad7",
+              "primary": "#00677d",
+              "on-secondary-fixed": "#051e28",
+              "error": "#ba1a1a",
+              "surface": "#f8fafb",
+              "on-surface": "#191c1d",
+              "on-primary-container": "#00414f",
+              "primary-container": "#00b4d8",
+              "primary-fixed": "#b3ebff",
+              "on-secondary-container": "#506873",
+              "error-container": "#ffdad6",
+              "on-tertiary-container": "#5d2f00",
+              "secondary": "#4a626d",
+              "on-surface-variant": "#3d494d",
+              "surface-container-low": "#f2f4f5",
+              "surface-bright": "#f8fafb",
+              "primary-fixed-dim": "#4cd6fb",
+              "on-primary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .aqi-aura {
+            background: radial-gradient(circle, rgba(0, 180, 216, 0.15) 0%, rgba(248, 250, 251, 0) 70%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background font-body text-on-surface overflow-hidden">
+<!-- 
+      Note: According to the Shell Visibility & Relevance Filter, 
+      BottomNavBar and TopAppBar are suppressed for splash/onboarding screens 
+      to prioritize the content canvas.
+    -->
+<main class="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+<!-- The AQI Aura (Background Effect) -->
+<div class="absolute inset-0 z-0 aqi-aura scale-150 opacity-60"></div>
+<!-- Main Logo Container -->
+<div class="relative z-10 flex flex-col items-center justify-center px-8">
+<!-- App Icon (using shared style hierarchy) -->
+<div class="relative w-48 md:w-56 flex items-center justify-center">
+<img alt="CleanAir Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/ADBb0ug1SDNA9z0prXksa4K8UZg8U2HVpXsnK9JHST5j86t0baWyDN1mWlN8nZqZwmeqeDXL9h1pOLkTaoZ6RjG_bIs9-8fEcdW3qd1DrNFglCKyPvz0e0XX8imgq2cQqawnxLZotw_ibgInMJ0cUDLYfEQKzu_J0jjyUH92ykMg8pk05WSCXmetaE6AWibYvA4Z75rYgcHXbmiZBEloP1tB38EOUaKZw_zOtLi5PlhPdkqfR7tMLwvcawgwSGHrs4sUn-15CqLjamP1" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;"/>
+</div>
+<!-- Brand Identity -->
+<div class="text-center mt-4">
+<h1 class="font-extrabold text-4xl md:text-5xl text-primary tracking-tighter font-display">
+                    CleanAir
+                </h1>
+</div>
+</div>
+<!-- Footer Branding/Loading Status -->
+<!-- Atmospheric Accents (Asymmetry) -->
+<div class="absolute -top-20 -right-20 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-40 -left-40 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
+</main>
+</body></html>

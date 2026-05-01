@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css');
+        
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior-y: none;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#00677d",
+                        "on-surface": "#171c1f",
+                        "secondary": "#396472",
+                        "surface": "#ffffff",
+                        "on-surface-variant": "#3d494d",
+                    },
+                    fontFamily: {
+                        sans: ["Pretendard", "sans-serif"],
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface h-screen flex flex-col overflow-hidden">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="close">close</span>
+<span class="text-xl font-black text-on-surface tracking-tighter">CleanAir</span>
+</div>
+<div class="text-lg font-bold tracking-tight text-primary">3/3</div>
+</header>
+<!-- Main Content: Centered without scrolling -->
+<main class="flex-1 flex flex-col items-center justify-center px-8 text-center">
+<!-- Hero Visual Section -->
+<div class="relative mb-10">
+<div class="relative w-32 h-32 bg-[#f0f9ff] rounded-[2.5rem] flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-6xl" data-icon="notifications" style="font-variation-settings: 'FILL' 1;">notifications</span>
+<!-- Decorative indicator -->
+<div class="absolute top-2 right-2 w-4 h-4 bg-[#ff8c00] rounded-full border-2 border-white"></div>
+</div>
+</div>
+<!-- Typography -->
+<h1 class="text-3xl font-bold text-on-surface leading-tight tracking-tight mb-4">
+            중요한 알림을<br/>놓치지 마세요
+        </h1>
+<!-- Feature List (Simplified) -->
+<div class="space-y-3 w-full max-w-xs mt-4">
+<div class="flex items-center gap-3 px-5 py-3 bg-[#f8fafc] rounded-2xl">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="warning">warning</span>
+<span class="text-on-surface-variant font-medium text-sm">위험 수치 도달 시 즉시 알림</span>
+</div>
+<div class="flex items-center gap-3 px-5 py-3 bg-[#f8fafc] rounded-2xl">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="info">info</span>
+<span class="text-on-surface-variant font-medium text-sm">매일 아침 대기 정보 요약</span>
+</div>
+</div>
+</main>
+<!-- Bottom Actions -->
+<footer class="pb-10 px-6 w-full max-w-md mx-auto">
+<div class="flex flex-col gap-3">
+<!-- Primary Action: Teal Gradient Button -->
+<button class="w-full py-4 bg-gradient-to-r from-[#008ba3] to-[#00b4d8] text-white rounded-full flex items-center justify-center shadow-lg font-semibold text-lg active:scale-[0.98] transition-transform">
+                알림 활성화
+            </button>
+<!-- Secondary Action -->
+<button class="w-full py-3 text-secondary font-medium text-base active:opacity-60 transition-opacity">
+                나중에 하기
+            </button>
+</div>
+</footer>
+</body></html>

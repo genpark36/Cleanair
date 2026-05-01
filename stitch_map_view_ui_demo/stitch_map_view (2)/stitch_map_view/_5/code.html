@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#dee3e6",
+                        "surface-tint": "#00677d",
+                        "surface-container": "#e9eff1",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "tertiary-fixed": "#ffdcc3",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "tertiary-container": "#eb8f3b",
+                        "surface-container-low": "#eff4f7",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "background": "#f5fafd",
+                        "primary": "#00677d",
+                        "outline-variant": "#bcc9ce",
+                        "primary-fixed-dim": "#4cd6fb",
+                        "on-primary-container": "#00414f",
+                        "tertiary": "#914d00",
+                        "on-surface": "#171c1f",
+                        "on-tertiary-container": "#5d2f00",
+                        "on-secondary-fixed": "#001f27",
+                        "inverse-on-surface": "#ecf2f4",
+                        "on-surface-variant": "#3d494d",
+                        "on-secondary-fixed-variant": "#1e4c5a",
+                        "outline": "#6d797e",
+                        "surface-bright": "#f5fafd",
+                        "primary-container": "#00b4d8",
+                        "primary-fixed": "#b3ebff",
+                        "secondary-fixed-dim": "#a1cddd",
+                        "on-tertiary-fixed": "#2f1500",
+                        "inverse-primary": "#4cd6fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#dee3e6",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed": "#bdeafa",
+                        "on-background": "#171c1f",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e3e9ec",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#bae7f7",
+                        "secondary": "#396472",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-secondary-container": "#3d6977",
+                        "on-primary-fixed": "#001f27",
+                        "inverse-surface": "#2b3134",
+                        "surface": "#f5fafd",
+                        "surface-dim": "#d5dbde"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Pretendard", "Inter"],
+                        "body": ["Pretendard", "Inter"],
+                        "label": ["Pretendard", "Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .semi-circle-gauge {
+            width: 160px;
+            height: 80px;
+            border-radius: 160px 160px 0 0;
+            background: conic-gradient(from 180deg at 50% 100%, #00b4d8 0deg, #00b4d8 252deg, #dee3e6 252deg, #dee3e6 360deg);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface w-[390px] h-[884px] mx-auto overflow-hidden flex flex-col relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#f5fafd]/80 backdrop-blur-xl shadow-[0_8px_32px_rgba(23,28,31,0.04)] flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#00B4D8]" data-icon="location_on">location_on</span>
+<h1 class="text-xl font-bold text-[#00B4D8] tracking-tight">CleanAir</h1>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="minimalist user avatar profile icon with soft shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6g1tAr3SrzNF12cRV5PI4tcc0QpKAjx2gQKcYWAXH4O7Pu8Hz3TDsYpI0F-_8cQYSHmJIYAmobKJ25NkdHc47osnbWxYdo1MSEaJtEWHwf9rkzboNy7ReDCURHL7AhqiLxfWU2zGfM_9n8fqH55kz9JThP2rCqkz1XEij3itW-Ip5RnBDvOBK6ryIT_pNN2Gml9Pd6Luy3t1OI5K4JqVqE0g8G-zcJLvrw48nVliSjKQVnOTiU_RIAKLNhpsu08ZH0UWAWl3V5ns"/>
+</div>
+</header>
+<!-- NavigationDrawer (Tab Selector) -->
+<nav class="mt-20 px-6">
+<div class="flex items-center justify-between mb-2">
+<h2 class="text-lg font-bold text-[#171c1f]">Health Mode</h2>
+</div>
+<div class="bg-[#eff4f7] p-1 rounded-xl flex gap-1">
+<button class="flex-1 py-2 text-center text-sm font-semibold text-slate-600 hover:bg-white/50 transition-all duration-300 rounded-lg">어린이</button>
+<button class="flex-1 py-2 text-center text-sm font-semibold bg-white text-[#00677d] shadow-sm rounded-lg">고령자</button>
+<button class="flex-1 py-2 text-center text-sm font-semibold text-slate-600 hover:bg-white/50 transition-all duration-300 rounded-lg">정화지표</button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-6 pt-6 pb-24 overflow-y-auto no-scrollbar space-y-4">
+<!-- Cardiovascular Protection Score (Bento Main) -->
+<section class="bg-gradient-to-br from-primary to-primary-container p-6 rounded-xl shadow-lg text-white">
+<div class="flex justify-between items-start mb-4">
+<div>
+<p class="text-white/80 text-sm font-medium mb-1">심혈관 보호점수</p>
+<h3 class="text-4xl font-extrabold tracking-tight">88<span class="text-xl font-medium ml-1">점</span></h3>
+</div>
+<div class="bg-white/20 p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="favorite" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs text-white/90">
+<span>PM 노출 이력 기반 리스크 관리 중</span>
+<span class="font-bold">안전</span>
+</div>
+<div class="w-full bg-white/20 h-2 rounded-full overflow-hidden">
+<div class="bg-white h-full w-[88%] rounded-full"></div>
+</div>
+<p class="text-[11px] text-white/70 leading-relaxed pt-1">과거 24시간 미세먼지 노출량과 K-평균 데이터 분석 결과, 현재 심혈관 스트레스 지수는 매우 낮음 상태입니다.</p>
+</div>
+</section>
+<!-- Risk Level & Sleep Index (Grid Layout) -->
+<div class="grid grid-cols-2 gap-4">
+<!-- PM2.5 Risk Card -->
+<article class="bg-surface-container-lowest p-5 rounded-xl flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-1.5 mb-3">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="error">error</span>
+<span class="text-xs font-bold text-secondary tracking-tight">심혈관 리스크</span>
+</div>
+<p class="text-lg font-bold text-on-surface mb-1">보통 구간</p>
+<p class="text-[11px] text-on-surface-variant leading-tight">PM2.5 농도가 안정적입니다. 무리한 실외 활동은 자제하세요.</p>
+</div>
+<div class="mt-4 flex gap-1">
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-primary rounded-full"></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full"></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full"></div>
+</div>
+</article>
+<!-- Sleep Index Card -->
+<article class="bg-surface-container-lowest p-5 rounded-xl overflow-hidden">
+<div class="flex items-center gap-1.5 mb-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="bedtime">bedtime</span>
+<span class="text-xs font-bold text-secondary tracking-tight">쾌적 수면지수</span>
+</div>
+<div class="relative flex flex-col items-center mt-2">
+<div class="semi-circle-gauge"></div>
+<div class="absolute bottom-0 text-center">
+<span class="text-lg font-bold text-primary">70%</span>
+<p class="text-[9px] text-secondary font-bold">양호</p>
+</div>
+</div>
+<div class="mt-3 flex flex-col gap-1">
+<div class="flex justify-between text-[10px]">
+<span class="text-on-surface-variant">CO₂ 70%</span>
+<span class="font-bold">480 ppm</span>
+</div>
+<div class="flex justify-between text-[10px]">
+<span class="text-on-surface-variant">VOC 30%</span>
+<span class="font-bold">0.12 mg</span>
+</div>
+</div>
+</article>
+</div>
+<!-- Apparent Temperature Card (Editorial Layout) -->
+<section class="bg-surface-container-low p-6 rounded-xl relative overflow-hidden">
+<div class="flex justify-between">
+<div class="z-10 relative">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-tertiary" data-icon="thermostat">thermostat</span>
+<span class="text-sm font-bold text-secondary">실외 체감온도</span>
+</div>
+<h4 class="text-3xl font-bold text-on-surface mb-2">24.5°</h4>
+<div class="inline-flex items-center px-2 py-1 bg-white rounded-full mb-4">
+<span class="text-[10px] font-bold text-tertiary">KMA 기상 데이터 기반</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-on-surface">계절별 행동 권고</p>
+<p class="text-xs text-on-surface-variant leading-relaxed">급격한 온도 변화는 혈압 상승을 유발할 수 있습니다. 외출 시 얇은 겉옷을 준비하여 체온을 유지하세요.</p>
+</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-[120px]" data-icon="wb_sunny">wb_sunny</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<footer class="fixed bottom-0 w-full z-50 bg-[#f5fafd]/80 backdrop-blur-xl shadow-[0_-4px_20px_rgba(0,0,0,0.03)] rounded-t-[20px] flex justify-around items-center h-20 pb-safe px-4">
+<div class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[11px] font-medium mt-1">홈</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#00677d] scale-110">
+<span class="material-symbols-outlined" data-icon="air" style="font-variation-settings: 'FILL' 1;">air</span>
+<span class="text-[11px] font-bold mt-1">실시간</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="text-[11px] font-medium mt-1">분석</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-[11px] font-medium mt-1">설정</span>
+</div>
+</footer>
+</body></html>

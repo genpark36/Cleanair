@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>위치 등록</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#00677d",
+                        "surface-bright": "#f5fafd",
+                        "outline-variant": "#bcc9ce",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001f27",
+                        "on-secondary-container": "#3d6977",
+                        "surface-container-high": "#e3e9ec",
+                        "surface-tint": "#00677d",
+                        "tertiary-container": "#eb8f3b",
+                        "surface-dim": "#d5dbde",
+                        "outline": "#6d797e",
+                        "surface-container-highest": "#dee3e6",
+                        "surface-variant": "#dee3e6",
+                        "on-secondary-fixed": "#001f27",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed-variant": "#1e4c5a",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "tertiary": "#914d00",
+                        "on-tertiary-container": "#5d2f00",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#00414f",
+                        "error-container": "#ffdad6",
+                        "on-background": "#171c1f",
+                        "secondary-fixed-dim": "#a1cddd",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "secondary-container": "#bae7f7",
+                        "tertiary-fixed": "#ffdcc3",
+                        "primary-fixed-dim": "#4cd6fb",
+                        "on-surface": "#171c1f",
+                        "background": "#f5fafd",
+                        "surface": "#f5fafd",
+                        "surface-container": "#e9eff1",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#00b4d8",
+                        "inverse-primary": "#4cd6fb",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "inverse-on-surface": "#ecf2f4",
+                        "on-error": "#ffffff",
+                        "secondary": "#396472",
+                        "primary-fixed": "#b3ebff",
+                        "surface-container-low": "#eff4f7",
+                        "inverse-surface": "#2b3134",
+                        "secondary-fixed": "#bdeafa",
+                        "on-tertiary-fixed": "#2f1500",
+                        "on-surface-variant": "#3d494d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter", "Pretendard", "sans-serif"],
+                        "display": ["Inter", "Pretendard", "sans-serif"],
+                        "body": ["Inter", "Pretendard", "sans-serif"],
+                        "label": ["Inter", "Pretendard", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .keep-all { word-break: keep-all; }
+        .bg-gradient-primary { background: linear-gradient(135deg, #00677d 0%, #00b4d8 100%); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface flex flex-col min-h-[884px] max-w-[390px] mx-auto overflow-x-hidden relative shadow-2xl antialiased">
+<!-- TopAppBar -->
+<header class="bg-[#f5fafd]/80 backdrop-blur-xl docked full-width top-0 sticky z-50 shadow-sm flex justify-between items-center w-full px-6 py-4">
+<button class="active:scale-95 transition-transform hover:opacity-80 transition-opacity flex items-center justify-center p-2 -ml-2 rounded-full text-[#396472]">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-['Pretendard','Inter'] font-semibold text-lg tracking-tight text-[#171c1f] flex-1 text-center">위치 등록</h1>
+<button class="active:scale-95 transition-transform hover:opacity-80 transition-opacity flex items-center justify-center p-2 -mr-2 rounded-full text-[#00B4D8]">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+</header>
+<main class="flex-1 flex flex-col pt-6 pb-32 px-6 gap-8">
+<!-- Location Summary Card -->
+<section class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_32px_rgba(23,28,31,0.04)]">
+<h2 class="text-sm font-semibold text-secondary mb-2 keep-all uppercase tracking-wider">선택된 주소</h2>
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-0.5" data-icon="location_on" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<div>
+<p class="text-lg font-bold text-on-surface leading-snug">새싹어린이집</p>
+<p class="text-sm text-on-surface-variant mt-1">서울시 강남구 테헤란로 123</p>
+</div>
+</div>
+</section>
+<!-- Detailed Input Form -->
+<section class="flex flex-col gap-6">
+<div class="mb-2">
+<h2 class="text-2xl font-bold text-on-surface tracking-tight keep-all">상세 위치를<br/>입력해주세요</h2>
+<p class="text-sm text-secondary mt-2 keep-all">정확한 위치를 입력하면 책임자가 더 빠르게 대응할 수 있습니다.</p>
+</div>
+<!-- Space Name -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-on-surface">공간 이름</label>
+<div class="bg-surface-container-highest rounded-lg p-1">
+<input class="w-full bg-transparent border-none text-base text-on-surface focus:ring-0 px-3 py-2 border-b-2 border-transparent focus:border-primary transition-colors" placeholder="예: 거실, 1층 복도" type="text" value="새싹어린이집 1층 복도"/>
+</div>
+</div>
+<!-- Facility Type (Chips) -->
+<div class="flex flex-col gap-3">
+<label class="text-sm font-bold text-on-surface">시설 유형</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-full bg-primary-container text-on-primary-container font-semibold text-sm transition-transform active:scale-95 shadow-[0_4px_12px_rgba(0,180,216,0.2)]">어린이집</button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant text-sm hover:bg-surface-container-high transition-colors">요양원</button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant text-sm hover:bg-surface-container-high transition-colors">가정</button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant text-sm hover:bg-surface-container-high transition-colors">작업장</button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface-variant text-sm hover:bg-surface-container-high transition-colors">매장</button>
+</div>
+</div>
+<!-- Floor & Detailed Location -->
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-on-surface">층</label>
+<div class="relative bg-surface-container-highest rounded-lg">
+<select class="w-full bg-transparent border-none text-base text-on-surface appearance-none focus:ring-0 px-4 py-3 rounded-lg border-b-2 border-transparent focus:border-primary transition-colors">
+<option>지하 1층</option>
+<option selected="">1층</option>
+<option>2층</option>
+<option>3층</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-on-surface">상세 위치</label>
+<div class="bg-surface-container-highest rounded-lg">
+<input class="w-full bg-transparent border-none text-base text-on-surface focus:ring-0 px-4 py-3 border-b-2 border-transparent focus:border-primary transition-colors rounded-lg" placeholder="예: 창가 쪽" type="text" value="조리실 앞 복도"/>
+</div>
+</div>
+</div>
+<!-- Memo -->
+<div class="flex flex-col gap-2 mt-2">
+<label class="text-sm font-bold text-on-surface">설치 메모 (선택)</label>
+<div class="bg-surface-container-highest rounded-lg">
+<textarea class="w-full bg-transparent border-none text-base text-on-surface focus:ring-0 px-4 py-3 resize-none border-b-2 border-transparent focus:border-primary transition-colors rounded-lg" placeholder="설치 관련 특이사항을 입력해주세요." rows="3"></textarea>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Fixed Button -->
+<div class="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-surface via-surface to-transparent z-50 flex flex-col items-center max-w-[390px] mx-auto left-1/2 -translate-x-1/2">
+<button class="w-full bg-gradient-primary text-on-primary py-4 px-6 rounded-full font-bold text-lg shadow-[0_8px_24px_rgba(0,103,125,0.2)] active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
+            위치 저장
+            <span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+</button>
+</div>
+</body></html>

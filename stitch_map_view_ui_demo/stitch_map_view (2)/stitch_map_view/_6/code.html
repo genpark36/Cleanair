@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CleanAir - Comparison</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link as="style" crossorigin="" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed-dim": "#a1cddd",
+                    "primary-fixed-dim": "#4cd6fb",
+                    "primary": "#00677d",
+                    "inverse-on-surface": "#ecf2f4",
+                    "secondary-container": "#bae7f7",
+                    "outline": "#6d797e",
+                    "inverse-surface": "#2b3134",
+                    "surface-bright": "#f5fafd",
+                    "tertiary-container": "#eb8f3b",
+                    "surface-container": "#e9eff1",
+                    "tertiary-fixed": "#ffdcc3",
+                    "on-tertiary-container": "#5d2f00",
+                    "on-primary-fixed-variant": "#004e5f",
+                    "inverse-primary": "#4cd6fb",
+                    "surface": "#f5fafd",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "surface-container-low": "#eff4f7",
+                    "primary-fixed": "#b3ebff",
+                    "on-secondary-container": "#3d6977",
+                    "on-secondary": "#ffffff",
+                    "surface-tint": "#00677d",
+                    "outline-variant": "#bcc9ce",
+                    "surface-container-highest": "#dee3e6",
+                    "surface-variant": "#dee3e6",
+                    "on-surface": "#171c1f",
+                    "on-tertiary-fixed": "#2f1500",
+                    "surface-container-high": "#e3e9ec",
+                    "on-secondary-fixed-variant": "#1e4c5a",
+                    "secondary-fixed": "#bdeafa",
+                    "background": "#f5fafd",
+                    "surface-dim": "#d5dbde",
+                    "on-surface-variant": "#3d494d",
+                    "on-error": "#ffffff",
+                    "on-secondary-fixed": "#001f27",
+                    "on-primary-fixed": "#001f27",
+                    "on-background": "#171c1f",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-container": "#00414f",
+                    "primary-container": "#00b4d8",
+                    "secondary": "#396472",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "on-error-container": "#93000a",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "tertiary": "#914d00",
+                    "error": "#ba1a1a"
+            }
+          }
+        }
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-[884px] max-w-[390px] mx-auto overflow-x-hidden relative pb-32">
+<!-- TopAppBar & TabBar Container -->
+<header class="bg-[#f5fafd]/80 dark:bg-[#171c1f]/80 backdrop-blur-xl sticky top-0 z-50 transition-colors duration-300">
+<div class="flex flex-col w-full max-w-screen-xl mx-auto px-6 pt-4">
+<div class="flex justify-between items-center mb-4">
+<span class="text-2xl font-bold text-[#171c1f] dark:text-[#f5fafd]">CleanAir</span>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-[#00677d] dark:text-[#00b4d8] cursor-pointer scale-95 active:opacity-80 transition-transform">cloud</span>
+<span class="material-symbols-outlined text-[#00677d] dark:text-[#00b4d8] cursor-pointer scale-95 active:opacity-80 transition-transform">search</span>
+</div>
+</div>
+<!-- TabBar Logic: '비교' is active (Semantic Match for Comparison screen) -->
+<nav class="flex gap-6 pb-2">
+<a class="text-[#396472] dark:text-[#bcc9ce] font-medium hover:text-[#00b4d8] transition-colors duration-300" href="#">개요</a>
+<a class="text-[#396472] dark:text-[#bcc9ce] font-medium hover:text-[#00b4d8] transition-colors duration-300" href="#">모니터링</a>
+<a class="text-[#396472] dark:text-[#bcc9ce] font-medium hover:text-[#00b4d8] transition-colors duration-300" href="#">건강</a>
+<a class="text-[#00677d] dark:text-[#00b4d8] border-b-2 border-[#00677d] dark:border-[#00b4d8] font-semibold" href="#">비교</a>
+</nav>
+</div>
+</header>
+<main class="px-5 py-6 flex flex-col gap-6">
+<!-- Card 1: Nearest Station -->
+<section class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_32px_rgba(23,28,31,0.04)]">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[11px] font-bold tracking-wider text-secondary uppercase">가장 가까운 측정소</span>
+<div class="flex items-center gap-1 text-secondary opacity-60">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="text-[11px]">14:30 업데이트</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<h2 class="text-xl font-extrabold tracking-tight">강남구 역삼동</h2>
+</div>
+<p class="text-sm text-secondary font-medium pl-6">서울특별시 강남구</p>
+</section>
+<!-- Card 2: PM2.5 Comparison -->
+<section class="bg-surface-container-low p-6 rounded-xl transition-all duration-300 hover:bg-surface-container">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="text-lg font-bold text-on-surface">PM2.5 초미세먼지</h3>
+<span class="text-xs text-secondary opacity-70">출처: 에어코리아</span>
+</div>
+<div class="bg-primary-fixed px-3 py-1 rounded-full">
+<span class="text-[10px] font-bold text-on-primary-fixed-variant">실시간 분석</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-surface-container-lowest p-4 rounded-lg">
+<p class="text-[10px] text-secondary font-bold mb-1">실내 센서</p>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold text-primary">12</span>
+<span class="text-xs text-secondary">µg/m³</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg">
+<p class="text-[10px] text-secondary font-bold mb-1">측정소</p>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold text-on-surface">24</span>
+<span class="text-xs text-secondary">µg/m³</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between bg-primary/5 p-4 rounded-lg mb-6">
+<span class="text-sm font-medium">측정 편차</span>
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined font-bold">arrow_downward</span>
+<span class="text-lg font-bold">-12 µg/m³</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-y-4 gap-x-2 pt-4 border-t border-outline-variant/20">
+<div class="flex flex-col">
+<span class="text-[10px] text-secondary font-bold mb-1">오차율 (MAPE)</span>
+<span class="text-sm font-bold text-primary">5.2%</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-secondary font-bold mb-1">일치도 (R²)</span>
+<span class="text-sm font-bold text-primary">0.92</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-secondary font-bold mb-1">RMSE</span>
+<span class="text-sm font-bold">1.8</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-secondary font-bold mb-1">CV</span>
+<span class="text-sm font-bold">12.5%</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-secondary font-bold mb-1">표본 수</span>
+<span class="text-sm font-bold">n=48</span>
+</div>
+</div>
+</section>
+<!-- Card 3: Temperature Comparison -->
+<section class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_24px_rgba(23,28,31,0.02)]">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="text-lg font-bold text-on-surface">온도</h3>
+<span class="text-xs text-secondary opacity-70">출처: 기상청</span>
+</div>
+<span class="material-symbols-outlined text-tertiary">thermostat</span>
+</div>
+<div class="flex justify-between items-center mb-6 px-2">
+<div class="text-center">
+<p class="text-[10px] text-secondary font-bold mb-1">실내</p>
+<span class="text-2xl font-bold">24.5°C</span>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div class="text-center">
+<p class="text-[10px] text-secondary font-bold mb-1">측정소</p>
+<span class="text-2xl font-bold text-secondary">18.2°C</span>
+</div>
+</div>
+<div class="flex items-center justify-between bg-error/5 p-4 rounded-lg mb-4">
+<span class="text-sm font-medium">편차</span>
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined font-bold">arrow_upward</span>
+<span class="text-lg font-bold">+6.3°C</span>
+</div>
+</div>
+</section>
+<!-- Card 4: Humidity Comparison -->
+<section class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_24px_rgba(23,28,31,0.02)]">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="text-lg font-bold text-on-surface">습도</h3>
+<span class="text-xs text-secondary opacity-70">출처: 기상청</span>
+</div>
+<span class="material-symbols-outlined text-[#00B4D8]">humidity_mid</span>
+</div>
+<div class="flex justify-between items-center mb-6 px-2">
+<div class="text-center">
+<p class="text-[10px] text-secondary font-bold mb-1">실내</p>
+<span class="text-2xl font-bold">45%</span>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div class="text-center">
+<p class="text-[10px] text-secondary font-bold mb-1">측정소</p>
+<span class="text-2xl font-bold text-secondary">52%</span>
+</div>
+</div>
+<div class="flex items-center justify-between bg-primary/5 p-4 rounded-lg mb-4">
+<span class="text-sm font-medium">편차</span>
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined font-bold">arrow_downward</span>
+<span class="text-lg font-bold">-7%</span>
+</div>
+</div>
+</section>
+<!-- Card 5: Statistics Guide -->
+<section class="bg-inverse-surface text-inverse-on-surface p-8 rounded-xl mt-4">
+<h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined">info</span>
+                통계 설명 가이드
+            </h3>
+<div class="space-y-6">
+<div>
+<h4 class="text-sm font-bold text-primary-fixed mb-2">지표 정의</h4>
+<div class="space-y-3">
+<div>
+<p class="text-xs font-bold">R² (결정계수)</p>
+<p class="text-[11px] opacity-70 leading-relaxed">두 데이터의 경향성 일치도. 1에 가까울수록 흐름이 정확히 일치함.</p>
+</div>
+<div>
+<p class="text-xs font-bold">RMSE (평균 제곱근 오차)</p>
+<p class="text-[11px] opacity-70 leading-relaxed">추정 값과 실제 값의 차이의 평균. 낮을수록 정확함.</p>
+</div>
+<div>
+<p class="text-xs font-bold">MAPE (평균 절대 백분율 오차)</p>
+<p class="text-[11px] opacity-70 leading-relaxed">상대적인 오차 비율. 낮을수록 정밀함.</p>
+</div>
+</div>
+</div>
+<div class="bg-white/5 p-4 rounded-lg">
+<h4 class="text-sm font-bold text-primary-fixed mb-3">R² 신뢰도 기준</h4>
+<div class="flex items-center justify-between text-[11px] py-1 border-b border-white/10">
+<span>0.9 이상</span>
+<span class="font-bold text-primary-fixed">매우 높음 (Very High)</span>
+</div>
+<div class="flex items-center justify-between text-[11px] py-1 border-b border-white/10">
+<span>0.7 ~ 0.9</span>
+<span>높음 (High)</span>
+</div>
+<div class="flex items-center justify-between text-[11px] py-1">
+<span>0.5 미만</span>
+<span class="opacity-50">낮음 (Low)</span>
+</div>
+</div>
+<div>
+<h4 class="text-sm font-bold text-primary-fixed mb-2">데이터 출처</h4>
+<ul class="text-[11px] space-y-1 opacity-70">
+<li class="flex justify-between"><span>PM2.5</span><span>에어코리아</span></li>
+<li class="flex justify-between"><span>온도 / 습도</span><span>기상청</span></li>
+<li class="flex justify-between"><span>CO₂/TVOC/NOx</span><span>비교 데이터 미제공</span></li>
+</ul>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-4 bg-[#ffffff]/80 dark:bg-[#171c1f]/80 backdrop-blur-xl z-50 rounded-t-[2rem] shadow-[0_-8px_32px_rgba(23,28,31,0.04)]">
+<!-- Dashboard Item -->
+<a class="flex flex-col items-center justify-center text-[#396472] dark:text-[#bcc9ce] px-5 py-2 hover:scale-110 transition-transform duration-200 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Pretendard'] text-[11px] font-bold tracking-wider">Dashboard</span>
+</a>
+<!-- Analysis Item (Active Tab logic) -->
+<a class="flex flex-col items-center justify-center text-[#00677d] dark:text-[#00b4d8] bg-[#eff4f7] dark:bg-[#e3e9ec]/10 rounded-full px-5 py-2 hover:scale-110 transition-transform duration-200 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-['Pretendard'] text-[11px] font-bold tracking-wider">Analysis</span>
+</a>
+<!-- Health Item -->
+<a class="flex flex-col items-center justify-center text-[#396472] dark:text-[#bcc9ce] px-5 py-2 hover:scale-110 transition-transform duration-200 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">health_and_safety</span>
+<span class="font-['Pretendard'] text-[11px] font-bold tracking-wider">Health</span>
+</a>
+<!-- Settings Item -->
+<a class="flex flex-col items-center justify-center text-[#396472] dark:text-[#bcc9ce] px-5 py-2 hover:scale-110 transition-transform duration-200 active:scale-90 duration-150" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Pretendard'] text-[11px] font-bold tracking-wider">Settings</span>
+</a>
+</nav>
+</body></html>

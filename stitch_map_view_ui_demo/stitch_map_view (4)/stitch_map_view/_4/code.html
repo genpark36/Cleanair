@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>연결 장치 관리 - Facility Safety</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Pretendard', sans-serif; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#001f27",
+                        "secondary-fixed": "#bdeafa",
+                        "surface-dim": "#d5dbde",
+                        "tertiary": "#914d00",
+                        "on-primary-fixed-variant": "#004e5f",
+                        "on-primary-container": "#00414f",
+                        "background": "#f5fafd",
+                        "surface-container-low": "#eff4f7",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-surface-variant": "#3d494d",
+                        "primary-fixed": "#b3ebff",
+                        "surface": "#f5fafd",
+                        "tertiary-fixed": "#ffdcc3",
+                        "outline": "#6d797e",
+                        "primary": "#00677d",
+                        "surface-container": "#e9eff1",
+                        "on-secondary-container": "#3d6977",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#f5fafd",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "surface-variant": "#dee3e6",
+                        "outline-variant": "#bcc9ce",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#00677d",
+                        "on-background": "#171c1f",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "on-secondary-fixed": "#001f27",
+                        "secondary-fixed-dim": "#a1cddd",
+                        "on-tertiary-container": "#5d2f00",
+                        "on-secondary-fixed-variant": "#1e4c5a",
+                        "on-tertiary-fixed": "#2f1500",
+                        "on-surface": "#171c1f",
+                        "primary-container": "#00b4d8",
+                        "inverse-on-surface": "#ecf2f4",
+                        "primary-fixed-dim": "#4cd6fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#396472",
+                        "inverse-surface": "#2b3134",
+                        "tertiary-container": "#eb8f3b",
+                        "surface-container-highest": "#dee3e6",
+                        "surface-container-high": "#e3e9ec",
+                        "secondary-container": "#bae7f7",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#4cd6fb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md text-cyan-600 dark:text-cyan-400 font-['Pretendard'] font-bold text-lg tracking-tight no-border shadow-none bg-opacity-70 flex justify-between items-center px-6 py-4 max-w-full mx-auto">
+<button class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="location_on">location_on</span>
+</button>
+<span class="text-xl font-black text-slate-900 dark:text-slate-50">Facility Safety</span>
+<button class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="notifications_active">notifications_active</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="pt-24 px-6 md:px-12 max-w-5xl mx-auto">
+<div class="mb-10 mt-8">
+<h1 class="text-4xl font-black text-on-background tracking-tight mb-2">연결 장치</h1>
+<p class="text-on-surface-variant text-lg">시설 내 연결된 장치를 실시간으로 제어하고 모니터링합니다.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 relative flex flex-col justify-between overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-surface-container-low to-transparent opacity-50 pointer-events-none"></div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-surface-container rounded-full text-secondary">
+<span class="material-symbols-outlined text-3xl" data-icon="campaign">campaign</span>
+</div>
+<span class="bg-surface-container-highest text-on-surface-variant text-xs font-bold px-3 py-1 rounded-full uppercase">꺼짐</span>
+</div>
+<h2 class="text-xl font-bold text-on-background mb-1">1층 복도 사이렌</h2>
+<p class="text-sm text-on-surface-variant mb-6">자동 제어: <span class="text-primary font-semibold">켜짐</span> (화재 의심 높음 단계 작동)</p>
+</div>
+<div class="relative z-10 flex items-center justify-between border-t border-outline-variant/20 pt-4 mt-auto">
+<button class="text-secondary font-semibold text-sm hover:underline flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">settings</span> 규칙 설정
+                    </button>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 relative flex flex-col justify-between overflow-hidden ring-2 ring-primary-container ring-offset-2 ring-offset-surface">
+<div class="absolute inset-0 bg-gradient-to-br from-primary-fixed-dim/20 to-transparent opacity-50 pointer-events-none"></div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-primary-fixed rounded-full text-primary">
+<span class="material-symbols-outlined text-3xl" data-icon="mode_fan">mode_fan</span>
+</div>
+<span class="bg-primary-container text-on-primary-container text-xs font-bold px-3 py-1 rounded-full uppercase animate-pulse">켜짐</span>
+</div>
+<h2 class="text-xl font-bold text-on-background mb-1">주방 환기팬</h2>
+<p class="text-sm text-on-surface-variant mb-6">마지막 작동: <span class="font-semibold">오전 11:15</span></p>
+</div>
+<div class="relative z-10 flex items-center justify-between border-t border-outline-variant/20 pt-4 mt-auto">
+<button class="text-secondary font-semibold text-sm hover:underline flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">settings</span> 규칙 설정
+                    </button>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 relative flex flex-col justify-between overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-surface-container-low to-transparent opacity-50 pointer-events-none"></div>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-surface-container rounded-full text-secondary">
+<span class="material-symbols-outlined text-3xl" data-icon="wb_incandescent">wb_incandescent</span>
+</div>
+<span class="bg-surface-container-highest text-on-surface-variant text-xs font-bold px-3 py-1 rounded-full uppercase">꺼짐</span>
+</div>
+<h2 class="text-xl font-bold text-on-background mb-1">입구 경광등</h2>
+<p class="text-sm text-on-surface-variant mb-6">자동 제어: <span class="font-semibold text-on-surface-variant">꺼짐</span></p>
+</div>
+<div class="relative z-10 flex items-center justify-between border-t border-outline-variant/20 pt-4 mt-auto">
+<button class="text-secondary font-semibold text-sm hover:underline flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">settings</span> 규칙 설정
+                    </button>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 rounded-t-[2rem] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl font-['Pretendard'] font-semibold text-[10px] uppercase tracking-wider no-border shadow-[0_-8px_32px_rgba(23,28,31,0.04)] shadow-xl flex justify-around items-center px-4 pb-6 pt-3">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="dashboard">dashboard</span>
+<span>Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="analytics">analytics</span>
+<span>Analysis</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="warning">warning</span>
+<span>Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-900/20 rounded-2xl px-3 py-1.5 scale-90 duration-150" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings_remote" data-weight="fill" style="font-variation-settings: 'FILL' 1;">settings_remote</span>
+<span>Devices</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-3 py-1.5 hover:text-cyan-500 transition-all" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</body></html>

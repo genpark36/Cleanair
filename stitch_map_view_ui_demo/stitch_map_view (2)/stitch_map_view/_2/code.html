@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link as="style" crossorigin="" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<style>
+        body { font-family: 'Pretendard', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .editorial-gradient { background: linear-gradient(135deg, #00677d 0%, #00b4d8 100%); }
+        .glass-header { background: rgba(245, 250, 253, 0.8); backdrop-filter: blur(12px); }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#00677d",
+                        "primary-container": "#00b4d8",
+                        "on-primary": "#ffffff",
+                        "secondary": "#396472",
+                        "secondary-container": "#bae7f7",
+                        "on-secondary-container": "#3d6977",
+                        "background": "#f5fafd",
+                        "on-background": "#171c1f",
+                        "surface": "#f5fafd",
+                        "on-surface": "#171c1f",
+                        "surface-variant": "#dee3e6",
+                        "on-surface-variant": "#3d494d",
+                        "outline": "#6d797e",
+                        "outline-variant": "#bcc9ce",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eff4f7",
+                        "surface-container": "#e9eff1",
+                        "surface-container-high": "#e3e9ec",
+                        "surface-container-highest": "#dee3e6",
+                        "error": "#ba1a1a"
+                    },
+                    borderRadius: {
+                        "lg": "1rem",
+                        "xl": "1.25rem",
+                        "full": "9999px"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            min-height: 884px;
+            width: 390px;
+            margin: 0 auto;
+            position: relative;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-[390px] z-50 glass-header border-b border-outline-variant/10">
+<div class="flex items-center justify-between px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">waves</span>
+<h1 class="text-xl font-bold text-primary tracking-tight">CleanAir</h1>
+</div>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-full bg-surface-container-highest text-secondary text-[11px] font-bold transition-transform active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-sm">download</span>
+                CSV/JSON 내보내기
+            </button>
+</div>
+</header>
+<main class="pt-20 pb-24 px-5 space-y-6">
+<!-- Metric Tabs -->
+<section class="no-scrollbar overflow-x-auto flex gap-2 -mx-2 px-2">
+<button class="flex-shrink-0 px-5 py-2 rounded-full bg-primary text-white text-sm font-bold shadow-md">PM2.5</button>
+<button class="flex-shrink-0 px-5 py-2 rounded-full bg-surface-container-high text-secondary text-sm font-medium">CO2</button>
+<button class="flex-shrink-0 px-5 py-2 rounded-full bg-surface-container-high text-secondary text-sm font-medium">TVOC</button>
+<button class="flex-shrink-0 px-5 py-2 rounded-full bg-surface-container-high text-secondary text-sm font-medium">NOx</button>
+<button class="flex-shrink-0 px-5 py-2 rounded-full bg-surface-container-high text-secondary text-sm font-medium">온도</button>
+</section>
+<!-- Summary Cards -->
+<section class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+<p class="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-60">MAX (최대)</p>
+<h3 class="text-xl font-black text-on-surface">42 <span class="text-xs font-bold opacity-40 uppercase">μg/m³</span></h3>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+<p class="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-60">MIN (최소)</p>
+<h3 class="text-xl font-black text-on-surface">12 <span class="text-xs font-bold opacity-40 uppercase">μg/m³</span></h3>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+<p class="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-60">AVG (평균)</p>
+<h3 class="text-xl font-black text-on-surface">24.5 <span class="text-xs font-bold opacity-40 uppercase">μg/m³</span></h3>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+<p class="text-[10px] text-secondary font-bold uppercase tracking-widest mb-1 opacity-60">MEDIAN (중앙값)</p>
+<h3 class="text-xl font-black text-on-surface">23 <span class="text-xs font-bold opacity-40 uppercase">μg/m³</span></h3>
+</div>
+</section>
+<!-- Replaced Status Card (Style from Screen 42) -->
+<section class="bg-surface-container-lowest p-6 rounded-2xl shadow-[0_8px_32px_rgba(23,28,31,0.04)] border border-outline-variant/10 relative overflow-hidden">
+<div class="flex justify-between items-start">
+<div>
+<p class="text-sm font-bold text-secondary mb-1">PM2.5 초미세먼지</p>
+<div class="flex items-baseline gap-1">
+<span class="text-4xl font-black tracking-tighter text-on-surface">12</span>
+<span class="text-base font-bold text-secondary">µg/m³</span>
+</div>
+</div>
+<div class="bg-[#e8f5e9] text-[#2e7d32] px-3 py-1 rounded-full text-[10px] font-black uppercase">좋음</div>
+</div>
+<div class="mt-5 flex items-center gap-2">
+<div class="flex h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="bg-[#4caf50] h-full" style="width: 24%;"></div>
+</div>
+</div>
+<p class="mt-4 text-[11px] text-secondary font-medium">
+<span class="text-primary font-bold">평균보다 12% 낮음</span> • 지난 24시간 대비 안정적
+            </p>
+<div class="absolute -right-3 -bottom-3 opacity-[0.03]">
+<span class="material-symbols-outlined text-[100px]">air</span>
+</div>
+</section>
+<!-- Precision Chart Section -->
+<section class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-6">
+<div class="flex bg-surface-container-low p-1 rounded-lg">
+<button class="px-3 py-1 rounded-md bg-white shadow-sm text-[11px] font-bold text-primary">24시간</button>
+<button class="px-3 py-1 text-[11px] font-bold text-secondary">주간</button>
+<button class="px-3 py-1 text-[11px] font-bold text-secondary">월간</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-1.5 rounded-lg bg-surface-container-low text-secondary">
+<span class="material-symbols-outlined text-lg">zoom_in</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg editorial-gradient text-white text-[11px] font-bold shadow-md">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">select_window</span>
+                        구간 선택
+                    </button>
+</div>
+</div>
+<!-- Precision Hybrid Chart -->
+<div class="h-48 w-full relative">
+<!-- Threshold Background -->
+<div class="absolute inset-0 flex flex-col pointer-events-none opacity-40">
+<div class="flex-1 bg-red-50 border-b border-red-100"></div>
+<div class="flex-1 bg-yellow-50 border-b border-yellow-100"></div>
+<div class="flex-[2] bg-green-50"></div>
+</div>
+<!-- Bars Representation -->
+<div class="absolute bottom-0 left-0 w-full h-full flex items-end justify-between px-1">
+<div class="w-[4%] h-[35%] bg-primary/30 rounded-t-sm"></div>
+<div class="w-[4%] h-[40%] bg-primary/30 rounded-t-sm"></div>
+<div class="w-[4%] h-[32%] bg-primary/30 rounded-t-sm"></div>
+<div class="w-[4%] h-[55%] bg-primary-container rounded-t-sm"></div>
+<div class="w-[4%] h-[68%] bg-primary rounded-t-sm relative">
+<div class="absolute -top-12 left-1/2 -translate-x-1/2 bg-on-surface text-white px-2 py-1 rounded text-[9px] font-bold whitespace-nowrap z-10 shadow-lg">
+                            14:35 — 32 μg/m³
+                        </div>
+</div>
+<div class="w-[4%] h-[75%] bg-primary rounded-t-sm"></div>
+<div class="w-[4%] h-[60%] bg-primary-container rounded-t-sm"></div>
+<div class="w-[4%] h-[45%] bg-primary-container/60 rounded-t-sm"></div>
+<div class="w-[4%] h-[38%] bg-primary/30 rounded-t-sm"></div>
+<div class="w-[4%] h-[25%] bg-primary/30 rounded-t-sm"></div>
+<div class="w-[4%] h-[30%] bg-primary/30 rounded-t-sm"></div>
+<div class="w-[4%] h-[45%] bg-primary-container rounded-t-sm"></div>
+<div class="w-[4%] h-[50%] bg-primary-container rounded-t-sm"></div>
+<div class="w-[4%] h-[42%] bg-primary/30 rounded-t-sm"></div>
+<div class="w-[4%] h-[35%] bg-primary/30 rounded-t-sm"></div>
+</div>
+</div>
+<div class="mt-4 flex justify-between text-[9px] text-secondary font-bold opacity-50 px-1">
+<span>00:00</span>
+<span>08:00</span>
+<span>16:00</span>
+<span>23:59</span>
+</div>
+</section>
+<!-- Detailed Log Table -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<h2 class="text-base font-bold text-on-surface">상세 데이터 로그</h2>
+<span class="text-[10px] text-secondary font-medium opacity-60">최근 업데이트: 방금 전</span>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="pl-5 pr-2 py-3 text-[10px] font-bold text-secondary uppercase tracking-wider">시간</th>
+<th class="px-2 py-3 text-[10px] font-bold text-secondary uppercase tracking-wider text-center">수치</th>
+<th class="px-2 py-3 text-[10px] font-bold text-secondary uppercase tracking-wider">상태</th>
+<th class="pl-2 pr-5 py-3 text-[10px] font-bold text-secondary uppercase tracking-wider text-right">상세</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/5">
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="pl-5 pr-2 py-4 text-xs font-medium text-secondary">14:55:02</td>
+<td class="px-2 py-4 text-xs font-bold text-on-surface text-center">22 <span class="text-[10px] opacity-40">μg</span></td>
+<td class="px-2 py-4">
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+<span class="text-[11px] font-bold text-green-600">좋음</span>
+</div>
+</td>
+<td class="pl-2 pr-5 py-4 text-right">
+<span class="material-symbols-outlined text-secondary opacity-30 text-lg">chevron_right</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="pl-5 pr-2 py-4 text-xs font-medium text-secondary">14:50:00</td>
+<td class="px-2 py-4 text-xs font-bold text-on-surface text-center">35 <span class="text-[10px] opacity-40">μg</span></td>
+<td class="px-2 py-4">
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+<span class="text-[11px] font-bold text-yellow-600">보통</span>
+</div>
+</td>
+<td class="pl-2 pr-5 py-4 text-right">
+<span class="material-symbols-outlined text-secondary opacity-30 text-lg">chevron_right</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container/50 transition-colors">
+<td class="pl-5 pr-2 py-4 text-xs font-medium text-secondary">14:40:00</td>
+<td class="px-2 py-4 text-xs font-bold text-on-surface text-center">54 <span class="text-[10px] opacity-40">μg</span></td>
+<td class="px-2 py-4">
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-error"></div>
+<span class="text-[11px] font-bold text-error">나쁨</span>
+</div>
+</td>
+<td class="pl-2 pr-5 py-4 text-right">
+<span class="material-symbols-outlined text-secondary opacity-30 text-lg">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+<button class="w-full py-4 text-[11px] font-bold text-primary hover:bg-surface-container transition-colors border-t border-outline-variant/5">더 보기 (254개 로그)</button>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-[390px] z-50 bg-[#f5fafd]/90 backdrop-blur-xl flex justify-around items-center px-4 pt-3 pb-8 rounded-t-3xl shadow-[0_-8px_32px_rgba(23,28,31,0.06)] border-t border-outline-variant/10">
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined text-[22px]">dashboard</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-1">대시보드</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary scale-105" href="#">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-1">분석</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined text-[22px]">tune</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-1">제어</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-1">설정</span>
+</a>
+</nav>
+</body></html>

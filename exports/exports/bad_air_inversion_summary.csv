@@ -1,0 +1,19 @@
+dataset,rule,scenario,rows_total,bad_count,inversion_count,inversion_ratio_within_bad_%
+dataset_1_previous_recomputed,bad_formula_aligned(co2>=1000 or pm25>=50 or tvoc>=200),orig_m,15705,10462,0,0.0
+dataset_1_previous_recomputed,bad_formula_aligned(co2>=1000 or pm25>=50 or tvoc>=200),no_k_m,15705,10462,0,0.0
+dataset_1_previous_recomputed,bad_formula_aligned(co2>=1000 or pm25>=50 or tvoc>=200),no_k_th_m,15705,10462,0,0.0
+dataset_1_previous_recomputed,bad_legacy_high(co2>=1000 or pm25>=35 or tvoc>=300),orig_m,15705,10385,0,0.0
+dataset_1_previous_recomputed,bad_legacy_high(co2>=1000 or pm25>=35 or tvoc>=300),no_k_m,15705,10385,0,0.0
+dataset_1_previous_recomputed,bad_legacy_high(co2>=1000 or pm25>=35 or tvoc>=300),no_k_th_m,15705,10385,0,0.0
+dataset_1_previous_recomputed,bad_not_good(co2>=800 or pm25>=15 or tvoc>=150),orig_m,15705,15064,55,0.365
+dataset_1_previous_recomputed,bad_not_good(co2>=800 or pm25>=15 or tvoc>=150),no_k_m,15705,15064,4602,30.55
+dataset_1_previous_recomputed,bad_not_good(co2>=800 or pm25>=15 or tvoc>=150),no_k_th_m,15705,15064,4200,27.881
+dataset_2_latest_since_cleanup,bad_formula_aligned(co2>=1000 or pm25>=50 or tvoc>=200),orig_m,1061,331,0,0.0
+dataset_2_latest_since_cleanup,bad_formula_aligned(co2>=1000 or pm25>=50 or tvoc>=200),no_k_m,1061,331,0,0.0
+dataset_2_latest_since_cleanup,bad_formula_aligned(co2>=1000 or pm25>=50 or tvoc>=200),no_k_th_m,1061,331,0,0.0
+dataset_2_latest_since_cleanup,bad_legacy_high(co2>=1000 or pm25>=35 or tvoc>=300),orig_m,1061,0,0,0.0
+dataset_2_latest_since_cleanup,bad_legacy_high(co2>=1000 or pm25>=35 or tvoc>=300),no_k_m,1061,0,0,0.0
+dataset_2_latest_since_cleanup,bad_legacy_high(co2>=1000 or pm25>=35 or tvoc>=300),no_k_th_m,1061,0,0,0.0
+dataset_2_latest_since_cleanup,bad_not_good(co2>=800 or pm25>=15 or tvoc>=150),orig_m,1061,1061,0,0.0
+dataset_2_latest_since_cleanup,bad_not_good(co2>=800 or pm25>=15 or tvoc>=150),no_k_m,1061,1061,730,68.803
+dataset_2_latest_since_cleanup,bad_not_good(co2>=800 or pm25>=15 or tvoc>=150),no_k_th_m,1061,1061,730,68.803

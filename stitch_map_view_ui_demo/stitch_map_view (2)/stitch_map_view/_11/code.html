@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html class="light" lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Atmosphere - 알림 설정</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-tint": "#00677d",
+              "on-secondary": "#ffffff",
+              "on-secondary-fixed": "#051e28",
+              "surface-container-low": "#f2f4f5",
+              "on-surface": "#191c1d",
+              "on-primary-container": "#00414f",
+              "tertiary": "#914d00",
+              "surface-dim": "#d8dadb",
+              "primary-container": "#00b4d8",
+              "surface-container": "#eceeef",
+              "inverse-surface": "#2e3132",
+              "surface-container-highest": "#e1e3e4",
+              "on-surface-variant": "#3d494d",
+              "tertiary-fixed": "#ffdcc3",
+              "primary-fixed": "#b3ebff",
+              "surface-container-lowest": "#ffffff",
+              "on-tertiary-container": "#5d2f00",
+              "surface-bright": "#f8fafb",
+              "secondary": "#4a626d",
+              "primary": "#00677d",
+              "inverse-primary": "#4cd6fb",
+              "inverse-on-surface": "#eff1f2",
+              "outline": "#6d797e",
+              "secondary-container": "#cde6f4",
+              "on-tertiary-fixed": "#2f1500",
+              "background": "#f8fafb",
+              "on-error": "#ffffff",
+              "outline-variant": "#bcc9ce",
+              "on-primary-fixed": "#001f27",
+              "secondary-fixed-dim": "#b1cad7",
+              "surface-container-high": "#e6e8e9",
+              "on-background": "#191c1d",
+              "surface-variant": "#e1e3e4",
+              "primary-fixed-dim": "#4cd6fb",
+              "surface": "#f8fafb",
+              "on-error-container": "#93000a",
+              "error-container": "#ffdad6",
+              "on-primary-fixed-variant": "#004e5f",
+              "secondary-fixed": "#cde6f4",
+              "tertiary-fixed-dim": "#ffb77d",
+              "on-secondary-container": "#506873",
+              "on-tertiary-fixed-variant": "#6e3900",
+              "on-tertiary": "#ffffff",
+              "on-primary": "#ffffff",
+              "tertiary-container": "#eb8f3b",
+              "error": "#ba1a1a",
+              "on-secondary-fixed-variant": "#334a55"
+            },
+            fontFamily: {
+              "headline": ["Manrope", "sans-serif"],
+              "body": ["Manrope", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #00677d;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 103, 125, 0.2);
+            margin-top: -8px;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 4px;
+            background: #e1e3e4;
+            border-radius: 2px;
+        }
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-6 py-4 sticky top-0 z-50 bg-[#f8fafb] dark:bg-slate-950">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#00677d] dark:text-cyan-400" data-icon="location_on">location_on</span>
+<h1 class="font-['Manrope'] font-bold text-xl tracking-tight text-[#00677d] dark:text-cyan-400">알림 설정</h1>
+</div>
+<div class="p-2 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors active:scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined text-[#4a626d] dark:text-slate-400" data-icon="settings">settings</span>
+</div>
+</header>
+<main class="max-w-xl mx-auto px-6 py-8">
+<!-- Hero Visual Section -->
+<section class="mb-12">
+<div class="relative overflow-hidden rounded-[32px] bg-primary-container p-8 text-on-primary-container">
+<div class="relative z-10">
+<h2 class="font-headline font-extrabold text-3xl mb-2 tracking-tight">안전하게 보호받으세요</h2>
+<p class="font-body opacity-80 max-w-[240px]">대기 질 변화에 대한 알림을 받고 싶은 시점과 방법을 설정하세요.</p>
+</div>
+<div class="absolute -right-8 -bottom-8 w-48 h-48 bg-primary/20 rounded-full blur-3xl"></div>
+<div class="absolute right-6 top-6">
+<span class="material-symbols-outlined text-6xl opacity-30" data-icon="notifications_active" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</div>
+</div>
+</section>
+<!-- Notification Preferences -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-bold text-lg text-on-surface-variant">기본 설정</h3>
+</div>
+<div class="space-y-4">
+<!-- Toggle: Daily Summary -->
+<div class="bg-surface-container-low p-5 rounded-2xl flex items-center justify-between group hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">일일 요약</p>
+<p class="font-label text-xs text-on-surface-variant uppercase tracking-wider">매일 오전 8:00에 전송</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- Toggle: Critical AQI Alerts -->
+<div class="bg-surface-container-low p-5 rounded-2xl flex items-center justify-between group hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface">위험 수치 알림</p>
+<p class="font-label text-xs text-on-surface-variant uppercase tracking-wider">즉각적인 건강 위험 경고</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Alert Threshold Slider -->
+<section class="mt-12">
+<div class="bg-surface-container-lowest border border-outline-variant/15 p-8 rounded-[32px] shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="font-headline font-bold text-lg text-on-surface">알림 기준 수치</h3>
+<p class="font-label text-xs text-on-surface-variant uppercase tracking-widest mt-1">설정한 수치 이상일 때 알림 전송</p>
+</div>
+<div class="bg-primary/10 px-4 py-2 rounded-xl">
+<span class="font-headline font-extrabold text-2xl text-primary">100</span>
+<span class="font-label text-xs text-primary font-bold ml-1 uppercase">AQI</span>
+</div>
+</div>
+<div class="relative w-full px-2">
+<input class="w-full h-1 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary" max="300" min="0" type="range" value="100"/>
+<div class="flex justify-between mt-4">
+<span class="font-label text-[10px] text-on-surface-variant font-bold">좋음 (0)</span>
+<span class="font-label text-[10px] text-on-surface-variant font-bold">매우 나쁨 (300+)</span>
+</div>
+</div>
+<div class="mt-8 flex gap-3 p-4 bg-tertiary-fixed rounded-2xl items-center">
+<span class="material-symbols-outlined text-on-tertiary-fixed-variant" data-icon="info">info</span>
+<p class="text-sm text-on-tertiary-fixed font-medium">기준치를 100으로 설정하면 대기 질이 '민감군에게 해로움' 단계일 때 알림을 받게 됩니다.</p>
+</div>
+</div>
+</section>
+<!-- Monitored Locations -->
+<section class="mt-12 pb-12">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline font-bold text-lg text-on-surface-variant">관심 지역</h3>
+<button class="text-primary font-label text-xs font-bold uppercase tracking-widest flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                    추가
+                </button>
+</div>
+<div class="space-y-3">
+<!-- Location 1 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="home">home</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface text-sm">우리집 (시애틀)</p>
+<p class="font-label text-[10px] text-on-surface-variant">모니터링 중</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant hover:text-error transition-colors cursor-pointer" data-icon="delete">delete</span>
+</div>
+<!-- Location 2 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="work">work</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface text-sm">사무실 (벨뷰)</p>
+<p class="font-label text-[10px] text-on-surface-variant">모니터링 중</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant hover:text-error transition-colors cursor-pointer" data-icon="delete">delete</span>
+</div>
+<!-- Location 3 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-2xl">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary" data-icon="park">park</span>
+</div>
+<div>
+<p class="font-headline font-bold text-on-surface text-sm">도시 공원</p>
+<p class="font-label text-[10px] text-on-surface-variant">모니터링 중</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant hover:text-error transition-colors cursor-pointer" data-icon="delete">delete</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-[#f8fafb]/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-[0_-4px_20px_0_rgba(0,0,0,0.05)] rounded-t-[24px]">
+<div class="flex flex-col items-center justify-center text-[#4a626d] dark:text-slate-500 opacity-70 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-[10px] font-medium uppercase tracking-widest mt-1">대시보드</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#4a626d] dark:text-slate-500 opacity-70 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-['Inter'] text-[10px] font-medium uppercase tracking-widest mt-1">분석</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#4a626d] dark:text-slate-500 opacity-70 hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-['Inter'] text-[10px] font-medium uppercase tracking-widest mt-1">지도</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#00677d] dark:text-cyan-400 font-bold bg-[#00677d]/10 dark:bg-cyan-400/10 rounded-xl px-4 py-2 translate-y-[-2px] transition-transform duration-300">
+<span class="material-symbols-outlined" data-icon="notifications_active" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+<span class="font-['Inter'] text-[10px] font-medium uppercase tracking-widest mt-1">알림</span>
+</div>
+</nav>
+</body></html>
