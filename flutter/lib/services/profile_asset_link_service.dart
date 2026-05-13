@@ -129,6 +129,9 @@ class ProfileAssetLinkService {
   }) async {
     final plugId = plug.deviceId.trim();
     if (plugId.isEmpty) return;
+    final voltage = _readTelemetryNumber(plug.telemetry, 'voltage');
+    final current = _readTelemetryNumber(plug.telemetry, 'current');
+    final powerWatts = _readTelemetryNumber(plug.telemetry, 'power');
     await _profileRef(user.uid)
         .collection('plug_links')
         .doc(_docId(plugId))
@@ -153,6 +156,15 @@ class ProfileAssetLinkService {
         'autoHysteresisPercent': plug.autoHysteresisPercent,
         'autoHoldMinutes': plug.autoHoldMinutes,
         'currentPowerOn': plug.currentPowerOn,
+        'actualState': plug.currentPowerOn == null
+            ? 'UNKNOWN'
+            : plug.currentPowerOn == true
+                ? 'ON'
+                : 'OFF',
+        'telemetry': plug.telemetry,
+        'voltage': voltage,
+        'current': current,
+        'powerWatts': powerWatts,
         'lastTestStatus': plug.lastTestStatus,
         'source': 'flutter_app',
         'localUpdatedAt': plug.updatedAt.toIso8601String(),
@@ -180,5 +192,17 @@ class ProfileAssetLinkService {
 
   String _docId(String raw) {
     return raw.trim().replaceAll('/', '_');
+  }
+
+  double? _readTelemetryNumber(Map<String, dynamic> telemetry, String key) {
+    final value = telemetry[key] ?? telemetry[_capitalize(key)];
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value.trim());
+    return null;
+  }
+
+  String _capitalize(String value) {
+    if (value.isEmpty) return value;
+    return value.substring(0, 1).toUpperCase() + value.substring(1);
   }
 }

@@ -58,13 +58,15 @@ Future<SensorLocationDraft?> _loadLocationForBinding(
       : storage.load();
 }
 
-Future<void> _syncProfileAssetLinksIfSignedIn() async {
-  if (FirebaseAuth.instance.currentUser == null) return;
+Future<bool> _syncProfileAssetLinksIfSignedIn() async {
+  if (FirebaseAuth.instance.currentUser == null) return false;
   try {
     await ProfileAssetLinkService().syncCurrentLocalAssets();
+    return true;
   } catch (_) {
     // Asset linking is a profile/web-dashboard mirror. The local app flow should
     // keep working even when the network is temporarily unavailable.
+    return false;
   }
 }
 
@@ -11490,16 +11492,16 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         .where((id) => id.isNotEmpty)
         .toSet();
     final names = _drafts
-        .map((draft) => draft.displayName.trim())
+        .map((draft) => _normalizePlugName(draft.displayName))
         .where((name) => name.isNotEmpty)
         .toSet();
     final topics = _drafts
-        .map((draft) => draft.mqttTopic.trim().toLowerCase())
+        .map((draft) => _normalizeMqttTopic(draft.mqttTopic).toLowerCase())
         .where((topic) => topic.isNotEmpty)
         .toSet();
     while (ids.contains('disaster-device-$number') ||
         ids.contains(_plugIdForNumber(number)) ||
-        names.contains('스마트 플러그 $number') ||
+        names.contains(_normalizePlugName('스마트 플러그 $number')) ||
         topics.contains(_mqttTopicForNumber(number))) {
       number += 1;
     }
@@ -11513,7 +11515,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       'cleanair_plug_${number.toString().padLeft(2, '0')}';
 
   String _mqttTopicForDraft(DisasterDeviceDraft draft) {
-    final topic = draft.mqttTopic.trim();
+    final topic = _normalizeMqttTopic(draft.mqttTopic);
     if (topic.isNotEmpty) return topic;
     final id = draft.deviceId.trim();
     if (id.startsWith('cleanair-plug-')) return id.replaceAll('-', '_');
@@ -11671,7 +11673,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       plugIp: _normalizePlugAddress(_ipController.text),
       mqttTopic: usesMqtt && _topicController.text.trim().isEmpty
           ? inferredTopic
-          : _topicController.text.trim(),
+          : _normalizeMqttTopic(_topicController.text),
       linkedSpaceName: _spaceController.text.trim(),
       linkedAddress: _addressController.text.trim(),
       description: _descriptionController.text.trim(),
@@ -11708,6 +11710,30 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       text = text.substring(0, slash);
     }
     return text.trim();
+  }
+
+  String _normalizePlugName(String value) {
+    return value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+  }
+
+  String _normalizeMqttTopic(String value) {
+    var text = value.trim();
+    if (text.isEmpty) return '';
+    text = text.replaceAll('\\', '/');
+    if (text.contains('/')) {
+      final parts =
+          text.split('/').where((part) => part.trim().isNotEmpty).toList();
+      if (parts.length >= 2) {
+        final prefix = parts.first.trim().toLowerCase();
+        if (prefix == 'cmnd' || prefix == 'stat' || prefix == 'tele') {
+          text = parts[1].trim();
+        }
+      }
+    }
+    text = text.replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_');
+    text = text.replaceAll(RegExp(r'_+'), '_');
+    text = text.replaceAll(RegExp(r'^_+|_+$'), '');
+    return text;
   }
 
   String _formatAutoNumber(double value) {
@@ -11902,7 +11928,9 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
   String? _validatePlugIdentity(DisasterDeviceDraft draft) {
     final name = draft.displayName.trim();
     final id = draft.deviceId.trim();
-    final topic = draft.mqttTopic.trim().toLowerCase();
+    final normalizedName = _normalizePlugName(name);
+    final ip = _normalizePlugAddress(draft.plugIp).toLowerCase();
+    final topic = _normalizeMqttTopic(draft.mqttTopic).toLowerCase();
     final normalizedId = id.toLowerCase();
     if (name.isEmpty) return '플러그 이름을 입력해 주세요.';
     if (id.isEmpty) return '플러그 정보를 저장할 수 없습니다. 플러그를 다시 추가해 주세요.';
@@ -11910,14 +11938,19 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       if (i == _selectedDeviceIndex) continue;
       final other = _drafts[i];
       final otherId = other.deviceId.trim().toLowerCase();
-      if (other.displayName.trim() == name) {
+      if (_normalizePlugName(other.displayName) == normalizedName) {
         return '같은 플러그 이름이 이미 있습니다.';
       }
       if (otherId == normalizedId) {
         return '같은 플러그가 이미 등록되어 있습니다.';
       }
-      if (topic.isNotEmpty && other.mqttTopic.trim().toLowerCase() == topic) {
-        return '같은 원격 제어 이름을 쓰는 플러그가 이미 있습니다.';
+      if (ip.isNotEmpty &&
+          _normalizePlugAddress(other.plugIp).toLowerCase() == ip) {
+        return '같은 로컬 IP를 쓰는 플러그가 이미 있습니다.';
+      }
+      final otherTopic = _normalizeMqttTopic(other.mqttTopic).toLowerCase();
+      if (topic.isNotEmpty && otherTopic == topic) {
+        return '같은 MQTT Topic을 쓰는 플러그가 이미 있습니다.';
       }
     }
     return null;
@@ -11983,6 +12016,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       }
       if (!changed || !mounted) return;
       await _storage.saveAll(updatedDrafts);
+      await _syncProfileAssetLinksIfSignedIn();
       if (!mounted) return;
       final selectedIndex = _selectedDeviceIndex
           .clamp(
@@ -12266,7 +12300,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         );
       }
       await _storage.saveAll(_replaceSelectedDraft(draft));
-      unawaited(_syncProfileAssetLinksIfSignedIn());
+      final profileSynced = await _syncProfileAssetLinksIfSignedIn();
       final hasControlEndpoint =
           draft.controlMethod.toUpperCase().contains('MQTT')
               ? draft.mqttTopic.trim().isNotEmpty
@@ -12316,7 +12350,11 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
           _activities.removeRange(5, _activities.length);
         }
       });
-      if (showSnack) _showSnack('방재 장치 설정을 저장했습니다.');
+      if (showSnack) {
+        _showSnack(
+          profileSynced ? '저장했습니다. 웹 대시보드에도 반영했습니다.' : '저장했습니다.',
+        );
+      }
       if (resolved.autoControlEnabled) {
         unawaited(_runLocalAutoControlIfNeeded());
       }
@@ -12358,7 +12396,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
 
     final remaining = _drafts.toList(growable: true)..removeAt(index);
     await _storage.saveAll(remaining);
-    unawaited(_syncProfileAssetLinksIfSignedIn());
+    await _syncProfileAssetLinksIfSignedIn();
     await _appendHistory(
       draft: draft,
       action: '삭제',
@@ -12484,6 +12522,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
     }
 
     await _storage.saveAll(updatedDrafts);
+    await _syncProfileAssetLinksIfSignedIn();
     final saved = await _storage.loadAll();
     if (notifyPlugControl) {
       await AlertNotificationPresenter.showAlert(
@@ -12538,6 +12577,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         updatedAt: DateTime.now(),
       );
       await _storage.saveAll(_replaceSelectedDraft(updated));
+      await _syncProfileAssetLinksIfSignedIn();
       await _appendHistory(
         draft: updated,
         action: label,
@@ -12661,6 +12701,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         updatedAt: DateTime.now(),
       );
       await _storage.saveAll(_replaceSelectedDraft(updated));
+      await _syncProfileAssetLinksIfSignedIn();
       await _appendHistory(
         draft: updated,
         action: '웹 설정',
@@ -12741,6 +12782,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         updatedAt: DateTime.now(),
       );
       await _storage.saveAll(_replaceSelectedDraft(updated));
+      await _syncProfileAssetLinksIfSignedIn();
       await _appendHistory(
         draft: updated,
         action: next ? '자동 모드 ON' : '수동 모드',
@@ -13376,8 +13418,8 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
   Widget _buildPlugEditCard(DisasterDeviceDraft draft) {
     final usesMqtt = _controlMethod.toUpperCase().contains('MQTT');
     final mqttTopicText = _topicController.text.trim().isEmpty
-        ? draft.mqttTopic.trim()
-        : _topicController.text.trim();
+        ? _normalizeMqttTopic(draft.mqttTopic)
+        : _normalizeMqttTopic(_topicController.text);
     final autoDisabled = _editingAutoDisabled;
     return _SoftCard(
       radius: 14,
@@ -13477,14 +13519,24 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Tasmota 입력값', style: _cardTitle),
+                  const Text('Tasmota MQTT 설정', style: _cardTitle),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Tasmota의 MQTT 설정 화면에서 아래 값만 플러그별로 맞춰 주세요.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.45,
+                      fontWeight: FontWeight.w700,
+                      color: CleanColors.secondary,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     [
-                      'Topic: ${mqttTopicText.isEmpty ? '저장 시 자동 배정' : mqttTopicText}',
+                      'Topic  ${mqttTopicText.isEmpty ? '저장 시 자동 배정' : mqttTopicText}',
                       if (mqttTopicText.isNotEmpty)
-                        'Client: ${mqttTopicText}_%06X',
-                      'Full Topic: %prefix%/%topic%/',
+                        'Client  ${mqttTopicText}_%06X',
+                      'Full Topic  %prefix%/%topic%/',
                     ].join('\n'),
                     style: const TextStyle(
                       fontSize: 12,
@@ -13495,7 +13547,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
                   ),
                   const SizedBox(height: 10),
                   _SheetActionButton(
-                    label: 'Topic 복사',
+                    label: 'Topic 값 복사',
                     onTap: mqttTopicText.isEmpty
                         ? () => _showSnack('저장 후 원격 제어 이름이 배정됩니다.')
                         : () {

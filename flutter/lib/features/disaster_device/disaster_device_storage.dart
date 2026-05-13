@@ -192,6 +192,7 @@ class DisasterDeviceStorage {
   List<DisasterDeviceDraft> _dedupe(List<DisasterDeviceDraft> drafts) {
     final seen = <String>{};
     final seenTopics = <String>{};
+    final seenNames = <String>{};
     final result = <DisasterDeviceDraft>[];
     for (final draft in drafts) {
       var id = draft.deviceId.trim();
@@ -199,7 +200,7 @@ class DisasterDeviceStorage {
         id = _nextPlugId(seen);
       }
       seen.add(id);
-      var topic = draft.mqttTopic.trim();
+      var topic = _normalizeMqttTopic(draft.mqttTopic);
       final usesMqtt = draft.controlMethod.toUpperCase().contains('MQTT');
       if (usesMqtt && topic.isEmpty) {
         topic = id.replaceAll('-', '_');
@@ -210,17 +211,60 @@ class DisasterDeviceStorage {
       if (topic.isNotEmpty) {
         seenTopics.add(topic.toLowerCase());
       }
+      final fallbackName = '스마트 플러그 ${result.length + 1}';
+      final displayName = _uniqueDisplayName(
+        draft.displayName.trim().isEmpty ? fallbackName : draft.displayName,
+        seenNames,
+      );
       result.add(
         draft.copyWith(
           deviceId: id,
           mqttTopic: topic,
-          displayName: draft.displayName.trim().isEmpty
-              ? '스마트 플러그 ${result.length + 1}'
-              : draft.displayName.trim(),
+          displayName: displayName,
         ),
       );
     }
     return result;
+  }
+
+  String _uniqueDisplayName(String rawName, Set<String> seenNames) {
+    final base = rawName.trim().replaceAll(RegExp(r'\s+'), ' ');
+    var name = base.isEmpty ? '스마트 플러그' : base;
+    var key = name.toLowerCase();
+    if (!seenNames.contains(key)) {
+      seenNames.add(key);
+      return name;
+    }
+    var number = 2;
+    while (true) {
+      name = '$base $number';
+      key = name.toLowerCase();
+      if (!seenNames.contains(key)) {
+        seenNames.add(key);
+        return name;
+      }
+      number += 1;
+    }
+  }
+
+  String _normalizeMqttTopic(String value) {
+    var text = value.trim();
+    if (text.isEmpty) return '';
+    text = text.replaceAll('\\', '/');
+    if (text.contains('/')) {
+      final parts =
+          text.split('/').where((part) => part.trim().isNotEmpty).toList();
+      if (parts.length >= 2) {
+        final prefix = parts.first.trim().toLowerCase();
+        if (prefix == 'cmnd' || prefix == 'stat' || prefix == 'tele') {
+          text = parts[1].trim();
+        }
+      }
+    }
+    text = text.replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_');
+    text = text.replaceAll(RegExp(r'_+'), '_');
+    text = text.replaceAll(RegExp(r'^_+|_+$'), '');
+    return text;
   }
 
   String _nextPlugId(Set<String> seen) {
