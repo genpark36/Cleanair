@@ -1,0 +1,21 @@
+# Build outputs and caches
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/node_modules/
+**/.firebase/
+**/.gradle/
+**/.kotlin/
+**/windows/flutter/ephemeral/
+**/.idea/
+**/.vscode/
+*.iml
+*.log
+
+# Local/generated artifacts not needed for source review
+**/.codex_appdata/
+**/.codex_stitch_run.png
+migration_export/
+migration_export_test/
+migration_export_operational/

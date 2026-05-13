@@ -1,0 +1,66 @@
+name: indoor_air_quality
+description: 실내 공기질 측정 및 시각화 모바일 앱
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Design
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+
+  # Charts
+  fl_chart: ^0.68.0
+
+  # State Management
+  provider: ^6.1.1
+
+  # Utilities
+  intl: ^0.19.0
+
+  # HTTP
+  http: ^1.2.0
+  webview_flutter: ^4.8.0
+  flutter_lucide: ^1.7.0
+  material_symbols_icons: ^4.2785.1
+
+  # Firebase (replaces mqtt_client + webview_flutter)
+  firebase_core: ^2.32.0
+  firebase_auth: ^4.20.0
+  firebase_messaging: ^14.9.3
+  cloud_firestore: ^4.17.0
+  google_sign_in: ^6.2.1
+
+  # File system
+  path_provider: ^2.1.0
+  permission_handler: ^11.3.0
+  geolocator: ^12.0.0
+
+  # 백그라운드 실행 및 절전 모드 제외
+  flutter_background_service: ^5.0.5
+  flutter_local_notifications: ^17.0.0
+  wakelock_plus: ^1.2.5
+  shared_preferences: ^2.2.3
+  multicast_dns: ^0.3.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Pretendard
+      fonts:
+        - asset: assets/fonts/Pretendard-Regular.ttf
+        - asset: assets/fonts/Pretendard-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Pretendard-Bold.ttf
+          weight: 700

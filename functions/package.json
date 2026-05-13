@@ -1,0 +1,19 @@
+{
+  "name": "iaq-v2-firebase-functions",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions",
+    "worker:plug": "node plug_mqtt_worker.js"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.11.0",
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.1",
+    "mqtt": "^5.14.1"
+  }
+}

@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── sensors ──────────────────────────────────────────────
+    // Cloud Function (Admin SDK) handles writes.
+    // Flutter app needs read access for onSnapshot real-time listener.
+    match /sensors/{sensorId} {
+      allow read: if true;
+      allow write: if false; // Only Admin SDK (Cloud Functions)
+
+      match /history/{historyId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // ── devices ──────────────────────────────────────────────
+    // Flutter app reads its own device doc (keyed by FCM token).
+    // Writes go through Cloud Function endpoints (registerDevice, updatePreferences).
+    match /devices/{deviceId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── device_codes ─────────────────────────────────────────
+    // 6-digit pairing codes. Read-only for checking expiry on client.
+    // Writes via Cloud Function (generateDeviceCode, claimDevice).
+    match /device_codes/{code} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── alerts ───────────────────────────────────────────────
+    // Alert history. Read-only for Flutter app display.
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── web/app account profile ─────────────────────────────
+    // Google Auth users can read/write only their own profile.
+    // This is shared by the web dashboard and the Flutter app profile UI.
+    match /user_profiles/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      // User-owned app/web asset links. These let the web dashboard show only
+      // the signed-in user's sensors, plugs, and response context.
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // ── Deny everything else ─────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

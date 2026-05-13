@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "19466125445",
+    "project_id": "capstone-cleanair-2026",
+    "storage_bucket": "capstone-cleanair-2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:19466125445:android:960e0ff0616cc3bd9aa9ec",
+        "android_client_info": {
+          "package_name": "com.example.indoor_air_quality"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "19466125445-1qmd5vfc46j4co28s95uon5eqsq8m5t4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.indoor_air_quality",
+            "certificate_hash": "2ba9fd474f49b6500d50a20831a64953c4511089"
+          }
+        },
+        {
+          "client_id": "19466125445-9as3ui3aefur04t6dj0ogh7p9houv3io.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4XoMdvhoEmwf5oKno4LYZIYms5JRoIQ0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "19466125445-9as3ui3aefur04t6dj0ogh7p9houv3io.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
