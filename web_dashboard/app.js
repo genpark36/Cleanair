@@ -149,23 +149,27 @@ function bootFirebase() {
         "Firebase Auth 응답이 지연되고 있습니다. 승인 도메인, Google 로그인 제공업체, 네트워크 차단 여부를 확인해 주세요.";
     }, 6000);
     onAuthStateChanged(state.auth, async (user) => {
-      authResolved = true;
-      window.clearTimeout(authTimer);
-      state.user = user;
-      state.authorized = isAuthorized(user);
-      renderAuthGate();
-      if (state.authorized && !state.subscribed) {
-        await loadUserProfile();
-        startLiveData();
-      } else if (state.authorized) {
-        await loadUserProfile();
-      } else {
-        state.profile = null;
+      try {
+        authResolved = true;
+        window.clearTimeout(authTimer);
+        state.user = user;
+        state.authorized = isAuthorized(user);
+        renderAuthGate();
+        if (state.authorized && !state.subscribed) {
+          await loadUserProfile();
+          startLiveData();
+        } else if (state.authorized) {
+          await loadUserProfile();
+        } else {
+          state.profile = null;
+        }
+        render();
+      } catch (error) {
+        showAuthError("로그인 후 대시보드 준비 실패", error);
       }
-      render();
     });
   } catch (error) {
-    state.lastError = error?.message || String(error);
+    state.lastError = formatError(error);
     els.setupWarning.classList.remove("hidden");
     els.authMessage.textContent = state.lastError;
     setSyncText("Firebase 연결 실패");
@@ -189,10 +193,10 @@ async function signInGoogle() {
   }
   try {
     els.authMessage.textContent = "로그인 창을 여는 중입니다.";
+    state.lastError = "";
     await signInWithPopup(state.auth, new GoogleAuthProvider());
   } catch (error) {
-    state.lastError = error?.message || String(error);
-    els.authMessage.textContent = "로그인에 실패했습니다. Firebase Auth와 승인 도메인을 확인해 주세요.";
+    showAuthError("Google 로그인 실패", error);
   }
 }
 
@@ -224,7 +228,7 @@ function renderAuthGate() {
   els.authGate.classList.remove("hidden");
   els.app.classList.add("locked");
   els.authMessage.textContent = state.user
-    ? "이 계정은 대시보드 관리자 목록에 없습니다."
+    ? `로그인은 되었지만 대시보드 접근이 차단되었습니다. email=${state.user.email || "unknown"}, restrictToAdminEmails=${options.restrictToAdminEmails === true}`
     : "Google 계정으로 로그인해 주세요.";
 }
 
@@ -262,7 +266,10 @@ async function loadUserProfile() {
       }, { merge: true });
     }
   } catch (error) {
-    state.lastError = `프로필 동기화 실패: ${error?.message || error}`;
+    state.lastError = `프로필 동기화 실패: ${formatError(error)}`;
+    if (els.authMessage && !els.authGate.classList.contains("hidden")) {
+      els.authMessage.textContent = state.lastError;
+    }
   }
 }
 
@@ -1871,8 +1878,27 @@ function emptyBlock(text) {
   return `<div class="alert-item"><span class="muted">${escapeHtml(text)}</span></div>`;
 }
 
+function formatError(error) {
+  if (!error) return "unknown";
+  const code = error.code ? `[${error.code}] ` : "";
+  const message = error.message || String(error);
+  return `${code}${message}`;
+}
+
+function showAuthError(context, error) {
+  const detail = formatError(error);
+  state.lastError = `${context}: ${detail}`;
+  console.error(state.lastError, error);
+  if (els.authMessage) {
+    els.authMessage.textContent = `${context}: ${detail}`;
+  }
+  setSyncText("인증 오류");
+  renderSettings();
+}
+
 function setError(error) {
-  state.lastError = error?.message || String(error);
+  state.lastError = formatError(error);
+  console.error("Dashboard sync error:", error);
   setSyncText("동기화 오류");
   renderSettings();
 }
