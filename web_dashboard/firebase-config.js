@@ -11,7 +11,7 @@ window.CLEANAIR_FIREBASE_CONFIG = {
 window.CLEANAIR_DASHBOARD_OPTIONS = {
   defaultRegion: "us-central1",
   requireAuth: true,
-  adminEmails: ["df34gh562@gmail.com"],
+  adminEmails: [],
   deviceApiKey: "capstone-iaq-2026-secure-key",
   functionsBaseUrl: "",
   kakaoJsApiKey: "5eb3ce76ffce0fb5d178e668062bce67",
