@@ -204,6 +204,7 @@ async function signOutUser() {
 function isAuthorized(user) {
   if (options.requireAuth === false) return true;
   if (!user) return false;
+  if (options.restrictToAdminEmails !== true) return true;
   const admins = Array.isArray(options.adminEmails)
     ? options.adminEmails.map((email) => String(email).trim().toLowerCase()).filter(Boolean)
     : [];

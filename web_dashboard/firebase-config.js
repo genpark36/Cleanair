@@ -11,6 +11,7 @@ window.CLEANAIR_FIREBASE_CONFIG = {
 window.CLEANAIR_DASHBOARD_OPTIONS = {
   defaultRegion: "us-central1",
   requireAuth: true,
+  restrictToAdminEmails: false,
   adminEmails: [],
   deviceApiKey: "capstone-iaq-2026-secure-key",
   functionsBaseUrl: "",
