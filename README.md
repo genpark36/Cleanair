@@ -12,8 +12,9 @@ Cleanair는 실내 공기질 센서, Firebase 백엔드, 스마트 플러그, �
 - 웹 상황판: `web_dashboard/`
 - 센서 펌웨어 설치 파일: `firmware_installer/`
 - 실행 가이드: `docs/RUN_GUIDE.md`
+- 앱 기능 설명: `docs/APP_OVERVIEW.md`
 - 제출 전 점검표: `docs/FINAL_CHECKLIST.md`
-- Tasmota MQTT 설정 가이드: `docs/TASMOTA_MQTT_USER_SETUP_GUIDE.pdf`
+- Tasmota MQTT 설정 가이드: `docs/TASMOTA_MQTT_SETUP.md`
 
 ## 실행 순서
 
@@ -24,7 +25,7 @@ Cleanair는 실내 공기질 센서, Firebase 백엔드, 스마트 플러그, �
 5. Tasmota 플러그를 앱에 등록하고 로컬 HTTP 또는 MQTT 제어를 확인합니다.
 6. 웹 상황판에 접속해 센서와 플러그 상태를 확인합니다.
 
-자세한 절차는 `docs/RUN_GUIDE.md`에 정리하였습니다.
+자세한 절차는 `docs/RUN_GUIDE.md`에 정리하였습니다. 앱에서 무엇을 확인할 수 있는지는 `docs/APP_OVERVIEW.md`에 따로 정리했습니다.
 
 ## 빌드 명령
 
@@ -60,7 +61,9 @@ firebase deploy --only functions --project capstone-cleanair-2026
 
 ## 포함된 설정 정보
 
-Firebase 설정, 웹 대시보드 설정, Functions 환경 변수, MQTT 접속 정보, 펌웨어 설치 파일을 함께 넣었습니다. 
+Firebase 설정, 웹 대시보드 설정, Functions 환경 변수, MQTT 접속 정보, 펌웨어 설치 파일을 함께 넣었습니다.
+
+제출과 시연에서 바로 실행되는 것을 우선해 실제 설정 파일이 포함되어 있습니다. 따라서 이 저장소는 비공개로 유지해야 합니다. 공개 저장소로 전환할 경우 `functions/.env`, `web_dashboard/firebase-config.js`, `flutter/android/app/google-services.json`의 값을 먼저 교체하거나 제거해야 합니다.
 
 ## 현재 배포 주소
 

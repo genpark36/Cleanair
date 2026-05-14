@@ -97,7 +97,7 @@ Download/AirGradient
 외부 제어까지 확인하려면 Tasmota의 MQTT 설정에 HiveMQ 정보를 입력합니다. 입력값과 확인 방법은 아래 문서를 따릅니다.
 
 ```text
-docs/TASMOTA_MQTT_USER_SETUP_GUIDE.pdf
+docs/TASMOTA_MQTT_SETUP.md
 ```
 
 앱에서 플러그를 등록한 뒤 아래 항목을 확인합니다.
