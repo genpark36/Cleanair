@@ -270,8 +270,9 @@ async function sendPushToDevice(event, device) {
 }
 
 async function dispatchAlertsForSnapshot(snapshotPayload) {
-  const events = generateAlertsFromSnapshot(snapshotPayload, {
+  const events = await generateAlertsFromSnapshot(snapshotPayload, {
     quietHoursWindow: DEFAULT_QUIET_HOURS,
+    firestore: db,
   });
 
   if (!events.length) return;

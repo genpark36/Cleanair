@@ -595,12 +595,29 @@ class _StitchDisasterScreenState extends State<StitchDisasterScreen> {
       if (location != null)
         '위치: ${location.spaceName} ${location.floor} ${location.detailLocation}',
       if (device != null) '연결 장치: ${device.displayName}',
-      '확인이 필요하면 현장 확인 후 119 신고 여부를 판단해 주세요.',
+      '현장 확인 후 119 신고 여부를 판단해 주세요.',
     ].join('\n');
     await Clipboard.setData(ClipboardData(text: text));
+    var shareOpened = false;
+    try {
+      shareOpened = await _cleanairSystemChannel.invokeMethod<bool>(
+            'shareText',
+            {
+              'subject': '방재 상황 요약',
+              'text': text,
+            },
+          ) ??
+          false;
+    } catch (_) {
+      shareOpened = false;
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('상황 요약을 복사했습니다.')),
+      SnackBar(
+        content: Text(
+          shareOpened ? '상황 요약을 복사하고 공유 화면을 열었습니다.' : '상황 요약을 복사했습니다.',
+        ),
+      ),
     );
   }
 

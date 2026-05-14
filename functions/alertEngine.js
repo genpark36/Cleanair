@@ -7,6 +7,75 @@ const STATE_PRUNE_MS = 24 * 60 * 60 * 1000;
 const alertState = new Map();
 const fireRiskHistory = new Map();
 
+const safeStateId = (value) => encodeURIComponent(String(value || "snapshot"))
+  .replace(/\./g, "%2E")
+  .replace(/%/g, "_");
+
+async function loadFireRiskRuntimeState(firestore, snapshotId, now) {
+  const minTs = now - 35 * 60 * 1000;
+  const memoryKey = `${snapshotId}:fire_risk_history`;
+  const fallback = {
+    ref: null,
+    samples: (fireRiskHistory.get(memoryKey) || []).filter(
+      (sample) => sample.ts >= minTs
+    ),
+    entry: ensureEntry(`${snapshotId}:fire_risk`)
+  };
+  if (!firestore) return fallback;
+
+  const ref = firestore.collection("alert_runtime_state")
+    .doc(`fire_risk_${safeStateId(snapshotId)}`);
+  try {
+    const doc = await ref.get();
+    const data = doc.exists ? (doc.data() || {}) : {};
+    const samples = Array.isArray(data.samples)
+      ? data.samples
+          .map((sample) => ({
+            ts: Number(sample.ts),
+            values: sample.values || {}
+          }))
+          .filter((sample) => Number.isFinite(sample.ts) && sample.ts >= minTs)
+      : [];
+    return {
+      ref,
+      samples,
+      entry: {
+        activeSince: null,
+        pendingSeverity: null,
+        lastEventTs: Number(data.lastEventTs) || 0,
+        lastEventSeverity: data.lastEventSeverity || null,
+        lastEventId: data.lastEventId || null,
+        lastValue: null,
+        lastUpdated: Number(data.lastUpdated) || null
+      }
+    };
+  } catch (error) {
+    console.warn("fire_risk_state_load_failed", error?.message || error);
+    return fallback;
+  }
+}
+
+async function saveFireRiskRuntimeState(state, snapshotId, samples, entry, now) {
+  const cappedSamples = samples.slice(-240);
+  fireRiskHistory.set(`${snapshotId}:fire_risk_history`, cappedSamples);
+  alertState.set(`${snapshotId}:fire_risk`, entry);
+  if (!state?.ref) return;
+  try {
+    await state.ref.set({
+      kind: "fire_risk",
+      snapshotId,
+      samples: cappedSamples,
+      lastEventTs: entry.lastEventTs || 0,
+      lastEventSeverity: entry.lastEventSeverity || null,
+      lastEventId: entry.lastEventId || null,
+      lastUpdated: now,
+      updatedAtMs: now
+    }, { merge: true });
+  } catch (error) {
+    console.warn("fire_risk_state_save_failed", error?.message || error);
+  }
+}
+
 const watchers = [
   {
     type: "pm25_high",
@@ -357,7 +426,14 @@ const fireLevelFor = (evaluation, persistenceGrade) => {
   return { level: "normal", severity: "notice", label: "정상", title: "현재 이상 징후 없음" };
 };
 
-const buildFireRiskEvent = (snapshot, raw, snapshotId, now, quietHoursWindow) => {
+const buildFireRiskEvent = async (
+  snapshot,
+  raw,
+  snapshotId,
+  now,
+  quietHoursWindow,
+  options = {}
+) => {
   const values = {
     pm25: readNumber(raw?.pm25, raw?.pm02, snapshot?.pm25),
     tvoc: readNumber(raw?.tvoc, raw?.tvocIndex, snapshot?.tvoc),
@@ -368,12 +444,15 @@ const buildFireRiskEvent = (snapshot, raw, snapshotId, now, quietHoursWindow) =>
   };
   if (!Object.values(values).some(Number.isFinite)) return null;
 
-  const historyKey = `${snapshotId}:fire_risk_history`;
-  const history = fireRiskHistory.get(historyKey) || [];
+  const runtimeState = await loadFireRiskRuntimeState(
+    options.firestore,
+    snapshotId,
+    now
+  );
+  const history = runtimeState.samples || [];
   history.push({ ts: now, values });
   const minTs = now - 35 * 60 * 1000;
   const samples = history.filter((sample) => sample.ts >= minTs);
-  fireRiskHistory.set(historyKey, samples);
 
   const current = averageFireWindow(samples, now, 60 * 1000);
   const previous = averageFireWindow(samples, now - 5 * 60 * 1000, 60 * 1000);
@@ -397,7 +476,12 @@ const buildFireRiskEvent = (snapshot, raw, snapshotId, now, quietHoursWindow) =>
   candidateCount = Math.max(0, Math.min(5, candidateCount));
   const persistenceGrade = candidateCount >= 4 ? 2 : candidateCount >= 2 ? 1 : 0;
   const level = fireLevelFor(evaluation, persistenceGrade);
-  if (level.level === "normal") return null;
+  const entry = runtimeState.entry || ensureEntry(`${snapshotId}:fire_risk`);
+  if (level.level === "normal") {
+    entry.lastUpdated = now;
+    await saveFireRiskRuntimeState(runtimeState, snapshotId, samples, entry, now);
+    return null;
+  }
 
   const activeMetrics = evaluation.metrics
     .filter((metric) => metric.score >= 0.5)
@@ -414,7 +498,6 @@ const buildFireRiskEvent = (snapshot, raw, snapshotId, now, quietHoursWindow) =>
       ? "즉시 환기 및 연소기기 확인"
       : "현장 원인 확인 및 환기/연결 장치 작동";
 
-  const entry = ensureEntry(`${snapshotId}:fire_risk`);
   const priority = severityRank[level.severity] || 1;
   const eventId = `fire_risk-${level.level}-${Math.floor(now / 60000)}`;
   const suppressed = entry.lastEventTs
@@ -425,6 +508,8 @@ const buildFireRiskEvent = (snapshot, raw, snapshotId, now, quietHoursWindow) =>
     entry.lastEventSeverity = level.severity;
     entry.lastEventId = eventId;
   }
+  entry.lastUpdated = now;
+  await saveFireRiskRuntimeState(runtimeState, snapshotId, samples, entry, now);
 
   return {
     type: "fire_risk",
@@ -542,7 +627,7 @@ const resolveApparentSnapshot = (snapshot) => {
   };
 };
 
-function generateAlertsFromSnapshot(snapshot, options = {}) {
+async function generateAlertsFromSnapshot(snapshot, options = {}) {
   const now = options.now ?? Date.now();
   const quietHoursWindow = options.quietHoursWindow || DEFAULT_QUIET_HOURS;
   pruneState(now);
@@ -671,12 +756,13 @@ function generateAlertsFromSnapshot(snapshot, options = {}) {
     });
   }
 
-  const fireRiskEvent = buildFireRiskEvent(
+  const fireRiskEvent = await buildFireRiskEvent(
     snapshot,
     raw,
     snapshotId,
     now,
-    quietHoursWindow
+    quietHoursWindow,
+    { firestore: options.firestore }
   );
   if (fireRiskEvent) {
     events.push(fireRiskEvent);

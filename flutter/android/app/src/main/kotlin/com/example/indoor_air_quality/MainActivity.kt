@@ -40,19 +40,40 @@ class MainActivity : FlutterActivity() {
             }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, systemChannel)
             .setMethodCallHandler { call, result ->
-                if (call.method != "openDialer") {
-                    result.notImplemented()
-                    return@setMethodCallHandler
-                }
-
-                val number = call.argument<String>("number") ?: "119"
-                try {
-                    val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(intent)
-                    result.success(true)
-                } catch (error: Exception) {
-                    result.error("dialer_failed", error.message, null)
+                when (call.method) {
+                    "openDialer" -> {
+                        val number = call.argument<String>("number") ?: "119"
+                        try {
+                            val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (error: Exception) {
+                            result.error("dialer_failed", error.message, null)
+                        }
+                    }
+                    "shareText" -> {
+                        val subject = call.argument<String>("subject") ?: "방재 상황 요약"
+                        val text = call.argument<String>("text")
+                        if (text.isNullOrBlank()) {
+                            result.error("invalid_args", "Share text is empty.", null)
+                            return@setMethodCallHandler
+                        }
+                        try {
+                            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, subject)
+                                putExtra(Intent.EXTRA_TEXT, text)
+                            }
+                            val chooser = Intent.createChooser(sendIntent, subject)
+                            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(chooser)
+                            result.success(true)
+                        } catch (error: Exception) {
+                            result.error("share_failed", error.message, null)
+                        }
+                    }
+                    else -> result.notImplemented()
                 }
             }
     }
