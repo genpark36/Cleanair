@@ -1,4 +1,5 @@
 const admin = require("firebase-admin");
+const mqtt = require("mqtt");
 const { onRequest } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { logger } = require("firebase-functions");
@@ -31,9 +32,70 @@ function isWithinQuietHours(window, timezone) {
   return minutes >= startMinutes || minutes < endMinutes;
 }
 
+function normalizeNotificationIntervalMinutes(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 15;
+  return Math.max(1, Math.min(24 * 60, Math.round(parsed)));
+}
+
+function normalizeMinimumSeverityPriority(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 2;
+  return Math.max(1, Math.min(3, Math.round(parsed)));
+}
+
+function eventSeverityPriority(severity) {
+  const ranks = { notice: 1, warning: 2, critical: 3 };
+  return ranks[String(severity || "").toLowerCase()] || 1;
+}
+
+function minimumSeverityForEvent(device, event) {
+  const byType = device?.minimumSeverityByType;
+  const typeValue = byType && typeof byType === "object"
+    ? byType[event.type]
+    : undefined;
+  return normalizeMinimumSeverityPriority(
+    typeValue ?? device?.minimumSeverityPriority ?? device?.minimumAlertSeverityPriority
+  );
+}
+
+function normalizeFireRiskMinimumLevel(value) {
+  const level = String(value || "").toLowerCase();
+  if (level === "warning" || level === "strong_warning" || level === "fire_suspected") {
+    return level;
+  }
+  return "strong_warning";
+}
+
+function fireRiskLevelPriority(level) {
+  const ranks = {
+    warning: 1,
+    strong_warning: 2,
+    fire_suspected: 3,
+    co_only: 3,
+  };
+  return ranks[String(level || "").toLowerCase()] || 1;
+}
+
+function dateFromMaybeTimestamp(value) {
+  if (!value) return null;
+  if (typeof value.toDate === "function") return value.toDate();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 function shouldDeliver(event, device) {
   if (device?.alertsEnabled === false) return false;
   if (device?.mutedTypes && device.mutedTypes[event.type]) return false;
+  const isFireRisk = event.type === "fire_risk";
+  if (isFireRisk && event.severity === "notice") return false;
+  if (isFireRisk) {
+    const minimumLevel = normalizeFireRiskMinimumLevel(device?.fireRiskMinimumLevel);
+    const eventLevel = event?.trendMeta?.code || event?.level || event?.fireRiskLevel;
+    if (fireRiskLevelPriority(eventLevel) < fireRiskLevelPriority(minimumLevel)) {
+      return false;
+    }
+  }
 
   const snoozedUntil = device?.snoozedUntil
     ? new Date(device.snoozedUntil)
@@ -43,6 +105,26 @@ function shouldDeliver(event, device) {
   }
 
   if (event.severity === "critical") return true;
+
+  if (!isFireRisk) {
+    const minimumSeverityPriority = minimumSeverityForEvent(device, event);
+    if (eventSeverityPriority(event.severity) < minimumSeverityPriority) {
+      return false;
+    }
+  }
+
+  const intervalMinutes = normalizeNotificationIntervalMinutes(
+    device?.notificationIntervalMinutes ?? device?.cooldownMinutes
+  );
+  const lastDeliveredAt = dateFromMaybeTimestamp(
+    device?.lastDeliveredByType?.[event.type]
+  );
+  if (
+    lastDeliveredAt &&
+    Date.now() - lastDeliveredAt.getTime() < intervalMinutes * 60 * 1000
+  ) {
+    return false;
+  }
 
   const quietEnabled = device?.quietHoursEnabled ?? Boolean(device?.quietHours);
   if (!quietEnabled) return true;
@@ -134,6 +216,16 @@ async function sendPushToDevice(event, device) {
         title: event.title,
         body: event.message,
       },
+      android: {
+        priority: event.type === "fire_risk" && event.severity === "critical" ? "high" : "normal",
+        notification: {
+          channelId:
+            event.type === "fire_risk" && event.severity === "critical"
+              ? "iaq_emergency_alerts"
+              : "iaq_alerts",
+          sound: "default",
+        },
+      },
       data: {
         type: String(event.type || ""),
         severity: String(event.severity || ""),
@@ -141,6 +233,24 @@ async function sendPushToDevice(event, device) {
         eventId: String(event.eventId || ""),
       },
     });
+    try {
+      await db.collection("devices").doc(device.id).set(
+        {
+          lastDeliveredAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastDeliveredByType: {
+            [String(event.type || "unknown")]: new Date().toISOString(),
+          },
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (writeError) {
+      logger.warn("push_delivery_state_update_failed", {
+        deviceId: device.id,
+        eventId: event.eventId,
+        error: writeError?.message || writeError,
+      });
+    }
   } catch (error) {
     const code = error?.errorInfo?.code || error?.code;
     if (code === "messaging/registration-token-not-registered") {
@@ -324,6 +434,16 @@ const ENABLE_EXPIREAT_TTL_WRITES = process.env.ENABLE_EXPIREAT_TTL_WRITES === un
   : isEnvTrue(process.env.ENABLE_EXPIREAT_TTL_WRITES);
 const TTL_SENSOR_COLLECTIONS_ENABLED = isEnvTrue(process.env.TTL_SENSOR_COLLECTIONS_ENABLED);
 const TTL_PLUG_LOG_COLLECTIONS_ENABLED = isEnvTrue(process.env.TTL_PLUG_LOG_COLLECTIONS_ENABLED);
+const MQTT_URL = String(process.env.MQTT_URL || "").trim();
+const MQTT_USERNAME = process.env.MQTT_USERNAME || undefined;
+const MQTT_PASSWORD = process.env.MQTT_PASSWORD || undefined;
+const ENABLE_FUNCTION_MQTT_COMMANDS = process.env.ENABLE_FUNCTION_MQTT_COMMANDS === undefined
+  ? Boolean(MQTT_URL)
+  : isEnvTrue(process.env.ENABLE_FUNCTION_MQTT_COMMANDS);
+const FUNCTION_MQTT_ACK_TIMEOUT_MS = toPositiveInt(
+  process.env.FUNCTION_MQTT_ACK_TIMEOUT_MS,
+  8000
+);
 
 const ingestCommitCache = new Map();
 const INGEST_COMMIT_CACHE_LIMIT = 5000;
@@ -352,6 +472,105 @@ function normalizePowerState(rawValue) {
     return value;
   }
   return "UNKNOWN";
+}
+
+function parsePowerStateFromPayload(payloadText) {
+  const text = String(payloadText || "").trim();
+  const direct = normalizePowerState(text);
+  if (direct !== "UNKNOWN") return direct;
+
+  try {
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== "object") return "UNKNOWN";
+    if (parsed.POWER !== undefined) return normalizePowerState(parsed.POWER);
+    if (parsed.Power !== undefined) return normalizePowerState(parsed.Power);
+  } catch (_) {
+    // MQTT payloads can be plain ON/OFF strings.
+  }
+
+  return "UNKNOWN";
+}
+
+function normalizeTasmotaTelemetry(payloadText) {
+  let parsed = null;
+  try {
+    parsed = typeof payloadText === "string" ? JSON.parse(payloadText) : payloadText;
+  } catch (_) {
+    return null;
+  }
+
+  if (!parsed || typeof parsed !== "object") return null;
+  const energy = parsed?.StatusSNS?.ENERGY
+    || parsed?.ENERGY
+    || parsed?.Energy
+    || parsed?.energy
+    || null;
+  if (!energy || typeof energy !== "object") return null;
+
+  const telemetry = {
+    voltage: toFiniteNumberOrNull(energy.Voltage ?? energy.voltage),
+    current: toFiniteNumberOrNull(energy.Current ?? energy.current),
+    power: toFiniteNumberOrNull(energy.Power ?? energy.power ?? energy.ActivePower),
+    apparentPower: toFiniteNumberOrNull(energy.ApparentPower ?? energy.apparentPower),
+    reactivePower: toFiniteNumberOrNull(energy.ReactivePower ?? energy.reactivePower),
+    factor: toFiniteNumberOrNull(energy.Factor ?? energy.PowerFactor ?? energy.factor),
+    today: toFiniteNumberOrNull(energy.Today ?? energy.today),
+    yesterday: toFiniteNumberOrNull(energy.Yesterday ?? energy.yesterday),
+    total: toFiniteNumberOrNull(energy.Total ?? energy.total),
+  };
+  const cleaned = Object.fromEntries(
+    Object.entries(telemetry).filter(([, value]) => Number.isFinite(value))
+  );
+  return Object.keys(cleaned).length ? cleaned : null;
+}
+
+function plugTelemetryUpdateFields(telemetry) {
+  if (!telemetry || typeof telemetry !== "object") return {};
+  const update = { telemetry };
+  if (Number.isFinite(telemetry.voltage)) update.voltage = telemetry.voltage;
+  if (Number.isFinite(telemetry.current)) update.current = telemetry.current;
+  if (Number.isFinite(telemetry.power)) {
+    update.power = telemetry.power;
+    update.powerWatts = telemetry.power;
+  }
+  if (Number.isFinite(telemetry.apparentPower)) update.apparentPower = telemetry.apparentPower;
+  if (Number.isFinite(telemetry.reactivePower)) update.reactivePower = telemetry.reactivePower;
+  if (Number.isFinite(telemetry.factor)) update.powerFactor = telemetry.factor;
+  if (Number.isFinite(telemetry.today)) update.energyToday = telemetry.today;
+  if (Number.isFinite(telemetry.yesterday)) update.energyYesterday = telemetry.yesterday;
+  if (Number.isFinite(telemetry.total)) update.energyTotal = telemetry.total;
+  return update;
+}
+
+function shouldUseFunctionMqttDispatch(transportHint, tasmotaTopic) {
+  if (!ENABLE_FUNCTION_MQTT_COMMANDS || !MQTT_URL) return false;
+  if (!String(tasmotaTopic || "").trim()) return false;
+  const hint = String(transportHint || "").trim().toUpperCase();
+  return !hint || hint === "MQTT" || hint === "CLOUD";
+}
+
+function normalizeAutoMetric(rawValue) {
+  const value = String(rawValue || "").trim().toLowerCase();
+  if (["iaqi", "co2", "pm25", "tvoc", "nox"].includes(value)) {
+    return value;
+  }
+  return "iaqi";
+}
+
+function autoMetricLabel(metric) {
+  switch (normalizeAutoMetric(metric)) {
+    case "co2":
+      return "CO2";
+    case "pm25":
+      return "PM2.5";
+    case "tvoc":
+      return "TVOC";
+    case "nox":
+      return "NOx";
+    case "iaqi":
+    default:
+      return "IAQI";
+  }
 }
 
 function toBooleanOrNull(value) {
@@ -424,6 +643,306 @@ function withExpireAt(payload, retentionDays, baseDate = new Date()) {
     ...payload,
     expireAt,
   };
+}
+
+function publishMqttCommandAndWait({
+  requestId,
+  tasmotaTopic,
+  command,
+  desiredState,
+}) {
+  return new Promise((resolve) => {
+    const startedAt = Date.now();
+    const safeTopic = String(tasmotaTopic || "").trim();
+    const mqttCommand = normalizePowerCommand(command);
+    const expectedState = normalizePowerState(desiredState);
+    const clientId = `cleanair-fn-${requestId.slice(0, 12)}-${Date.now()}`;
+    const commandTopic = `cmnd/${safeTopic}/POWER`;
+    const statusTopic = `cmnd/${safeTopic}/STATUS`;
+    const resultPrefix = `stat/${safeTopic}/`;
+    const telemetryTopics = [
+      `tele/${safeTopic}/SENSOR`,
+      `stat/${safeTopic}/STATUS8`,
+    ];
+    const subscriptions = [
+      `stat/${safeTopic}/POWER`,
+      `stat/${safeTopic}/RESULT`,
+      ...telemetryTopics,
+    ];
+
+    if (!MQTT_URL || !safeTopic || !mqttCommand) {
+      resolve({
+        ok: false,
+        status: "failed",
+        errorMessage: "mqtt_not_configured",
+        actualState: "UNKNOWN",
+        latencyMs: 0,
+      });
+      return;
+    }
+
+    let done = false;
+    let publishIssued = false;
+    let latestTelemetry = null;
+    let pendingAck = null;
+    let ackDelayTimer = null;
+    const client = mqtt.connect(MQTT_URL, {
+      username: MQTT_USERNAME,
+      password: MQTT_PASSWORD,
+      clientId,
+      clean: true,
+      keepalive: 30,
+      connectTimeout: 5000,
+      reconnectPeriod: 0,
+    });
+
+    function finish(result) {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      clearTimeout(ackDelayTimer);
+      try {
+        client.end(true);
+      } catch (_) {
+        // Ignore MQTT socket cleanup errors after the command result is known.
+      }
+      resolve(result);
+    }
+
+    function finishWithTelemetryDelay(result) {
+      if (done) return;
+      pendingAck = result;
+      ackDelayTimer = setTimeout(() => {
+        finish({
+          ...pendingAck,
+          telemetry: latestTelemetry,
+        });
+      }, 550);
+    }
+
+    const timer = setTimeout(() => {
+      finish({
+        ok: false,
+        status: "timeout",
+        errorMessage: "mqtt_ack_timeout",
+        responseTopic: null,
+        responsePayloadRaw: null,
+        actualState: "UNKNOWN",
+        latencyMs: Date.now() - startedAt,
+      });
+    }, FUNCTION_MQTT_ACK_TIMEOUT_MS);
+
+    client.on("connect", () => {
+      client.subscribe(subscriptions, { qos: 1 }, (subscribeError) => {
+        if (subscribeError) {
+          finish({
+            ok: false,
+            status: "failed",
+            errorMessage: subscribeError.message || "mqtt_subscribe_failed",
+            actualState: "UNKNOWN",
+            latencyMs: Date.now() - startedAt,
+          });
+          return;
+        }
+
+        publishIssued = true;
+        client.publish(statusTopic, "8", { qos: 1 }, () => {});
+        client.publish(commandTopic, mqttCommand, { qos: 1 }, (publishError) => {
+          if (publishError) {
+            finish({
+              ok: false,
+              status: "failed",
+              errorMessage: publishError.message || "mqtt_publish_failed",
+              actualState: "UNKNOWN",
+              latencyMs: Date.now() - startedAt,
+            });
+          }
+        });
+      });
+    });
+
+    client.on("message", (topic, payload) => {
+      if (!publishIssued) return;
+      const safeMessageTopic = String(topic || "");
+      const payloadText = payload ? payload.toString("utf8") : "";
+      if (telemetryTopics.includes(safeMessageTopic)) {
+        latestTelemetry = normalizeTasmotaTelemetry(payloadText) || latestTelemetry;
+        return;
+      }
+      if (!safeMessageTopic.startsWith(resultPrefix)) return;
+      const actualState = parsePowerStateFromPayload(payloadText);
+      if (actualState === "UNKNOWN") return;
+      if (expectedState !== "UNKNOWN" && actualState !== expectedState) return;
+
+      client.publish(statusTopic, "8", { qos: 1 }, () => {});
+      finishWithTelemetryDelay({
+        ok: true,
+        status: "acknowledged",
+        responseTopic: topic,
+        responsePayloadRaw: payloadText,
+        actualState,
+        latencyMs: Date.now() - startedAt,
+      });
+    });
+
+    client.on("error", (error) => {
+      finish({
+        ok: false,
+        status: "failed",
+        errorMessage: error?.message || "mqtt_error",
+        actualState: "UNKNOWN",
+        latencyMs: Date.now() - startedAt,
+      });
+    });
+  });
+}
+
+async function finalizePlugCommandRequest({
+  requestId,
+  plugId,
+  status,
+  responseTopic,
+  responsePayloadRaw,
+  errorMessage,
+  actualState,
+  online,
+  latencyMs,
+  workerId,
+  telemetry,
+}) {
+  const requestRef = db.collection("plug_command_requests").doc(requestId);
+  const queueRef = db.collection("plug_command_queue").doc(requestId);
+  const responseRef = db.collection("plug_command_responses").doc();
+  const nowTs = admin.firestore.FieldValue.serverTimestamp();
+  const nowDate = new Date();
+  const safeStatus = status || "failed";
+  const safeState = normalizePowerState(actualState);
+  const safeOnline = typeof online === "boolean" ? online : null;
+  const safeLatency = Number.isFinite(latencyMs) ? Math.max(0, Math.round(latencyMs)) : 0;
+  const safeTelemetry = telemetry && typeof telemetry === "object" ? telemetry : null;
+  const telemetryUpdate = plugTelemetryUpdateFields(safeTelemetry);
+
+  await db.runTransaction(async (tx) => {
+    tx.set(requestRef, {
+      status: safeStatus,
+      ackAt: safeStatus === "acknowledged" ? nowTs : null,
+      latencyMs: safeLatency,
+      workerId: workerId || "firebase-function-mqtt",
+      errorMessage: errorMessage || null,
+      actualState: safeState,
+      online: safeOnline,
+      updatedAt: nowTs,
+    }, { merge: true });
+
+    tx.set(queueRef, {
+      status: safeStatus === "acknowledged" ? "processed" : safeStatus,
+      processedAt: nowTs,
+      updatedAt: nowTs,
+    }, { merge: true });
+
+    tx.set(
+      responseRef,
+      withExpireAt(
+        {
+          responseId: responseRef.id,
+          requestId,
+          plugId,
+          status: safeStatus,
+          responseTopic: responseTopic || null,
+          responsePayloadRaw: responsePayloadRaw || null,
+          errorMessage: errorMessage || null,
+          actualState: safeState,
+          online: safeOnline,
+          latencyMs: safeLatency,
+          telemetry: safeTelemetry,
+          workerId: workerId || "firebase-function-mqtt",
+          createdAt: nowTs,
+          updatedAt: nowTs,
+        },
+        PLUG_LOG_RETENTION_DAYS,
+        nowDate
+      )
+    );
+
+    if (plugId) {
+      tx.set(db.collection("plugs").doc(plugId), {
+        plugId,
+        actualState: safeState,
+        online: safeOnline,
+        ...telemetryUpdate,
+        lastAckRequestId: requestId,
+        lastSeen: safeOnline === false ? null : nowTs,
+        updatedAt: nowTs,
+        createdAt: nowTs,
+      }, { merge: true });
+    }
+  });
+
+  if (plugId && !DISABLE_PLUG_STATE_HISTORY_WRITES) {
+    await db.collection("plug_state_history").add(
+      withExpireAt(
+        {
+          plugId,
+          actualState: safeState,
+          online: safeOnline,
+          telemetry: safeTelemetry,
+          source: workerId || "firebase-function-mqtt",
+          requestId,
+          createdAt: nowTs,
+        },
+        PLUG_LOG_RETENTION_DAYS,
+        nowDate
+      )
+    );
+  }
+}
+
+async function dispatchQueuedCommandWithFunctionMqtt({
+  requestId,
+  plugId,
+  tasmotaTopic,
+  command,
+  desiredState,
+}) {
+  const queueRef = db.collection("plug_command_queue").doc(requestId);
+  const requestRef = db.collection("plug_command_requests").doc(requestId);
+  const nowTs = admin.firestore.FieldValue.serverTimestamp();
+
+  await queueRef.set({
+    status: "function_dispatching",
+    dispatchedAt: nowTs,
+    dispatcher: "firebase-function-mqtt",
+    updatedAt: nowTs,
+  }, { merge: true });
+  await requestRef.set({
+    status: "sent",
+    sentAt: nowTs,
+    dispatcher: "firebase-function-mqtt",
+    updatedAt: nowTs,
+  }, { merge: true });
+
+  const result = await publishMqttCommandAndWait({
+    requestId,
+    tasmotaTopic,
+    command,
+    desiredState,
+  });
+
+  await finalizePlugCommandRequest({
+    requestId,
+    plugId,
+    status: result.status,
+    responseTopic: result.responseTopic || null,
+    responsePayloadRaw: result.responsePayloadRaw || null,
+    errorMessage: result.errorMessage || null,
+    actualState: result.actualState || "UNKNOWN",
+    online: result.ok ? true : null,
+    latencyMs: result.latencyMs,
+    workerId: "firebase-function-mqtt",
+    telemetry: result.telemetry || null,
+  });
+
+  return result;
 }
 
 function roundTo(value, digits = 3) {
@@ -638,20 +1157,13 @@ function calculateIaqi({
 }) {
   const safeCo2 = Number.isFinite(Number(co2)) ? Number(co2) : 600;
   const safePm25 = Number.isFinite(Number(pm25)) ? Number(pm25) : 15;
-  const safeK = Number.isFinite(Number(k)) ? Number(k) : 0;
   const safeVoc = Number.isFinite(Number(voc)) ? Number(voc) : 100;
-  const safeTemp = Number.isFinite(Number(temp)) ? Number(temp) : 24;
-  const safeHumi = Number.isFinite(Number(humi)) ? Number(humi) : 50;
 
   const rCo2 = Math.max(0, (safeCo2 - 600) / 400);
   const rPm25 = Math.max(0, (safePm25 - 15) / 35);
-  const rK = Math.max(0, (6 - safeK) / 2);
   const rVoc = Math.max(0, (safeVoc - 100) / 100);
-  const rTemp = Math.max(0, Math.abs(safeTemp - 24) / 4);
-  const rHumi = Math.max(0, Math.abs(safeHumi - 50) / 10);
-  const rTh = Math.max(rTemp, rHumi);
 
-  const mScoreRaw = Math.max(rCo2, Math.max(rPm25, Math.max(rK, rVoc)));
+  const mScoreRaw = Math.max(rCo2, Math.max(rPm25, rVoc));
 
   let primaryGrade = "좋음";
   let subLevel = null;
@@ -660,37 +1172,87 @@ function calculateIaqi({
 
   if (mScoreRaw > 0 && mScoreRaw < 1) {
     primaryGrade = "보통";
-    iScoreRaw =
-      (0.2 * rCo2) +
-      (0.2 * rPm25) +
-      (0.2 * rK) +
-      (0.2 * rVoc) +
-      (0.2 * rTh);
+    iScoreRaw = mScoreRaw;
   } else if (mScoreRaw >= 1) {
     primaryGrade = "나쁨";
     eScoreRaw =
       Math.max(0, rCo2 - 1) +
       Math.max(0, rPm25 - 1) +
-      Math.max(0, rK - 1) +
       Math.max(0, rVoc - 1);
 
     if (eScoreRaw < 1) {
-      subLevel = "경미한 악화 (나쁨-1)";
+      subLevel = "조금 나쁨";
     } else if (eScoreRaw < 2) {
-      subLevel = "중간수준 악화 (나쁨-2)";
+      subLevel = "나쁨";
     } else if (eScoreRaw < 3) {
-      subLevel = "심각한 악화 (나쁨-3)";
+      subLevel = "상당히 나쁨";
     } else {
-      subLevel = "매우 위험 (나쁨-4)";
+      subLevel = "매우 나쁨";
+    }
+  }
+
+  let baseDisplayIaqiRaw = 0;
+  if (mScoreRaw > 0 && mScoreRaw < 1) {
+    baseDisplayIaqiRaw = mScoreRaw;
+  } else if (mScoreRaw >= 1) {
+    baseDisplayIaqiRaw = 1 + (eScoreRaw ?? Math.max(0, mScoreRaw - 1));
+  }
+
+  const thermal = calculateThermalComfortPenalty(temp, humi);
+  const displayIaqiRaw = Math.min(6, baseDisplayIaqiRaw + thermal.penalty);
+  const displayExcess = Math.max(0, displayIaqiRaw - 1);
+  if (displayIaqiRaw >= 1 && primaryGrade !== "나쁨") {
+    primaryGrade = "나쁨";
+    if (displayExcess < 1) {
+      subLevel = "조금 나쁨";
+    } else if (displayExcess < 2) {
+      subLevel = "나쁨";
+    } else if (displayExcess < 3) {
+      subLevel = "상당히 나쁨";
+    } else {
+      subLevel = "매우 나쁨";
     }
   }
 
   return {
     primary_grade: primaryGrade,
     sub_level: subLevel,
+    display_iaqi: roundTo(displayIaqiRaw, 3),
+    base_display_iaqi: roundTo(baseDisplayIaqiRaw, 3),
+    thermal_penalty: thermal.penalty,
+    thermal_deviation: thermal.deviation,
+    thermal_temp_deviation: thermal.tempDeviation,
+    thermal_humidity_deviation: thermal.humidityDeviation,
     m_score: roundTo(mScoreRaw, 3),
     e_score: eScoreRaw == null ? null : roundTo(eScoreRaw, 3),
     i_score: iScoreRaw == null ? null : roundTo(iScoreRaw, 3),
+  };
+}
+
+function calculateThermalComfortPenalty(temp, humi) {
+  const safeTemp = Number(temp);
+  const safeHumi = Number(humi);
+  if (!Number.isFinite(safeTemp) || !Number.isFinite(safeHumi)) {
+    return {
+      penalty: 0,
+      deviation: 0,
+      tempDeviation: 0,
+      humidityDeviation: 0,
+    };
+  }
+
+  const tempExcess = Math.max(0, 20 - safeTemp, safeTemp - 26);
+  const tempDeviation = Math.min(1, Math.pow(tempExcess / 4, 2));
+  const dryDeviation = Math.pow(Math.max(0, 30 - safeHumi) / 10, 2);
+  const humidDeviation = Math.pow(Math.max(0, safeHumi - 60) / 20, 2);
+  const humidityDeviation = Math.min(1, Math.max(dryDeviation, humidDeviation));
+  const deviation = Math.min(1, Math.max(0, 0.7 * tempDeviation + 0.3 * humidityDeviation));
+
+  return {
+    penalty: roundTo(0.5 * deviation, 3),
+    deviation: roundTo(deviation, 3),
+    tempDeviation: roundTo(tempDeviation, 3),
+    humidityDeviation: roundTo(humidityDeviation, 3),
   };
 }
 
@@ -706,23 +1268,22 @@ function buildIaqiBundle({
   if (!Number.isFinite(pm25Number) || pm25Number < 0) {
     return null;
   }
-
-  const kNumber = Number(k);
-  if (!Number.isFinite(kNumber) || kNumber < 0) {
+  const co2Number = Number(co2);
+  if (!Number.isFinite(co2Number) || co2Number < 0) {
     return null;
   }
 
   const iaqi = calculateIaqi({
-    co2,
+    co2: co2Number,
     pm25: pm25Number,
-    k: kNumber,
+    k,
     voc,
     temp,
     humi,
   });
 
-  const mScore = Number(iaqi.m_score);
-  const iaqiScore = Number.isFinite(mScore) ? roundTo(mScore, 3) : null;
+  const displayIaqi = Number(iaqi.display_iaqi);
+  const iaqiScore = Number.isFinite(displayIaqi) ? roundTo(displayIaqi, 3) : null;
 
   return {
     iaqi,
@@ -794,7 +1355,7 @@ function toFiniteNumberOrNull(value) {
   return parsed;
 }
 
-function resolveAqiAutoProfile(profileData) {
+function resolveAutoProfile(profileData) {
   const thresholds = profileData?.thresholds && typeof profileData.thresholds === "object"
     ? profileData.thresholds
     : {};
@@ -804,6 +1365,7 @@ function resolveAqiAutoProfile(profileData) {
   const constraints = profileData?.constraints && typeof profileData.constraints === "object"
     ? profileData.constraints
     : {};
+  const metric = normalizeAutoMetric(profileData?.metric || thresholds.metric);
 
   const iaqiOnRaw = normalizeLegacyScaledIaqi(toFiniteNumber(thresholds.iaqiOn, NaN));
   const aqiOn = Number.isFinite(iaqiOnRaw)
@@ -832,15 +1394,97 @@ function resolveAqiAutoProfile(profileData) {
   }
 
   const minCommandIntervalSeconds = toPositiveInt(
-    constraints.minCommandIntervalSeconds || constraints.minIntervalSeconds,
+    constraints.minCommandIntervalSeconds ?? constraints.minIntervalSeconds,
     DEFAULT_AUTO_COMMAND_INTERVAL_SECONDS
   );
 
+  if (metric !== "iaqi") {
+    const metricOn = toFiniteNumber(
+      thresholds.onThreshold ?? thresholds[`${metric}On`],
+      NaN
+    );
+    const metricOffExplicit = toFiniteNumber(
+      thresholds.offThreshold ?? thresholds[`${metric}Off`],
+      NaN
+    );
+    const metricHysteresis = toFiniteNumber(
+      hysteresis.value ?? hysteresis[metric],
+      NaN
+    );
+    const onThreshold = Number.isFinite(metricOn) ? metricOn : aqiOn;
+    let offThreshold = Number.isFinite(metricOffExplicit)
+      ? metricOffExplicit
+      : onThreshold - Math.abs(Number.isFinite(metricHysteresis)
+        ? metricHysteresis
+        : onThreshold * 0.2);
+
+    if (!Number.isFinite(offThreshold)) {
+      offThreshold = onThreshold;
+    }
+    if (offThreshold >= onThreshold) {
+      offThreshold = onThreshold - Math.max(Math.abs(onThreshold) * 0.01, 0.01);
+    }
+
+    return {
+      metric,
+      controlBasis: autoMetricLabel(metric),
+      onThreshold,
+      offThreshold,
+      minCommandIntervalSeconds,
+    };
+  }
+
   return {
+    metric: "iaqi",
+    controlBasis: "IAQI",
+    onThreshold: aqiOn,
+    offThreshold: aqiOff,
     aqiOn,
     aqiOff,
     minCommandIntervalSeconds,
   };
+}
+
+function resolveAutoProfiles(profileData) {
+  const rawRules = Array.isArray(profileData?.rules) ? profileData.rules : [];
+  const rules = rawRules
+    .filter((rule) => rule && typeof rule === "object")
+    .map((rule) => resolveAutoProfile({
+      metric: rule.metric || rule.thresholds?.metric,
+      thresholds: rule.thresholds || {},
+      hysteresis: rule.hysteresis || {},
+      constraints: profileData?.constraints || {},
+    }))
+    .filter((rule) => rule && Number.isFinite(rule.onThreshold) && Number.isFinite(rule.offThreshold));
+
+  if (rules.length) return rules;
+  return [resolveAutoProfile(profileData)];
+}
+
+function resolveAutoMetricValue(snapshotPayload, iaqiBundle, metric) {
+  const raw = snapshotPayload?.raw && typeof snapshotPayload.raw === "object"
+    ? snapshotPayload.raw
+    : {};
+  switch (normalizeAutoMetric(metric)) {
+    case "co2":
+      return toFiniteNumberOrNull(raw.co2 ?? snapshotPayload?.co2);
+    case "pm25":
+      return toFiniteNumberOrNull(
+        raw.pm25
+          ?? raw.pm2_5
+          ?? raw.pm02
+          ?? snapshotPayload?.pm25
+          ?? snapshotPayload?.pm2_5
+          ?? snapshotPayload?.pm02
+      );
+    case "tvoc":
+      return toFiniteNumberOrNull(raw.tvoc ?? raw.voc ?? snapshotPayload?.tvoc ?? snapshotPayload?.voc);
+    case "nox":
+      return toFiniteNumberOrNull(raw.nox ?? snapshotPayload?.nox);
+    case "iaqi":
+    default:
+      return toFiniteNumberOrNull(snapshotPayload?.iaqiScore ?? raw.iaqiScore ?? iaqiBundle?.iaqiScore);
+  }
 }
 
 function isWithinAutoCommandInterval(plugData, minCommandIntervalSeconds) {
@@ -906,8 +1550,10 @@ async function logPlugControlDecision(entry) {
 async function enqueueAutoAqiCommand({
   plug,
   command,
-  iaqiScore,
+  metric,
+  metricValue,
   iaqi,
+  iaqiScore,
   pm25,
   profile,
   snapshotPayload,
@@ -928,12 +1574,17 @@ async function enqueueAutoAqiCommand({
     serial: snapshotPayload?.serial || null,
     timestamp: snapshotPayload?.timestamp || new Date().toISOString(),
     pm25,
+    metric: profile.metric,
+    metricValue,
     iaqiScore,
     iaqi,
-    controlBasis: "IAQI",
+    controlBasis: profile.controlBasis,
     thresholds: {
-      aqiOn: profile.aqiOn,
-      aqiOff: profile.aqiOff,
+      metric: profile.metric,
+      onThreshold: profile.onThreshold,
+      offThreshold: profile.offThreshold,
+      aqiOn: profile.aqiOn ?? null,
+      aqiOff: profile.aqiOff ?? null,
     },
   };
 
@@ -968,8 +1619,8 @@ async function enqueueAutoAqiCommand({
             command,
             desiredState,
             mode: "auto",
-            actor: "auto_iaqi_engine",
-            reason: "auto_iaqi_threshold",
+            actor: "auto_control_engine",
+            reason: `auto_${normalizeAutoMetric(metric)}_threshold`,
             sensorSnapshot,
             status: "suppressed_manual_override",
             errorMessage: "manual_override_active",
@@ -1029,8 +1680,8 @@ async function enqueueAutoAqiCommand({
           command,
           desiredState,
           mode: "auto",
-          actor: "auto_iaqi_engine",
-          reason: "auto_iaqi_threshold",
+          actor: "auto_control_engine",
+          reason: `auto_${normalizeAutoMetric(metric)}_threshold`,
           sensorSnapshot,
           status: "queued",
           queuedAt: nowTs,
@@ -1051,7 +1702,12 @@ async function enqueueAutoAqiCommand({
           command,
           desiredState,
           mode: "auto",
-          status: "pending",
+          status: shouldUseFunctionMqttDispatch(null, plugData.tasmotaTopic)
+            ? "function_dispatching"
+            : "pending",
+          dispatcher: shouldUseFunctionMqttDispatch(null, plugData.tasmotaTopic)
+            ? "firebase-function-mqtt"
+            : "worker",
           tasmotaTopic: plugData.tasmotaTopic || null,
           queuedAt: nowTs,
           createdAt: nowTs,
@@ -1068,6 +1724,8 @@ async function enqueueAutoAqiCommand({
       desiredState,
       lastCommandRequestId: requestId,
       lastAutoCommandAt: nowTs,
+      lastAutoMetric: profile.metric,
+      lastAutoMetricValue: metricValue,
       lastAutoIAQI: iaqiScore,
       lastAutoIAQIPrimary: iaqi?.primary_grade || null,
       lastAutoPM25: pm25,
@@ -1079,8 +1737,29 @@ async function enqueueAutoAqiCommand({
       queued: true,
       status: "queued",
       requestId,
+      plugId,
+      command,
+      desiredState,
+      tasmotaTopic: plugData.tasmotaTopic || null,
+      functionMqttDispatch: shouldUseFunctionMqttDispatch(null, plugData.tasmotaTopic),
     };
   });
+
+  if (result.queued && result.functionMqttDispatch) {
+    const dispatchResult = await dispatchQueuedCommandWithFunctionMqtt({
+      requestId: result.requestId,
+      plugId: result.plugId,
+      tasmotaTopic: result.tasmotaTopic,
+      command: result.command,
+      desiredState: result.desiredState,
+    });
+    return {
+      ...result,
+      status: dispatchResult.status,
+      dispatched: true,
+      acknowledged: dispatchResult.ok === true,
+    };
+  }
 
   return result;
 }
@@ -1092,12 +1771,9 @@ async function dispatchAutoControlForSnapshot(snapshotPayload) {
   if (!sensorId) return;
 
   const iaqiBundle = buildIaqiBundleFromSnapshot(snapshotPayload);
-  if (!iaqiBundle) return;
-
-  const pm25 = iaqiBundle.pm25;
-  const iaqi = iaqiBundle.iaqi;
-  const iaqiScore = iaqiBundle.iaqiScore;
-  if (!Number.isFinite(iaqiScore)) return;
+  const pm25 = toFiniteNumberOrNull(snapshotPayload?.pm25 ?? snapshotPayload?.raw?.pm25 ?? iaqiBundle?.pm25);
+  const iaqi = iaqiBundle?.iaqi || snapshotPayload?.iaqi || snapshotPayload?.raw?.iaqi || null;
+  const iaqiScore = toFiniteNumberOrNull(snapshotPayload?.iaqiScore ?? snapshotPayload?.raw?.iaqiScore ?? iaqiBundle?.iaqiScore);
 
   const plugs = await listPlugsForSensor(sensorId);
   if (!plugs.length) return;
@@ -1122,33 +1798,81 @@ async function dispatchAutoControlForSnapshot(snapshotPayload) {
       }
     }
 
-    const profile = resolveAqiAutoProfile(profileData);
+    const profiles = resolveAutoProfiles(profileData);
+    const evaluatedProfiles = [];
+    for (const profile of profiles) {
+      const metricValue = resolveAutoMetricValue(snapshotPayload, iaqiBundle, profile.metric);
+      if (Number.isFinite(metricValue)) {
+        evaluatedProfiles.push({ profile, metricValue });
+      }
+    }
+
+    const firstProfile = profiles[0] || resolveAutoProfile(profileData);
+    if (!evaluatedProfiles.length) {
+      await logPlugControlDecision({
+        plugId,
+        sensorId,
+        profileId: profileId || null,
+        controlBasis: firstProfile.controlBasis,
+        metric: firstProfile.metric,
+        metricValue: null,
+        iaqiScore,
+        iaqi,
+        pm25,
+        command: null,
+        status: "skipped_missing_metric",
+        thresholds: {
+          metric: firstProfile.metric,
+          onThreshold: firstProfile.onThreshold,
+          offThreshold: firstProfile.offThreshold,
+          minCommandIntervalSeconds: firstProfile.minCommandIntervalSeconds,
+        },
+      });
+      continue;
+    }
 
     let command = null;
-    if (iaqiScore >= profile.aqiOn) {
+    let selected = evaluatedProfiles
+      .filter((item) => item.metricValue >= item.profile.onThreshold)
+      .sort((a, b) =>
+        (b.metricValue / b.profile.onThreshold) -
+        (a.metricValue / a.profile.onThreshold)
+      )[0];
+    if (selected) {
       command = "ON";
-    } else if (iaqiScore <= profile.aqiOff) {
+    } else if (
+      evaluatedProfiles.length === profiles.length &&
+      evaluatedProfiles.every((item) => item.metricValue <= item.profile.offThreshold)
+    ) {
       command = "OFF";
+      selected = evaluatedProfiles[0];
     }
 
     if (!command) {
       continue;
     }
+    const profile = selected.profile;
+    const metricValue = selected.metricValue;
 
     if (isWithinAutoCommandInterval(plug, profile.minCommandIntervalSeconds)) {
       await logPlugControlDecision({
         plugId,
         sensorId,
         profileId: profileId || null,
-        controlBasis: "IAQI",
+        controlBasis: profile.controlBasis,
+        metric: profile.metric,
+        metricValue,
         iaqiScore,
         iaqi,
         pm25,
         command,
         status: "skipped_min_interval",
         thresholds: {
-          aqiOn: profile.aqiOn,
-          aqiOff: profile.aqiOff,
+          metric: profile.metric,
+          onThreshold: profile.onThreshold,
+          offThreshold: profile.offThreshold,
+          aqiOn: profile.aqiOn ?? null,
+          aqiOff: profile.aqiOff ?? null,
           minCommandIntervalSeconds: profile.minCommandIntervalSeconds,
         },
       });
@@ -1158,8 +1882,10 @@ async function dispatchAutoControlForSnapshot(snapshotPayload) {
     const enqueueResult = await enqueueAutoAqiCommand({
       plug,
       command,
-      iaqiScore,
+      metric: profile.metric,
+      metricValue,
       iaqi,
+      iaqiScore,
       pm25,
       profile,
       snapshotPayload,
@@ -1169,7 +1895,9 @@ async function dispatchAutoControlForSnapshot(snapshotPayload) {
       plugId,
       sensorId,
       profileId: profileId || null,
-      controlBasis: "IAQI",
+      controlBasis: profile.controlBasis,
+      metric: profile.metric,
+      metricValue,
       iaqiScore,
       iaqi,
       pm25,
@@ -1178,18 +1906,85 @@ async function dispatchAutoControlForSnapshot(snapshotPayload) {
       status: enqueueResult.status,
       queued: Boolean(enqueueResult.queued),
       thresholds: {
-        aqiOn: profile.aqiOn,
-        aqiOff: profile.aqiOff,
+        metric: profile.metric,
+        onThreshold: profile.onThreshold,
+        offThreshold: profile.offThreshold,
+        aqiOn: profile.aqiOn ?? null,
+        aqiOff: profile.aqiOff ?? null,
         minCommandIntervalSeconds: profile.minCommandIntervalSeconds,
       },
     });
   }
 }
 
+function buildSnapshotPayloadFromSensorDoc(sensorId, sensorData) {
+  const latest = sensorData?.latest && typeof sensorData.latest === "object"
+    ? sensorData.latest
+    : sensorData || {};
+  return {
+    serial: sensorId,
+    raw: latest,
+    pm25: latest.pm25 ?? latest.pm02 ?? sensorData?.pm25 ?? sensorData?.pm02,
+    iaqi: latest.iaqi ?? sensorData?.iaqi,
+    iaqiScore: latest.iaqiScore ?? sensorData?.iaqiScore,
+    co2: latest.co2 ?? latest.rco2 ?? sensorData?.co2 ?? sensorData?.rco2,
+    tvoc: latest.tvoc ?? latest.voc ?? sensorData?.tvoc ?? sensorData?.voc,
+    nox: latest.nox ?? sensorData?.nox,
+    temp: latest.temp ?? latest.temperature ?? sensorData?.temp ?? sensorData?.temperature,
+    humidity: latest.humidity ?? latest.rhum ?? sensorData?.humidity ?? sensorData?.rhum,
+    k: latest.k ?? sensorData?.k,
+    kEffective: latest.kEffective ?? sensorData?.kEffective,
+    timestamp: toIsoStringOrNull(
+      latest.timestamp
+        || latest.createdAt
+        || sensorData?.lastSeen
+        || sensorData?.timestamp
+        || sensorData?.updatedAt
+    ) || new Date().toISOString(),
+  };
+}
+
+async function loadLatestSensorSnapshotPayload(sensorId) {
+  const candidates = buildSensorIdCandidates(sensorId).slice(0, 12);
+  for (const candidate of candidates) {
+    const snap = await db.collection("sensors").doc(candidate).get();
+    if (!snap.exists) continue;
+    return buildSnapshotPayloadFromSensorDoc(candidate, snap.data() || {});
+  }
+  return null;
+}
+
+async function dispatchAutoControlForRegisteredPlugs() {
+  const snap = await db.collection("plugs")
+    .where("mode", "==", "auto")
+    .limit(100)
+    .get();
+  if (snap.empty) return { scanned: 0, sensors: 0 };
+
+  const sensorIds = [...new Set(snap.docs
+    .map((doc) => {
+      const data = doc.data() || {};
+      if (data.controlEnabled === false) return "";
+      return typeof data.sensorId === "string" ? data.sensorId.trim() : "";
+    })
+    .filter((value) => value.length > 0))];
+
+  let dispatched = 0;
+  for (const sensorId of sensorIds) {
+    const payload = await loadLatestSensorSnapshotPayload(sensorId);
+    if (!payload) continue;
+    await dispatchAutoControlForSnapshot(payload);
+    dispatched += 1;
+  }
+
+  return { scanned: snap.size, sensors: dispatched };
+}
+
 exports.registerPlug = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -1246,6 +2041,7 @@ exports.upsertPlugProfile = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -1258,9 +2054,11 @@ exports.upsertPlugProfile = onRequest(
     const payload = {
       profileId,
       name: typeof body.name === "string" ? body.name.trim() : "default",
+      metric: normalizeAutoMetric(body.metric || body.thresholds?.metric),
       weights: body.weights && typeof body.weights === "object" ? body.weights : {},
       thresholds: body.thresholds && typeof body.thresholds === "object" ? body.thresholds : {},
       hysteresis: body.hysteresis && typeof body.hysteresis === "object" ? body.hysteresis : {},
+      rules: Array.isArray(body.rules) ? body.rules : [],
       constraints: body.constraints && typeof body.constraints === "object" ? body.constraints : {},
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1280,6 +2078,7 @@ exports.commandPlug = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -1446,7 +2245,12 @@ exports.commandPlug = onRequest(
               command,
               desiredState,
               mode,
-              status: "pending",
+              status: shouldUseFunctionMqttDispatch(transportHint, plugData.tasmotaTopic)
+                ? "function_dispatching"
+                : "pending",
+              dispatcher: shouldUseFunctionMqttDispatch(transportHint, plugData.tasmotaTopic)
+                ? "firebase-function-mqtt"
+                : "worker",
               transportHint,
               tasmotaTopic: plugData.tasmotaTopic || null,
               queuedAt: nowTs,
@@ -1482,6 +2286,13 @@ exports.commandPlug = onRequest(
         return {
           queued: true,
           status: "queued",
+          command,
+          desiredState,
+          tasmotaTopic: plugData.tasmotaTopic || null,
+          functionMqttDispatch: shouldUseFunctionMqttDispatch(
+            transportHint,
+            plugData.tasmotaTopic
+          ),
           manualOverrideUntil: manualOverrideUntil
             ? manualOverrideUntil.toDate().toISOString()
             : null,
@@ -1500,12 +2311,35 @@ exports.commandPlug = onRequest(
         });
       }
 
+      let dispatchResult = null;
+      if (commandResult.functionMqttDispatch) {
+        dispatchResult = await dispatchQueuedCommandWithFunctionMqtt({
+          requestId,
+          plugId,
+          tasmotaTopic: commandResult.tasmotaTopic,
+          command: commandResult.command,
+          desiredState: commandResult.desiredState,
+        });
+      }
+
       return res.status(200).json({
         ok: true,
         requestId,
         plugId,
         queued: true,
-        status: commandResult.status,
+        status: dispatchResult?.status || commandResult.status,
+        dispatched: Boolean(dispatchResult),
+        acknowledged: dispatchResult?.ok === true,
+        mqtt: dispatchResult
+          ? {
+            status: dispatchResult.status,
+            actualState: dispatchResult.actualState || "UNKNOWN",
+            responseTopic: dispatchResult.responseTopic || null,
+            errorMessage: dispatchResult.errorMessage || null,
+            latencyMs: dispatchResult.latencyMs || null,
+            telemetry: dispatchResult.telemetry || null,
+          }
+          : null,
         manualOverrideUntil: commandResult.manualOverrideUntil,
       });
     } catch (error) {
@@ -1519,6 +2353,7 @@ exports.ackPlugCommand = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -1547,6 +2382,8 @@ exports.ackPlugCommand = onRequest(
     const online = toBooleanOrNull(body.online);
     const latencyMs = toFiniteNumber(body.latencyMs, 0);
     const workerId = typeof body.workerId === "string" ? body.workerId.trim() : null;
+    const telemetry = body.telemetry && typeof body.telemetry === "object" ? body.telemetry : null;
+    const telemetryUpdate = plugTelemetryUpdateFields(telemetry);
 
     try {
       await db.runTransaction(async (tx) => {
@@ -1591,6 +2428,7 @@ exports.ackPlugCommand = onRequest(
               actualState,
               online,
               latencyMs,
+              telemetry,
               workerId,
               createdAt: nowTs,
               updatedAt: nowTs,
@@ -1605,6 +2443,7 @@ exports.ackPlugCommand = onRequest(
             plugId,
             actualState,
             online,
+            ...telemetryUpdate,
             lastAckRequestId: requestId,
             lastSeen: nowTs,
             updatedAt: nowTs,
@@ -1629,6 +2468,7 @@ exports.updatePlugState = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -1644,6 +2484,7 @@ exports.updatePlugState = onRequest(
     const online = toBooleanOrNull(body.online);
     const source = typeof body.source === "string" ? body.source.trim() : "worker";
     const telemetry = body.telemetry && typeof body.telemetry === "object" ? body.telemetry : null;
+    const telemetryUpdate = plugTelemetryUpdateFields(telemetry);
 
     try {
       const nowTs = admin.firestore.FieldValue.serverTimestamp();
@@ -1653,6 +2494,7 @@ exports.updatePlugState = onRequest(
           actualState,
           online,
           telemetry,
+          ...telemetryUpdate,
           stateSource: source,
           lastSeen: nowTs,
           updatedAt: nowTs,
@@ -1689,6 +2531,7 @@ exports.getPlug = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -1734,6 +2577,7 @@ exports.listPlugs = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -1777,6 +2621,7 @@ exports.getPlugControlTrace = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -2046,6 +2891,7 @@ exports.ingest = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (req.method !== "POST") {
@@ -2261,6 +3107,7 @@ exports.registerDevice = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -2276,6 +3123,10 @@ exports.registerDevice = onRequest(
       quietHoursEnabled,
       snoozedUntil,
       mutedTypes,
+      notificationIntervalMinutes,
+      minimumSeverityPriority,
+      minimumSeverityByType,
+      fireRiskMinimumLevel,
     } = req.body || {};
 
     if (!token || typeof token !== "string") {
@@ -2302,6 +3153,20 @@ exports.registerDevice = onRequest(
         : Boolean(quietHours),
       snoozedUntil: parseSnoozedUntil(snoozedUntil),
       mutedTypes: mutedTypes && typeof mutedTypes === "object" ? mutedTypes : {},
+      notificationIntervalMinutes:
+        normalizeNotificationIntervalMinutes(notificationIntervalMinutes),
+      minimumSeverityPriority:
+        normalizeMinimumSeverityPriority(minimumSeverityPriority),
+      minimumSeverityByType:
+        minimumSeverityByType && typeof minimumSeverityByType === "object"
+          ? Object.fromEntries(
+            Object.entries(minimumSeverityByType).map(([type, priority]) => [
+              type,
+              normalizeMinimumSeverityPriority(priority),
+            ])
+          )
+          : {},
+      fireRiskMinimumLevel: normalizeFireRiskMinimumLevel(fireRiskMinimumLevel),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
@@ -2330,6 +3195,7 @@ exports.claimDevice = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -2417,6 +3283,7 @@ exports.updatePreferences = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -2429,6 +3296,10 @@ exports.updatePreferences = onRequest(
       quietHoursEnabled,
       snoozedUntil,
       mutedTypes,
+      notificationIntervalMinutes,
+      minimumSeverityPriority,
+      minimumSeverityByType,
+      fireRiskMinimumLevel,
       timezone,
     } = req.body || {};
 
@@ -2455,6 +3326,26 @@ exports.updatePreferences = onRequest(
     if (mutedTypes && typeof mutedTypes === "object") {
       updatePayload.mutedTypes = mutedTypes;
     }
+    if (notificationIntervalMinutes !== undefined) {
+      updatePayload.notificationIntervalMinutes =
+        normalizeNotificationIntervalMinutes(notificationIntervalMinutes);
+    }
+    if (minimumSeverityPriority !== undefined) {
+      updatePayload.minimumSeverityPriority =
+        normalizeMinimumSeverityPriority(minimumSeverityPriority);
+    }
+    if (minimumSeverityByType && typeof minimumSeverityByType === "object") {
+      updatePayload.minimumSeverityByType = Object.fromEntries(
+        Object.entries(minimumSeverityByType).map(([type, priority]) => [
+          type,
+          normalizeMinimumSeverityPriority(priority),
+        ])
+      );
+    }
+    if (fireRiskMinimumLevel !== undefined) {
+      updatePayload.fireRiskMinimumLevel =
+        normalizeFireRiskMinimumLevel(fireRiskMinimumLevel);
+    }
     if (timezone !== undefined) {
       updatePayload.timezone = typeof timezone === "string" ? timezone : null;
     }
@@ -2471,10 +3362,129 @@ exports.updatePreferences = onRequest(
   }
 );
 
+exports.resolveAlert = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    invoker: "public",
+  },
+  async (req, res) => {
+    if (!ensurePost(req, res)) return;
+    if (!validateOptionalApiKey(req, res)) return;
+
+    const {
+      alertId,
+      resolvedBy,
+      resolutionNote,
+    } = req.body || {};
+
+    const resolvedAlertId = typeof alertId === "string" ? alertId.trim() : "";
+    if (!resolvedAlertId) {
+      return badRequest(res, "alertId_is_required");
+    }
+
+    const alertRef = db.collection("alerts").doc(resolvedAlertId);
+    try {
+      const alertSnap = await alertRef.get();
+      if (!alertSnap.exists) {
+        return res.status(404).json({ ok: false, error: "alert_not_found" });
+      }
+
+      await alertRef.set(
+        {
+          status: "resolved",
+          resolvedAt: admin.firestore.FieldValue.serverTimestamp(),
+          resolvedBy:
+            typeof resolvedBy === "string" && resolvedBy.trim()
+              ? resolvedBy.trim()
+              : null,
+          resolutionNote:
+            typeof resolutionNote === "string" && resolutionNote.trim()
+              ? resolutionNote.trim()
+              : "closed_from_dashboard",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      return res.status(200).json({ ok: true, alertId: resolvedAlertId });
+    } catch (error) {
+      logger.error("resolve_alert_failed", {
+        alertId: resolvedAlertId,
+        error: error?.message || error,
+      });
+      return res.status(500).json({ ok: false, error: "internal_error" });
+    }
+  }
+);
+
+exports.getDevicePreferences = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    invoker: "public",
+  },
+  async (req, res) => {
+    if (!ensurePost(req, res)) return;
+    if (!validateOptionalApiKey(req, res)) return;
+
+    const { token } = req.body || {};
+    if (!token || typeof token !== "string") {
+      return badRequest(res, "token_is_required");
+    }
+
+    const tokenId = token.trim();
+
+    try {
+      const doc = await db.collection("devices").doc(tokenId).get();
+      if (!doc.exists) {
+        return res.status(200).json({
+          ok: true,
+          token: tokenId,
+          device: null,
+        });
+      }
+
+      const data = doc.data() || {};
+      return res.status(200).json({
+        ok: true,
+        token: tokenId,
+        device: {
+          sensorId: data.sensorId || null,
+          firestoreDocPath: data.firestoreDocPath || null,
+          alertsEnabled: data.alertsEnabled !== false,
+          quietHours: data.quietHours || null,
+          quietHoursEnabled: Boolean(data.quietHoursEnabled),
+          snoozedUntil: toIsoStringOrNull(data.snoozedUntil),
+          mutedTypes: data.mutedTypes || {},
+          notificationIntervalMinutes:
+            normalizeNotificationIntervalMinutes(data.notificationIntervalMinutes),
+          minimumSeverityPriority:
+            normalizeMinimumSeverityPriority(data.minimumSeverityPriority),
+          minimumSeverityByType:
+            data.minimumSeverityByType && typeof data.minimumSeverityByType === "object"
+              ? data.minimumSeverityByType
+              : {},
+          lastDeliveredAt: toIsoStringOrNull(data.lastDeliveredAt),
+          lastDeliveredByType: data.lastDeliveredByType || {},
+          pushDisabled: data.pushDisabled === true,
+          updatedAt: toIsoStringOrNull(data.updatedAt),
+        },
+      });
+    } catch (error) {
+      logger.error("get_device_preferences_failed", {
+        error: error?.message || error,
+      });
+      return res.status(500).json({ ok: false, error: "internal_error" });
+    }
+  }
+);
+
 exports.generateDeviceCode = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
@@ -2546,6 +3556,7 @@ exports.relay = onRequest(
   {
     region: "us-central1",
     cors: true,
+    invoker: "public",
   },
   async (req, res) => {
     if (req.method !== "POST") {
@@ -2978,5 +3989,30 @@ exports.scheduledDataCleanup = onSchedule(
     }
 
     logger.info("scheduled_cleanup_finished", { deletedCount });
+  }
+);
+
+exports.scheduledPlugAutoControl = onSchedule(
+  {
+    region: "asia-northeast3",
+    schedule: "* * * * *",
+    timeZone: "Asia/Seoul",
+  },
+  async () => {
+    if (isEnvTrue(process.env.DISABLE_PLUG_AUTO_CONTROL_SWEEP)) {
+      logger.info("scheduled_plug_auto_control_skipped", {
+        reason: "disabled_by_env",
+      });
+      return;
+    }
+
+    try {
+      const result = await dispatchAutoControlForRegisteredPlugs();
+      logger.info("scheduled_plug_auto_control_finished", result);
+    } catch (error) {
+      logger.error("scheduled_plug_auto_control_failed", {
+        error: error?.message || error,
+      });
+    }
   }
 );
