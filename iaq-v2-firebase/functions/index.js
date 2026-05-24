@@ -385,6 +385,32 @@ function validateOptionalApiKey(req, res) {
   return true;
 }
 
+async function validateOptionalApiKeyOrFirebaseAuth(req, res) {
+  const requiredApiKey = process.env.DEVICE_API_KEY || process.env.INGEST_API_KEY || null;
+  const incomingApiKey = req.get("X-API-Key");
+  if (requiredApiKey && incomingApiKey === requiredApiKey) {
+    return { ok: true, uid: null };
+  }
+
+  const authorization = req.get("Authorization") || "";
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  if (match) {
+    try {
+      const decoded = await admin.auth().verifyIdToken(match[1]);
+      return { ok: true, uid: decoded.uid || null };
+    } catch (error) {
+      logger.warn("firebase_auth_token_invalid", { error: error?.message || error });
+    }
+  }
+
+  if (!requiredApiKey) {
+    return { ok: true, uid: null };
+  }
+
+  unauthorized(res);
+  return { ok: false, uid: null };
+}
+
 const DEVICE_CODE_TTL_MINUTES = Number(process.env.DEVICE_CODE_TTL_MINUTES || 10);
 const MANUAL_OVERRIDE_DEFAULT_SECONDS = Number(
   process.env.MANUAL_OVERRIDE_DEFAULT_SECONDS || 15 * 60
@@ -3370,7 +3396,8 @@ exports.resolveAlert = onRequest(
   },
   async (req, res) => {
     if (!ensurePost(req, res)) return;
-    if (!validateOptionalApiKey(req, res)) return;
+    const auth = await validateOptionalApiKeyOrFirebaseAuth(req, res);
+    if (!auth.ok) return;
 
     const {
       alertId,
@@ -3397,7 +3424,7 @@ exports.resolveAlert = onRequest(
           resolvedBy:
             typeof resolvedBy === "string" && resolvedBy.trim()
               ? resolvedBy.trim()
-              : null,
+              : auth.uid,
           resolutionNote:
             typeof resolutionNote === "string" && resolutionNote.trim()
               ? resolutionNote.trim()

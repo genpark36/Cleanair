@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -45,10 +46,14 @@ class SituationResolutionService {
     return _fallbackBaseUrl.trim();
   }
 
-  Map<String, String> _headers() {
+  Future<Map<String, String>> _headers() async {
     final headers = <String, String>{'Content-Type': 'application/json'};
     if (_deviceApiKey.trim().isNotEmpty) {
       headers['X-API-Key'] = _deviceApiKey.trim();
+    }
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (idToken != null && idToken.trim().isNotEmpty) {
+      headers['Authorization'] = 'Bearer ${idToken.trim()}';
     }
     return headers;
   }
@@ -150,7 +155,7 @@ class SituationResolutionService {
       final response = await _client
           .post(
             Uri.parse('$_baseUrl/resolveAlert'),
-            headers: _headers(),
+            headers: await _headers(),
             body: jsonEncode(<String, Object?>{
               'alertId': alertId,
               'resolvedBy': 'mobile_app',
