@@ -34,6 +34,7 @@ const state = {
   plugLinks: [],
   sensors: [],
   alerts: [],
+  dismissedAlertIds: new Set(),
   incidents: [],
   plugs: [],
   plugTraces: {},
@@ -153,6 +154,11 @@ function bootFirebase() {
         authResolved = true;
         window.clearTimeout(authTimer);
         state.user = user;
+        if (user) {
+          loadDismissedAlerts();
+        } else {
+          state.dismissedAlertIds = new Set();
+        }
         state.authorized = isAuthorized(user);
         renderAuthGate();
         if (state.authorized && !state.subscribed) {
@@ -340,7 +346,7 @@ function subscribeAlerts() {
   state.alertsUnsubscribe = onSnapshot(alertsQuery, (snapshot) => {
     state.alerts = snapshot.docs
       .map((doc) => normalizeAlert(doc.id, doc.data()))
-      .filter((alert) => isVisibleAlert(alert) && alertBelongsToUser(alert));
+      .filter((alert) => isVisibleAlert(alert) && alertBelongsToUser(alert) && !isDismissedAlert(alert));
     render();
   }, setError);
 }
@@ -1367,6 +1373,18 @@ async function createIncidentFromCurrent() {
 
 async function endIncident(incidentId) {
   if (!state.db || !state.user || !incidentId) return;
+  const alert = state.alerts.find((item) => item.id === incidentId);
+  const incident = state.incidents.find((item) => item.id === incidentId);
+
+  if (alert && !incident) {
+    dismissAlert(incidentId);
+    state.alerts = state.alerts.filter((item) => item.id !== incidentId);
+    setSyncText("상황 확인 처리됨");
+    closeModal();
+    render();
+    return;
+  }
+
   try {
     await setDoc(doc(state.db, "user_profiles", state.user.uid, "incidents", incidentId), {
       status: "resolved",
@@ -1374,8 +1392,13 @@ async function endIncident(incidentId) {
       resolvedBy: state.user.email || state.user.uid,
       updatedAt: serverTimestamp(),
     }, { merge: true });
+    if (alert) {
+      dismissAlert(incidentId);
+      state.alerts = state.alerts.filter((item) => item.id !== incidentId);
+    }
     setSyncText("상황 종료 처리됨");
     closeModal();
+    render();
   } catch (error) {
     state.lastError = `상황 종료 실패: ${error?.message || error}`;
     renderSettings();
@@ -1795,7 +1818,41 @@ function isVisibleSensor(sensor) {
 
 function isVisibleAlert(alert) {
   if (isSampleRecord(alert.id, alert.sensorId, alert.title, alert.message, alert.location)) return false;
-  return hasRecentUpdate(alert.createdAt, 30) || alert.isCritical;
+  const maxAgeDays = alert.isCritical ? 3 : 30;
+  return hasRecentUpdate(alert.createdAt, maxAgeDays);
+}
+
+function dismissedAlertStorageKey() {
+  return `cleanair.dismissedAlerts.${state.user?.uid || "guest"}`;
+}
+
+function loadDismissedAlerts() {
+  try {
+    const raw = window.localStorage.getItem(dismissedAlertStorageKey());
+    const ids = JSON.parse(raw || "[]");
+    state.dismissedAlertIds = new Set(Array.isArray(ids) ? ids.map(String) : []);
+  } catch (_) {
+    state.dismissedAlertIds = new Set();
+  }
+}
+
+function saveDismissedAlerts() {
+  try {
+    const ids = [...state.dismissedAlertIds].slice(-200);
+    window.localStorage.setItem(dismissedAlertStorageKey(), JSON.stringify(ids));
+  } catch (_) {
+    // localStorage may be unavailable in private or blocked browser modes.
+  }
+}
+
+function dismissAlert(alertId) {
+  if (!alertId) return;
+  state.dismissedAlertIds.add(String(alertId));
+  saveDismissedAlerts();
+}
+
+function isDismissedAlert(alert) {
+  return Boolean(alert?.id && state.dismissedAlertIds.has(String(alert.id)));
 }
 
 function isVisiblePlug(plug) {
@@ -1858,7 +1915,7 @@ function getStatusCounts() {
 }
 
 function getCriticalAlert() {
-  return state.alerts.find((alert) => alert.isCritical) || null;
+  return state.alerts.find((alert) => alert.isCritical && !isDismissedAlert(alert)) || null;
 }
 
 function statusLabel(status) {
