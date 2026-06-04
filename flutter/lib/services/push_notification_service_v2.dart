@@ -297,6 +297,19 @@ class PushNotificationServiceV2 {
     }
   }
 
+  Future<Uri?> slackConnectUri() async {
+    if (_baseUrl.isEmpty) {
+      _lastRegistrationMessage = 'Functions URL이 없어 Slack 연결을 시작할 수 없습니다.';
+      _lastRegistrationAt = DateTime.now();
+      return null;
+    }
+
+    final token = await ensureClientToken();
+    return Uri.parse('$_baseUrl/startSlackConnect').replace(
+      queryParameters: {'token': token},
+    );
+  }
+
   Future<bool> syncNotificationPreferences(
       NotificationPreferences prefs) async {
     if (_baseUrl.isEmpty) {
@@ -328,6 +341,7 @@ class PushNotificationServiceV2 {
           'minimumSeverityPriority': prefs.minimumSeverityPriority,
           'minimumSeverityByType': prefs.minimumSeverityByType,
           'fireRiskMinimumLevel': prefs.fireRiskMinimumLevel,
+          'slackWebhookUrl': prefs.slackWebhookUrl,
         }),
       );
 

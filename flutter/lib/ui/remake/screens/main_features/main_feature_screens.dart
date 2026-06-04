@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,11 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:permission_handler/permission_handler.dart' as app_permission;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../models/air_quality_snapshot.dart';
+import '../../../../features/disaster_mode/fire_risk_assessment.dart';
 import '../../../../features/disaster_device/disaster_device_draft.dart';
 import '../../../../features/disaster_device/disaster_device_storage.dart';
 import '../../../../features/disaster_device/disaster_device_test_controller.dart';
@@ -21,6 +25,7 @@ import '../../../../features/sensor_location/sensor_location_draft.dart';
 import '../../../../features/sensor_location/sensor_location_storage.dart';
 import '../../../../services/air_quality_csv_export_service.dart';
 import '../../../../services/airgradient_mdns_service.dart';
+import '../../../../services/ai_recommendation_service.dart';
 import '../../../../services/alert_notification_engine.dart';
 import '../../../../services/alert_notification_presenter.dart';
 import '../../../../services/background_service.dart';
@@ -47,6 +52,7 @@ typedef _IaqiBreakdownItem = ({
   Color color,
 });
 typedef _ChartPoint = ({DateTime time, double value});
+typedef _ChartStatusResolver = String Function(double value);
 typedef _DataLogRow = ({String a, String b, String c, Color color});
 
 Future<SensorLocationDraft?> _loadLocationForBinding(
@@ -107,6 +113,11 @@ class MainDashboardScreen extends StatelessWidget {
               location,
               activeRecord,
             );
+            final fireHistory = controller.rawHistory.isEmpty &&
+                    controller.latestSnapshot != null
+                ? <AirQualitySnapshot>[controller.latestSnapshot!]
+                : controller.rawHistory;
+            final fireAssessment = FireRiskAssessment.fromHistory(fireHistory);
 
             return Container(
               color: const Color(0xFFF7F9FA),
@@ -129,13 +140,18 @@ class MainDashboardScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 24),
                           _IaqiCard(data: data),
+                          const SizedBox(height: 18),
+                          _DashboardStatusSummaryCard(
+                            data: data,
+                            assessment: fireAssessment,
+                          ),
                           const SizedBox(height: 22),
-                          _InsightCard(data: data),
+                          _InsightCard(data: data, controller: controller),
                           if (data.alertMessages.isNotEmpty) ...[
                             const SizedBox(height: 22),
                             _DashboardAlertCard(messages: data.alertMessages),
                           ],
-                          const SizedBox(height: 22),
+                          const SizedBox(height: 16),
                           _DashboardMetricGrid(
                             data: data,
                             onMetricSelected: onMetricSelected,
@@ -162,7 +178,6 @@ class MainDashboardScreen extends StatelessWidget {
                             data: data,
                             location: location,
                             device: deviceSnapshot.data,
-                            onTap: onDisasterMode,
                           ),
                           const SizedBox(height: 22),
                           _TrendCard(data: data, controller: controller),
@@ -1777,6 +1792,7 @@ class _DashboardMetricGrid extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           GridView.builder(
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: metrics.length,
@@ -2070,13 +2086,265 @@ class _DashboardConnectionCard extends StatelessWidget {
   }
 }
 
-class _InsightCard extends StatelessWidget {
-  const _InsightCard({required this.data});
+class _DashboardStatusSummaryCard extends StatelessWidget {
+  const _DashboardStatusSummaryCard({
+    required this.data,
+    required this.assessment,
+  });
 
   final _DashboardData data;
+  final FireRiskAssessment assessment;
 
   @override
   Widget build(BuildContext context) {
+    final airTitle = data.alertMessages.isNotEmpty
+        ? _alertDisplayTitle(data.alertMessages.first, 0)
+        : data.hasLiveData
+            ? '공기질 상태'
+            : '센서 연결 대기';
+    final airText = data.alertMessages.isNotEmpty
+        ? data.alertMessages.first
+        : data.hasLiveData
+            ? '현재 공기질은 ${data.status} 상태입니다.'
+            : '센서가 연결되면 실시간 공기질을 표시합니다.';
+    final disasterText = assessment.level == FireRiskLevel.normal
+        ? '화재 의심 패턴은 보이지 않습니다.'
+        : assessment.headline;
+
+    return _SoftCard(
+      radius: 22,
+      padding: const EdgeInsets.all(16),
+      color: Colors.white,
+      child: Column(
+        children: [
+          _DashboardStatusSummaryRow(
+            icon: Symbols.air,
+            title: airTitle,
+            text: airText,
+            color: data.alertMessages.isNotEmpty
+                ? const Color(0xFFFF8A1C)
+                : data.statusColor,
+          ),
+          const SizedBox(height: 12),
+          _DashboardStatusSummaryRow(
+            icon: assessment.isUrgent
+                ? Symbols.local_fire_department
+                : Symbols.shield,
+            title: '방재 ${assessment.levelLabel}',
+            text: disasterText,
+            color: _fireRiskSummaryColor(assessment.level),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardStatusSummaryRow extends StatelessWidget {
+  const _DashboardStatusSummaryRow({
+    required this.icon,
+    required this.title,
+    required this.text,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 21, fill: 1),
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: CleanColors.onSurface,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                text,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.35,
+                  fontWeight: FontWeight.w700,
+                  color: CleanColors.secondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Color _fireRiskSummaryColor(FireRiskLevel level) {
+  return switch (level) {
+    FireRiskLevel.fireSuspected || FireRiskLevel.coOnly => CleanColors.error,
+    FireRiskLevel.strongWarning => const Color(0xFFC2410C),
+    FireRiskLevel.warning => const Color(0xFFFF8A1C),
+    FireRiskLevel.notice => const Color(0xFFFFB45C),
+    FireRiskLevel.normal => CleanColors.primary,
+  };
+}
+
+class _InsightCard extends StatefulWidget {
+  const _InsightCard({
+    required this.data,
+    required this.controller,
+  });
+
+  final _DashboardData data;
+  final AirQualityController controller;
+
+  @override
+  State<_InsightCard> createState() => _InsightCardState();
+}
+
+class _InsightCardState extends State<_InsightCard> {
+  final AiRecommendationService _service = AiRecommendationService();
+  AiRecommendation? _recommendation;
+  String? _loadedKey;
+  AirQualitySnapshot? _lastRequestedSnapshot;
+  DateTime? _lastRequestedAt;
+  String? _lastRequestedStatus;
+  String? _lastRequestedAlerts;
+  bool _loading = false;
+  static const Duration _minimumRefreshInterval = Duration(minutes: 10);
+
+  @override
+  void initState() {
+    super.initState();
+    _maybeLoadRecommendation();
+  }
+
+  @override
+  void didUpdateWidget(_InsightCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _maybeLoadRecommendation();
+  }
+
+  void _maybeLoadRecommendation() {
+    final snapshot = widget.controller.latestSnapshot;
+    if (snapshot == null || !widget.data.hasLiveData) return;
+
+    final alertSignature = widget.data.alertMessages.join('|');
+    final key = [
+      snapshot.id ?? '',
+      widget.data.locationLabel,
+      widget.data.status,
+      alertSignature,
+      _metricBucket(snapshot.pm25, 10),
+      _metricBucket(snapshot.co2, 150),
+      _metricBucket(snapshot.tvoc, 50),
+      _metricBucket(snapshot.nox, 1),
+      _metricBucket(snapshot.co, 2),
+      _metricBucket(widget.data.rawIaqiScore, 0.25),
+    ].join(':');
+    if (key == _loadedKey || _loading) return;
+    if (!_shouldRefreshRecommendation(snapshot, alertSignature)) return;
+    _loadedKey = key;
+    _loading = true;
+    _lastRequestedAt = DateTime.now();
+    _lastRequestedSnapshot = snapshot;
+    _lastRequestedStatus = widget.data.status;
+    _lastRequestedAlerts = alertSignature;
+
+    unawaited(
+      _service
+          .generate(
+        snapshot: snapshot,
+        recentHistory: widget.controller.rawHistory.length > 12
+            ? widget.controller.rawHistory
+                .sublist(widget.controller.rawHistory.length - 12)
+            : widget.controller.rawHistory,
+        locationLabel: widget.data.locationLabel,
+        alertMessages: widget.data.alertMessages,
+      )
+          .then((value) {
+        if (!mounted) return;
+        setState(() {
+          _recommendation = value;
+          _loading = false;
+        });
+      }).catchError((_) {
+        if (!mounted) return;
+        setState(() {
+          _loading = false;
+        });
+      }),
+    );
+  }
+
+  bool _shouldRefreshRecommendation(
+    AirQualitySnapshot snapshot,
+    String alertSignature,
+  ) {
+    final previous = _lastRequestedSnapshot;
+    if (previous == null || _recommendation == null) return true;
+
+    final statusChanged = widget.data.status != _lastRequestedStatus;
+    final alertChanged = alertSignature != _lastRequestedAlerts;
+    final elapsed = _lastRequestedAt == null
+        ? _minimumRefreshInterval
+        : DateTime.now().difference(_lastRequestedAt!);
+
+    if (!statusChanged && !alertChanged && elapsed < _minimumRefreshInterval) {
+      return false;
+    }
+
+    return statusChanged ||
+        alertChanged ||
+        _changedBy(previous.pm25, snapshot.pm25, 10) ||
+        _changedBy(previous.co2, snapshot.co2, 150) ||
+        _changedBy(previous.tvoc, snapshot.tvoc, 50) ||
+        _changedBy(previous.nox, snapshot.nox, 1) ||
+        _changedBy(previous.co, snapshot.co, 2) ||
+        _changedBy(previous.iaqiScore, snapshot.iaqiScore, 0.25);
+  }
+
+  static bool _changedBy(double? before, double? after, double threshold) {
+    if (before == null || after == null) return before != after;
+    return (after - before).abs() >= threshold;
+  }
+
+  static String _metricBucket(double? value, double step) {
+    if (value == null || !value.isFinite || step <= 0) return '-';
+    return (value / step).round().toString();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final recommendation = _recommendation;
+    final summary = recommendation?.summary.trim().isNotEmpty == true
+        ? recommendation!.summary.trim()
+        : widget.data.insight;
+    final actions = recommendation?.recommendations ?? const <String>[];
+
     return Container(
       constraints: const BoxConstraints(minHeight: 146),
       padding: const EdgeInsets.all(22),
@@ -2106,7 +2374,7 @@ class _InsightCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               const Text(
-                '건강 인사이트',
+                'AI 공기질 추천',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
@@ -2117,17 +2385,125 @@ class _InsightCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            data.insight,
+            _loading && recommendation == null
+                ? '최근 센서 흐름을 분석하는 중입니다.'
+                : summary,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               height: 1.45,
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
           ),
+          const SizedBox(height: 10),
+          _InsightMetricStatusRow(data: widget.data),
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            for (final action in actions)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Symbols.check_circle,
+                      size: 14,
+                      fill: 1,
+                      color: Color(0xFF9BE7F5),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        action,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          height: 1.4,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFE7F6F8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ],
       ),
     );
+  }
+}
+
+class _InsightMetricStatusRow extends StatelessWidget {
+  const _InsightMetricStatusRow({required this.data});
+
+  final _DashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <({String label, String value, String status})>[];
+    if (data.co2 != null) {
+      items.add((
+        label: 'CO₂',
+        value: '${data.co2!.round()} ppm',
+        status: co2Status(data.co2!),
+      ));
+    }
+    if (data.pm25 != null) {
+      items.add((
+        label: 'PM2.5',
+        value: '${_formatInsightMetricValue(data.pm25!)} µg/m³',
+        status: pm25Status(data.pm25!),
+      ));
+    }
+    if (data.tvoc != null) {
+      items.add((
+        label: 'TVOC',
+        value: '${_formatInsightMetricValue(data.tvoc!)} index',
+        status: tvocStatus(data.tvoc!),
+      ));
+    }
+    if (items.isEmpty) {
+      return const Text(
+        '센서 값이 들어오면 현재 상태와 추천을 함께 표시합니다.',
+        style: TextStyle(
+          fontSize: 11,
+          height: 1.35,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFFB9D7DD),
+        ),
+      );
+    }
+    final visible = items.take(2).toList(growable: false);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final item in visible)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFF334143),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '${item.label} ${item.value} · ${item.status}',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFFE7F6F8),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _formatInsightMetricValue(double value) {
+    if (value == value.roundToDouble()) return value.round().toString();
+    return value
+        .toStringAsFixed(1)
+        .replaceFirst(RegExp(r'0+$'), '')
+        .replaceFirst(RegExp(r'\.$'), '');
   }
 }
 
@@ -2200,13 +2576,11 @@ class _SafetyExtensionCard extends StatelessWidget {
     required this.data,
     required this.location,
     required this.device,
-    this.onTap,
   });
 
   final _DashboardData data;
   final SensorLocationDraft? location;
   final DisasterDeviceDraft? device;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -2217,114 +2591,104 @@ class _SafetyExtensionCard extends StatelessWidget {
     final locationLabel = location?.spaceName ?? data.locationLabel;
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(28),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: risky ? const Color(0xFFFFF3E4) : Colors.white,
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1400677D),
-                blurRadius: 22,
-                offset: Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: risky
-                          ? const Color(0xFFFFB45C)
-                          : CleanColors.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      risky ? Symbols.warning : Symbols.shield,
-                      color: Colors.white,
-                      fill: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          risky ? '방재 상태 확인' : '방재 상태 안정',
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            color: CleanColors.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '$locationLabel · ${deviceReady ? device!.displayName : '응답 장치 설정 필요'}',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            height: 1.35,
-                            fontWeight: FontWeight.w700,
-                            color: CleanColors.secondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Symbols.chevron_right,
-                    color: CleanColors.primary,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  Pill(
-                    text: location == null ? '위치 등록 필요' : '위치 연결됨',
-                    color: location == null
-                        ? CleanColors.surfaceLow
-                        : CleanColors.primaryFixed,
-                    textColor: location == null
-                        ? CleanColors.secondary
-                        : CleanColors.primary,
-                    icon: Symbols.location_on,
-                  ),
-                  Pill(
-                    text: deviceReady ? device!.lastTestStatus : '응답 장치 필요',
-                    color: deviceReady
-                        ? CleanColors.primaryFixed
-                        : CleanColors.surfaceLow,
-                    textColor: deviceReady
-                        ? CleanColors.primary
-                        : CleanColors.secondary,
-                    icon: Symbols.power_settings_new,
-                  ),
-                  Pill(
-                    text: risky ? '원인 확인' : '화재 의심 아님',
+      child: Ink(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: risky ? const Color(0xFFFFF3E4) : Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1400677D),
+              blurRadius: 22,
+              offset: Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
                     color: risky
-                        ? const Color(0xFFFFE1BD)
-                        : CleanColors.surfaceLow,
-                    textColor:
-                        risky ? const Color(0xFF9A4D00) : CleanColors.secondary,
-                    icon: risky ? Symbols.priority_high : Symbols.check_circle,
+                        ? const Color(0xFFFFB45C)
+                        : CleanColors.primaryContainer,
+                    shape: BoxShape.circle,
                   ),
-                ],
-              ),
-            ],
-          ),
+                  child: Icon(
+                    risky ? Symbols.warning : Symbols.shield,
+                    color: Colors.white,
+                    fill: 1,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        risky ? '방재 상태 확인' : '방재 상태 안정',
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          color: CleanColors.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$locationLabel · ${deviceReady ? device!.displayName : '응답 장치 설정 필요'}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          height: 1.35,
+                          fontWeight: FontWeight.w700,
+                          color: CleanColors.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Pill(
+                  text: location == null ? '위치 등록 필요' : '위치 연결됨',
+                  color: location == null
+                      ? CleanColors.surfaceLow
+                      : CleanColors.primaryFixed,
+                  textColor: location == null
+                      ? CleanColors.secondary
+                      : CleanColors.primary,
+                  icon: Symbols.location_on,
+                ),
+                Pill(
+                  text: deviceReady ? device!.lastTestStatus : '응답 장치 필요',
+                  color: deviceReady
+                      ? CleanColors.primaryFixed
+                      : CleanColors.surfaceLow,
+                  textColor:
+                      deviceReady ? CleanColors.primary : CleanColors.secondary,
+                  icon: Symbols.power_settings_new,
+                ),
+                Pill(
+                  text: risky ? '원인 확인' : '화재 의심 아님',
+                  color:
+                      risky ? const Color(0xFFFFE1BD) : CleanColors.surfaceLow,
+                  textColor:
+                      risky ? const Color(0xFF9A4D00) : CleanColors.secondary,
+                  icon: risky ? Symbols.priority_high : Symbols.check_circle,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -2438,6 +2802,7 @@ class _TrendCardState extends State<_TrendCard> {
               height: 96,
               rangeStart: chartWindow.start,
               rangeEnd: chartWindow.end,
+              statusOf: _iaqiChartStatus,
             ),
           ),
         ],
@@ -2539,6 +2904,7 @@ class _PollutantCardState extends State<_PollutantCard> {
                   unit: series.unit,
                   asBars: _asBars,
                   range: _range,
+                  statusOf: series.statusOf,
                 ),
                 child: const _IconSquare(Symbols.open_in_full),
               ),
@@ -2553,6 +2919,7 @@ class _PollutantCardState extends State<_PollutantCard> {
                   unit: series.unit,
                   asBars: _asBars,
                   range: _range,
+                  statusOf: series.statusOf,
                 ),
                 child: const _IconSquare(Symbols.search),
               ),
@@ -2591,6 +2958,7 @@ class _PollutantCardState extends State<_PollutantCard> {
                     height: 170,
                     rangeStart: chartWindow.start,
                     rangeEnd: chartWindow.end,
+                    statusOf: series.statusOf,
                   )
                 : const Center(
                     child: Text(
@@ -2651,6 +3019,7 @@ class _DashboardPollutantSeries {
     required this.icon,
     required this.values,
     required this.points,
+    required this.statusOf,
     required this.maxValue,
     required this.minValue,
   });
@@ -2661,6 +3030,7 @@ class _DashboardPollutantSeries {
   final IconData icon;
   final List<double> values;
   final List<_ChartPoint> points;
+  final _ChartStatusResolver statusOf;
   final double? maxValue;
   final double? minValue;
 }
@@ -2729,6 +3099,7 @@ _DashboardPollutantSeries _dashboardPollutantSeries(
     icon: icon,
     values: values,
     points: points,
+    statusOf: statusOf,
     maxValue: values.isEmpty ? null : values.reduce(math.max),
     minValue: values.isEmpty ? null : values.reduce(math.min),
   );
@@ -2819,6 +3190,7 @@ void _showDashboardChartSheet(
   required String unit,
   required bool asBars,
   _LogRange? range,
+  _ChartStatusResolver? statusOf,
 }) {
   Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -2830,6 +3202,7 @@ void _showDashboardChartSheet(
         unit: unit,
         asBars: asBars,
         range: range,
+        statusOf: statusOf,
       ),
     ),
   );
@@ -2843,6 +3216,7 @@ class _ExpandedChartScreen extends StatefulWidget {
     required this.unit,
     required this.asBars,
     this.range,
+    this.statusOf,
   });
 
   final String title;
@@ -2851,6 +3225,7 @@ class _ExpandedChartScreen extends StatefulWidget {
   final String unit;
   final bool asBars;
   final _LogRange? range;
+  final _ChartStatusResolver? statusOf;
 
   @override
   State<_ExpandedChartScreen> createState() => _ExpandedChartScreenState();
@@ -2934,6 +3309,7 @@ class _ExpandedChartScreenState extends State<_ExpandedChartScreen> {
                         height: constraints.maxHeight,
                         rangeStart: chartWindow?.start,
                         rangeEnd: chartWindow?.end,
+                        statusOf: widget.statusOf,
                       );
                     },
                   ),
@@ -3800,28 +4176,105 @@ class _PlugInputBox extends StatelessWidget {
   }
 }
 
-class _ToggleSwitch extends StatelessWidget {
-  const _ToggleSwitch({this.on = false});
+class _PlugModeSelector extends StatelessWidget {
+  const _PlugModeSelector({
+    required this.auto,
+    required this.subtitle,
+    required this.busy,
+    required this.onManualTap,
+    required this.onAutoTap,
+  });
 
-  final bool on;
+  final bool auto;
+  final String subtitle;
+  final bool busy;
+  final VoidCallback? onManualTap;
+  final VoidCallback? onAutoTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 46,
-      height: 26,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: on ? CleanColors.primary : CleanColors.surfaceHighest,
-        borderRadius: BorderRadius.circular(999),
+    return _SoftCard(
+      radius: 14,
+      color: CleanColors.surfaceLow,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Symbols.auto_mode, color: CleanColors.primary, size: 19),
+              SizedBox(width: 7),
+              Text('제어 모드', style: _cardTitle),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _PlugModeButton(
+                  label: '수동',
+                  selected: !auto,
+                  disabled: busy || onManualTap == null,
+                  onTap: onManualTap,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _PlugModeButton(
+                  label: '자동',
+                  selected: auto,
+                  disabled: busy || onAutoTap == null,
+                  onTap: onAutoTap,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 9),
+          Text(subtitle, style: _tinyMuted),
+        ],
       ),
-      alignment: on ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        width: 20,
-        height: 20,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
+    );
+  }
+}
+
+class _PlugModeButton extends StatelessWidget {
+  const _PlugModeButton({
+    required this.label,
+    required this.selected,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final bool disabled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: disabled ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        height: 42,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? CleanColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected
+                ? CleanColors.primary
+                : CleanColors.outline.withValues(alpha: 0.18),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w900,
+            color: selected ? Colors.white : CleanColors.secondary,
+          ),
         ),
       ),
     );
@@ -4003,6 +4456,7 @@ class _LineChartPanel extends StatefulWidget {
     this.unit = '',
     this.rangeStart,
     this.rangeEnd,
+    this.statusOf,
   });
 
   final List<double> values;
@@ -4012,6 +4466,7 @@ class _LineChartPanel extends StatefulWidget {
   final String unit;
   final DateTime? rangeStart;
   final DateTime? rangeEnd;
+  final _ChartStatusResolver? statusOf;
 
   @override
   State<_LineChartPanel> createState() => _LineChartPanelState();
@@ -4088,6 +4543,7 @@ class _LineChartPanelState extends State<_LineChartPanel> {
                       unit: widget.unit,
                       rangeStart: widget.rangeStart,
                       rangeEnd: widget.rangeEnd,
+                      statusOf: widget.statusOf,
                     ),
                     child: const SizedBox.expand(),
                   ),
@@ -4116,7 +4572,8 @@ class _LineChartPanelState extends State<_LineChartPanel> {
                       child: Text(
                         selectedPoint == null
                             ? '선택 ${_formatMetric(selectedValue)} ${widget.unit}'
-                            : '${_chartTimeLabel(selectedPoint.time)} · ${_formatMetric(selectedPoint.value)} ${widget.unit}',
+                            : '${_chartTimeLabel(selectedPoint.time)} · ${_formatMetric(selectedPoint.value)} ${widget.unit}'
+                                '${_chartTooltipStatus(widget.statusOf, selectedPoint.value)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -4499,6 +4956,7 @@ class _LineChartPainter extends CustomPainter {
     this.unit = '',
     this.rangeStart,
     this.rangeEnd,
+    this.statusOf,
   });
 
   final List<double> values;
@@ -4510,6 +4968,7 @@ class _LineChartPainter extends CustomPainter {
   final String unit;
   final DateTime? rangeStart;
   final DateTime? rangeEnd;
+  final _ChartStatusResolver? statusOf;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -4529,6 +4988,9 @@ class _LineChartPainter extends CustomPainter {
     final axis = Paint()
       ..color = CleanColors.outlineVariant
       ..strokeWidth = 1.2;
+    if (values.isNotEmpty) {
+      _paintStatusBackground(canvas, plotRect);
+    }
     for (var i = 0; i <= 4; i++) {
       final y = plotRect.top + plotRect.height * i / 4;
       canvas.drawLine(
@@ -4575,11 +5037,17 @@ class _LineChartPainter extends CustomPainter {
     }
     _paintSelectionBand(canvas, plotRect);
     if (asBars) {
-      final barWidth = math.max(3.0, plotRect.width / values.length * 0.58);
+      final barWidth = math.min(22.0,
+          math.max(4.0, plotRect.width / math.max(12, values.length) * 0.72));
+      canvas.save();
+      canvas.clipRect(plotRect);
       for (var i = 0; i < values.length; i++) {
         final factor = ((values[i] - minValue) / range).clamp(0.0, 1.0);
-        final barHeight = math.max(6.0, factor * plotRect.height);
-        final x = _xForIndex(plotRect, i, asBarCenter: true) - barWidth / 2;
+        final barHeight = math.max(3.0, factor * plotRect.height);
+        final centerX = _xForIndex(plotRect, i, asBarCenter: true);
+        final x = (centerX - barWidth / 2)
+            .clamp(plotRect.left, plotRect.right - barWidth)
+            .toDouble();
         final rect = RRect.fromRectAndRadius(
           Rect.fromLTWH(
             x,
@@ -4594,22 +5062,22 @@ class _LineChartPainter extends CustomPainter {
           Paint()
             ..color = i == selectedIndex
                 ? CleanColors.primary
-                : CleanColors.primaryContainer.withValues(alpha: 0.62),
+                : _chartStatusColor(
+                    statusOf?.call(values[i]),
+                    fallbackValue: values[i],
+                  ).withValues(alpha: 0.72),
         );
       }
+      canvas.restore();
       _paintSelectedGuide(canvas, plotRect);
       return;
     }
-    final path = Path();
+    final offsets = <Offset>[];
     for (var i = 0; i < values.length; i++) {
       final x = _xForIndex(plotRect, i);
       final y =
           plotRect.bottom - ((values[i] - minValue) / range) * plotRect.height;
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
+      offsets.add(Offset(x, y));
       canvas.drawCircle(Offset(x, y), 4, Paint()..color = Colors.white);
       canvas.drawCircle(
         Offset(x, y),
@@ -4617,18 +5085,13 @@ class _LineChartPainter extends CustomPainter {
         Paint()
           ..color = i == selectedIndex
               ? CleanColors.primary
-              : CleanColors.primaryContainer,
+              : _chartStatusColor(
+                  statusOf?.call(values[i]),
+                  fallbackValue: values[i],
+                ),
       );
     }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = CleanColors.primaryContainer
-        ..strokeWidth = 4
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
+    _paintSegmentedLine(canvas, offsets);
     _paintSelectedGuide(canvas, plotRect);
   }
 
@@ -4642,7 +5105,57 @@ class _LineChartPainter extends CustomPainter {
         points != oldDelegate.points ||
         unit != oldDelegate.unit ||
         rangeStart != oldDelegate.rangeStart ||
-        rangeEnd != oldDelegate.rangeEnd;
+        rangeEnd != oldDelegate.rangeEnd ||
+        statusOf != oldDelegate.statusOf;
+  }
+
+  void _paintStatusBackground(Canvas canvas, Rect plotRect) {
+    final maxValue = values.reduce(math.max);
+    final minValue = values.reduce(math.min);
+    final range = math.max(1.0, maxValue - minValue);
+    const samples = 160;
+    var bandStart = 0;
+    var bandColor = _chartStatusColor(
+      statusOf?.call(maxValue),
+      fallbackValue: maxValue,
+    );
+
+    for (var i = 1; i <= samples; i++) {
+      final value = maxValue - range * i / samples;
+      final color = _chartStatusColor(
+        statusOf?.call(value),
+        fallbackValue: value,
+      );
+      final colorChanged = color != bandColor;
+      final reachedEnd = i == samples;
+      if (!colorChanged && !reachedEnd) continue;
+
+      final top = plotRect.top + plotRect.height * bandStart / samples;
+      final bottom = plotRect.top + plotRect.height * i / samples;
+      if (bottom > top) {
+        canvas.drawRect(
+          Rect.fromLTRB(plotRect.left, top, plotRect.right, bottom),
+          Paint()..color = bandColor.withValues(alpha: 0.11),
+        );
+      }
+
+      bandStart = i;
+      bandColor = color;
+    }
+  }
+
+  void _paintSegmentedLine(Canvas canvas, List<Offset> offsets) {
+    if (offsets.length < 2) return;
+    for (var i = 0; i < offsets.length - 1; i++) {
+      final status = statusOf?.call(values[i + 1]);
+      final paint = Paint()
+        ..color = _chartStatusColor(status, fallbackValue: values[i + 1])
+        ..strokeWidth = 4
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+      canvas.drawLine(offsets[i], offsets[i + 1], paint);
+    }
   }
 
   String _axisNumber(double value) {
@@ -4806,6 +5319,65 @@ class _LineChartPainter extends CustomPainter {
     return plotRect.left +
         plotRect.width * index / math.max(1, values.length - 1);
   }
+}
+
+String _chartTooltipStatus(_ChartStatusResolver? statusOf, double value) {
+  final status = statusOf?.call(value).trim();
+  return status == null || status.isEmpty ? '' : ' · $status';
+}
+
+String _iaqiChartStatus(double value) {
+  if (value < 0.5) return '좋음';
+  if (value < 1) return '보통';
+  if (value < 2) return '조금 나쁨';
+  if (value < 3) return '나쁨';
+  if (value < 4) return '상당히 나쁨';
+  return '매우 나쁨';
+}
+
+Color _chartStatusColor(String? status, {double? fallbackValue}) {
+  final normalized = status?.trim();
+  if (normalized == null || normalized.isEmpty) {
+    if (fallbackValue != null) return _iaqiStatusColorByValue(fallbackValue);
+    return CleanColors.primaryContainer;
+  }
+  if (normalized.contains('매우') ||
+      normalized.contains('위험') ||
+      normalized.contains('높음') && normalized.contains('매우')) {
+    return const Color(0xFFDC2626);
+  }
+  if (normalized.contains('상당') ||
+      normalized == '나쁨' ||
+      normalized == '더움' ||
+      normalized == '높음') {
+    return const Color(0xFFF97316);
+  }
+  if (normalized.contains('조금') ||
+      normalized.contains('주의') ||
+      normalized.contains('보통') ||
+      normalized.contains('따뜻') ||
+      normalized.contains('약간') ||
+      normalized.contains('서늘') ||
+      normalized.contains('건조')) {
+    return const Color(0xFFFACC15);
+  }
+  if (normalized.contains('좋음') ||
+      normalized.contains('쾌적') ||
+      normalized.contains('적정') ||
+      normalized.contains('최적')) {
+    return const Color(0xFF22C55E);
+  }
+  if (fallbackValue != null) return _iaqiStatusColorByValue(fallbackValue);
+  return CleanColors.primaryContainer;
+}
+
+Color _iaqiStatusColorByValue(double value) {
+  if (value < 0.5) return const Color(0xFF22C55E);
+  if (value < 1) return const Color(0xFFFACC15);
+  if (value < 2) return const Color(0xFFFFA726);
+  if (value < 3) return const Color(0xFFFF4056);
+  if (value < 4) return const Color(0xFFB91C1C);
+  return const Color(0xFF9333EA);
 }
 
 class _DataTableCard extends StatelessWidget {
@@ -4990,6 +5562,7 @@ class _PollutantMetricData {
     required this.median,
     required this.values,
     required this.points,
+    required this.statusOf,
     required this.rows,
     required this.icon,
     required this.sampleCount,
@@ -5010,6 +5583,7 @@ class _PollutantMetricData {
   final String median;
   final List<double> values;
   final List<_ChartPoint> points;
+  final _ChartStatusResolver statusOf;
   final List<_DataLogRow> rows;
   final IconData icon;
   final int sampleCount;
@@ -5403,6 +5977,7 @@ class _DataLoggingScreenState extends State<DataLoggingScreen> {
                       unit: data.unit,
                       asBars: _chartAsBars,
                       range: _range,
+                      statusOf: data.statusOf,
                     ),
                     child: const _IconSquare(Symbols.open_in_full),
                   ),
@@ -5417,6 +5992,7 @@ class _DataLoggingScreenState extends State<DataLoggingScreen> {
                       unit: data.unit,
                       asBars: _chartAsBars,
                       range: _range,
+                      statusOf: data.statusOf,
                     ),
                     child: const _IconSquare(Symbols.search),
                   ),
@@ -5449,6 +6025,7 @@ class _DataLoggingScreenState extends State<DataLoggingScreen> {
                 asBars: _chartAsBars,
                 rangeStart: chartWindow.start,
                 rangeEnd: chartWindow.end,
+                statusOf: data.statusOf,
               ),
               const SizedBox(height: 10),
               Row(
@@ -6216,6 +6793,7 @@ _PollutantMetricData _metricFromHistory({
       median: '-',
       values: const <double>[],
       points: const <_ChartPoint>[],
+      statusOf: statusOf,
       rows: const <_DataLogRow>[],
       icon: icon,
       sampleCount: 0,
@@ -6271,6 +6849,7 @@ _PollutantMetricData _metricFromHistory({
       valueOf: valueOf,
       fallbackValue: current,
     ),
+    statusOf: statusOf,
     rows: rows,
     icon: icon,
     sampleCount: rawValues.isEmpty && current != null ? 1 : rawValues.length,
@@ -9011,6 +9590,7 @@ class _ComparisonNormalScreenState extends State<ComparisonNormalScreen> {
                 points: chartPoints,
                 height: 118,
                 unit: hasStationPm ? 'µg/m³' : 'µg/m³',
+                statusOf: pm25Status,
               ),
             ],
           ),
@@ -11460,7 +12040,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       plugIp: '',
       mqttTopic: nextTopic,
       controlMethod: 'MQTT 제어',
-      lastTestStatus: '원격 제어 이름 자동 배정됨',
+      lastTestStatus: '플러그 정보를 입력해 주세요.',
       linkedSpaceName: '',
       linkedAddress: '',
       purpose: '',
@@ -11476,7 +12056,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       _powerOn = null;
       _editingPlug = true;
       _showPlugDetail = true;
-      _statusMessage = '$nextTopic 배정됨';
+      _statusMessage = '새 플러그를 추가했습니다.';
     });
     try {
       await _storage.saveAll(nextDrafts);
@@ -11598,10 +12178,10 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       _ => command,
     };
     if (draft.controlMethod.toUpperCase().contains('MQTT')) {
-      return '요청: 원격 제어 · ${draft.mqttTopic.trim()} · $command';
+      return '요청: 원격 ${command.toUpperCase()}';
     }
     if (ip.isNotEmpty) {
-      return '요청: 같은 Wi-Fi 제어 · $ip · $commandText';
+      return '요청: 같은 Wi-Fi $commandText';
     }
     return '요청: 플러그 제어 · $command';
   }
@@ -11625,9 +12205,9 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
   String _autoRulesSummary(Iterable<DisasterAutoRule> rules) {
     final items = rules.map((rule) {
       final metric = _normalizeAutoMetric(rule.metric);
-      return '${_autoMetricLabel(metric)} ${_formatAutoNumber(rule.onThreshold)} 이상 켜기 / ${_formatAutoNumber(rule.offThreshold)} 이하 끄기';
+      return '${_autoMetricLabel(metric)} ${_formatAutoNumber(rule.onThreshold)}부터 켜짐 · ${_formatAutoNumber(rule.offThreshold)} 아래면 꺼짐';
     }).toList(growable: false);
-    if (items.isEmpty) return '자동 제어 기준 없음';
+    if (items.isEmpty) return '자동 제어 사용 안 함';
     return items.join(', ');
   }
 
@@ -11909,7 +12489,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         return '$label 히스테리시스는 1~90% 사이로 입력해 주세요.';
       }
       if (rule.offThreshold >= rule.onThreshold) {
-        return '$label OFF 기준은 ON 기준보다 낮아야 합니다.';
+        return '$label 꺼짐 값은 켜짐 값보다 낮아야 합니다.';
       }
     }
     if (draft.autoOnThreshold <= 0 || draft.autoOffThreshold <= 0) {
@@ -11920,7 +12500,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       return '히스테리시스는 1~90% 사이로 입력해 주세요.';
     }
     if (draft.autoOffThreshold >= draft.autoOnThreshold) {
-      return 'OFF 기준은 ON 기준보다 낮아야 합니다. 그래야 켜짐과 꺼짐이 반복 충돌하지 않습니다.';
+      return '꺼짐 값은 켜짐 값보다 낮아야 합니다. 그래야 플러그가 짧게 켜졌다 꺼지는 일을 줄일 수 있습니다.';
     }
     return null;
   }
@@ -11950,7 +12530,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       }
       final otherTopic = _normalizeMqttTopic(other.mqttTopic).toLowerCase();
       if (topic.isNotEmpty && otherTopic == topic) {
-        return '같은 MQTT Topic을 쓰는 플러그가 이미 있습니다.';
+        return '같은 식별 이름을 쓰는 플러그가 이미 있습니다.';
       }
     }
     return null;
@@ -12007,10 +12587,10 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
           ok: result.ok,
           powerOn: result.ok ? turnOn : null,
           message: result.ok
-              ? '${decision.metricLabel} ${_formatAutoNumber(value)} · ${turnOn ? 'ON 기준 초과' : 'OFF 기준 회복'}'
+              ? '${decision.metricLabel} ${_formatAutoNumber(value)} · ${turnOn ? '켜짐 조건 도달' : '꺼짐 조건 회복'}'
               : result.message,
           requestLog:
-              '요청: 자동 제어 · ${decision.metricLabel} ${_formatAutoNumber(value)} · ${turnOn ? '켜기 기준 초과' : '끄기 기준 회복'}',
+              '요청: 자동 제어 · ${decision.metricLabel} ${_formatAutoNumber(value)} · ${turnOn ? '켜짐 조건 도달' : '꺼짐 조건 회복'}',
           responseLog: _plugControlResponseLog(result),
         );
       }
@@ -12079,7 +12659,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
           metricLabel: metricLabel,
           value: null,
           reason: null,
-          skipReason: '원격 제어 이름 없음',
+          skipReason: '원격 제어 정보 없음',
         );
       }
     } else if (draft.plugIp.trim().isEmpty) {
@@ -12176,7 +12756,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       metricLabel: metricLabel,
       value: evaluated.first.value,
       reason: null,
-      skipReason: isOn ? 'OFF 기준까지 회복되지 않음' : 'ON 기준 미만',
+      skipReason: isOn ? '꺼짐 값까지 회복되지 않음' : '켜짐 값 미만',
     );
   }
 
@@ -12190,7 +12770,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
     }
     if (draft.controlMethod.toUpperCase().contains('MQTT')) {
       if (draft.mqttTopic.trim().isEmpty) {
-        return '원격 제어 이름이 없어 자동 제어 명령을 보낼 수 없습니다.';
+        return '원격 제어 정보가 없어 자동 제어 명령을 보낼 수 없습니다.';
       }
     } else if (draft.plugIp.trim().isEmpty) {
       return '로컬 IP가 없어 자동 제어를 실행할 수 없습니다.';
@@ -12233,7 +12813,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         evaluated.every((item) => item.value <= item.rule.offThreshold);
     if (draft.currentPowerOn == true) {
       if (allRecovered) {
-        return '설정한 기준이 모두 회복되었습니다. 다음 자동 판단에서 꺼짐을 시도합니다.';
+        return '설정한 값들이 모두 안정 범위로 내려왔습니다. 다음 판단에서 꺼짐을 시도합니다.';
       }
       final active = evaluated
           .where((item) => item.value > item.rule.offThreshold)
@@ -12295,7 +12875,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         }
         draft = draft.copyWith(
           lastTestStatus:
-              syncedProfileId == null ? '자동 제어 설정 저장됨' : '자동 제어 서버 동기화됨',
+              syncedProfileId == null ? '자동 제어 설정 저장됨' : '자동 제어 반영됨',
           updatedAt: DateTime.now(),
         );
       }
@@ -12334,7 +12914,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         _statusMessage = '${resolved.displayName} 저장됨';
         _autoPolicyMessage = syncedProfileId == null
             ? _autoPolicyMessage
-            : '${_autoMetricLabel(resolved.autoMetric)} ${_formatAutoNumber(resolved.autoOnThreshold)} 이상 켜기 기준';
+            : '${_autoMetricLabel(resolved.autoMetric)} ${_formatAutoNumber(resolved.autoOnThreshold)}부터 켜짐';
         _activities.insert(
           0,
           _PlugActivityEntry(
@@ -12469,7 +13049,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
           : draft.plugIp.trim().isNotEmpty;
     }).toList(growable: true);
     if (drafts.isEmpty) {
-      _showSnack('제어할 플러그 IP 또는 원격 제어 이름이 없습니다.');
+      _showSnack('제어할 플러그 IP 또는 원격 제어 설정이 없습니다.');
       return;
     }
     final prefs = context.read<NotificationPreferencesController>().value;
@@ -12775,7 +13355,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       final synced = syncedProfileId != null;
       final updated = draft.copyWith(
         lastTestStatus: synced
-            ? '자동 제어 서버 동기화됨'
+            ? '자동 제어 반영됨'
             : next
                 ? '자동 제어 설정 저장됨'
                 : '자동 제어 꺼짐',
@@ -12809,10 +13389,10 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         _draft = resolved;
         _statusMessage = resolved.lastTestStatus;
         _autoPolicyMessage = synced
-            ? '${_autoMetricLabel(resolved.autoMetric)} ${_formatAutoNumber(resolved.autoOnThreshold)} 이상 켜기 기준'
+            ? '${_autoMetricLabel(resolved.autoMetric)} ${_formatAutoNumber(resolved.autoOnThreshold)}부터 켜짐'
             : next
                 ? '${_autoMetricLabel(resolved.autoMetric)} 기준 저장됨'
-                : '자동 제어 꺼짐 · 로컬 저장';
+                : '자동 제어 꺼짐';
         _activities.insert(
           0,
           _PlugActivityEntry(
@@ -12835,9 +13415,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         }
       });
       _showSnack(
-        synced
-            ? '자동 제어 설정을 저장했습니다.'
-            : '자동 제어 설정을 앱에 저장했습니다. 원격 제어 정보가 없으면 앱이 켜져 있을 때만 자동 제어됩니다.',
+        synced ? '자동 제어 설정을 저장했습니다.' : '자동 제어 설정을 저장했습니다.',
       );
       if (next) {
         unawaited(_runLocalAutoControlIfNeeded());
@@ -13142,8 +13720,8 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
       return '수동 제어로 ${_formatClock(overrideUntil)}까지 자동 제어를 멈춥니다.';
     }
     return draft.autoControlEnabled
-        ? '센서 기준으로 자동 제어 중입니다. 수동 ON/OFF를 누르면 자동 제어가 15분간 일시 중지됩니다.'
-        : '수동 버튼으로만 플러그를 제어합니다.';
+        ? '기준을 넘으면 켜지고, 회복 기준 아래로 내려가면 꺼집니다. 직접 ON/OFF를 누르면 잠시 수동 명령을 우선합니다.'
+        : '사용자가 누른 ON/OFF 명령만 따릅니다.';
   }
 
   Widget _buildPlugDetailCard(
@@ -13168,8 +13746,8 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
         : (hasIp ? draft.plugIp.trim() : '로컬 IP 미설정');
     final controlSubtitle = usesMqtt
         ? (draft.mqttTopic.trim().isEmpty
-            ? '플러그 추가 시 배정된 Topic을 Tasmota에 입력해 주세요.'
-            : '외부에서도 플러그를 켜고 끌 수 있습니다. Topic: ${draft.mqttTopic.trim()}')
+            ? '플러그의 MQTT 설정을 마치면 외부에서도 제어할 수 있습니다.'
+            : '외부에서도 플러그 상태 확인과 ON/OFF 제어를 사용할 수 있습니다.')
         : hasIp
             ? '휴대폰과 플러그가 같은 Wi-Fi에 있을 때 제어합니다.'
             : '플러그 IP를 입력하면 켜기, 끄기, 상태 확인을 사용할 수 있습니다.';
@@ -13230,11 +13808,9 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
           const SizedBox(height: 10),
           _InfoListTile(
             icon: Symbols.rule,
-            title: draft.autoControlEnabled
-                ? '${_autoMetricLabel(draft.autoMetric)} ON ${_formatAutoNumber(draft.autoOnThreshold)}'
-                : '자동 제어 안함',
+            title: draft.autoControlEnabled ? '자동 제어 기준' : '수동 제어',
             subtitle: draft.autoControlEnabled
-                ? 'OFF ${_formatAutoNumber(draft.autoOffThreshold)} · 자동 제어 후 ${draft.autoHoldMinutes}분 동안 재전환 대기'
+                ? _autoRulesSummary(draft.autoRules)
                 : '수동 ON/OFF만 사용합니다.',
           ),
           const SizedBox(height: 12),
@@ -13284,21 +13860,12 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
             ],
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _InfoListTile(
-                  icon: Symbols.auto_mode,
-                  title: '자동 제어',
-                  subtitle: _autoModeSubtitle(draft),
-                ),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _busy ? null : _toggleAutoControl,
-                child: _ToggleSwitch(on: draft.autoControlEnabled),
-              ),
-            ],
+          _PlugModeSelector(
+            auto: draft.autoControlEnabled,
+            subtitle: _autoModeSubtitle(draft),
+            busy: _busy,
+            onManualTap: draft.autoControlEnabled ? _toggleAutoControl : null,
+            onAutoTap: draft.autoControlEnabled ? null : _toggleAutoControl,
           ),
           const SizedBox(height: 10),
           _InfoListTile(
@@ -13497,7 +14064,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
           const SizedBox(height: 12),
           if (usesMqtt)
             _PlugInputBox(
-              label: '원격 제어 Topic',
+              label: '플러그 식별 이름',
               controller: _topicController,
               keyboardType: TextInputType.text,
               readOnly: true,
@@ -13522,7 +14089,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
                   const Text('Tasmota MQTT 설정', style: _cardTitle),
                   const SizedBox(height: 8),
                   const Text(
-                    'Tasmota의 MQTT 설정 화면에서 아래 값만 플러그별로 맞춰 주세요.',
+                    'Tasmota의 MQTT 설정 화면에서 플러그마다 아래 값을 입력해 주세요.',
                     style: TextStyle(
                       fontSize: 12,
                       height: 1.45,
@@ -13533,7 +14100,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
                   const SizedBox(height: 8),
                   Text(
                     [
-                      'Topic  ${mqttTopicText.isEmpty ? '저장 시 자동 배정' : mqttTopicText}',
+                      'Topic  ${mqttTopicText.isEmpty ? '저장 후 자동 배정' : mqttTopicText}',
                       if (mqttTopicText.isNotEmpty)
                         'Client  ${mqttTopicText}_%06X',
                       'Full Topic  %prefix%/%topic%/',
@@ -13547,14 +14114,14 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
                   ),
                   const SizedBox(height: 10),
                   _SheetActionButton(
-                    label: 'Topic 값 복사',
+                    label: '식별 이름 복사',
                     onTap: mqttTopicText.isEmpty
-                        ? () => _showSnack('저장 후 원격 제어 이름이 배정됩니다.')
+                        ? () => _showSnack('저장 후 식별 이름이 배정됩니다.')
                         : () {
                             Clipboard.setData(
                               ClipboardData(text: mqttTopicText),
                             );
-                            _showSnack('Topic을 복사했습니다.');
+                            _showSnack('식별 이름을 복사했습니다.');
                           },
                   ),
                 ],
@@ -13597,7 +14164,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
           const Text('자동 제어 기준', style: _cardTitle),
           const SizedBox(height: 10),
           const Text(
-            '여러 기준을 켜둘 수 있습니다. 하나라도 기준을 넘으면 켜지고, 켜둔 기준이 모두 회복되면 꺼집니다.',
+            '여러 항목을 함께 볼 수 있습니다. 하나라도 켜짐 값에 도달하면 켜지고, 모든 항목이 꺼짐 값 아래로 안정되면 꺼집니다.',
             style: _tinyMuted,
           ),
           const SizedBox(height: 10),
@@ -13673,7 +14240,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
               children: [
                 Expanded(
                   child: _PlugInputBox(
-                    label: 'ON 기준',
+                    label: '켜짐 값',
                     controller: _autoThresholdController,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
@@ -13683,7 +14250,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _PlugInputBox(
-                    label: 'OFF 기준',
+                    label: '꺼짐 값',
                     controller: _autoOffThresholdController,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
@@ -13707,7 +14274,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _PlugInputBox(
-                    label: '재전환 대기(분)',
+                    label: '최소 유지 시간(분)',
                     controller: _autoHoldController,
                     keyboardType: TextInputType.number,
                     onChanged: (_) => setState(() {}),
@@ -13717,7 +14284,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'ON 기준 이상이면 켜고, OFF 기준 이하로 회복되면 끕니다. 두 기준 사이에서는 현재 상태를 유지합니다.',
+              '히스테리시스는 켜짐과 꺼짐이 짧게 반복되지 않도록 만드는 여유 구간입니다. 최소 유지 시간 동안은 한 번 전환된 상태를 유지합니다.',
               style: _tinyMuted,
             ),
           ],
@@ -16186,6 +16753,142 @@ class _AlertSettingsScreenState extends State<AlertSettingsScreen> {
     );
   }
 
+  Future<void> _startSlackConnect() async {
+    if (_saving) return;
+    final push = context.read<PushNotificationServiceV2>();
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() {
+      _saving = true;
+      _saveMessage = 'Slack 연결 주소를 준비하는 중입니다.';
+    });
+    final uri = await push.slackConnectUri();
+    if (!mounted) return;
+    if (uri == null) {
+      setState(() {
+        _saving = false;
+        _saveMessage = 'Slack 연결을 시작할 수 없습니다.';
+      });
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Slack 연결을 시작할 수 없습니다. 서버 설정을 확인해 주세요.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!mounted) return;
+    if (!opened) {
+      await Clipboard.setData(ClipboardData(text: uri.toString()));
+      setState(() {
+        _saving = false;
+        _saveMessage = 'Slack 연결 주소를 복사했습니다.';
+      });
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('브라우저를 열지 못해 Slack 연결 주소를 복사했습니다.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _saving = false;
+      _saveMessage = 'Slack 승인 후 앱으로 돌아와 연결 확인을 눌러 주세요.';
+    });
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text('Slack 승인 후 앱으로 돌아와 연결 확인을 눌러 주세요.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _refreshSlackConnection() async {
+    if (_saving) return;
+    setState(() {
+      _saving = true;
+      _saveMessage = 'Slack 연결 상태를 확인하는 중입니다.';
+    });
+    final push = context.read<PushNotificationServiceV2>();
+    final controller = context.read<NotificationPreferencesController>();
+    final messenger = ScaffoldMessenger.of(context);
+    var message = 'Slack 연결 정보를 찾지 못했습니다.';
+    try {
+      final serverPrefs = await push.fetchServerDevicePreferences();
+      final url = serverPrefs?['slackWebhookUrl']?.toString().trim() ?? '';
+      await controller.setSlackWebhookUrl(url);
+      message =
+          url.isEmpty ? 'Slack 채널이 아직 연결되지 않았습니다.' : 'Slack 채널이 연결되어 있습니다.';
+    } catch (_) {
+      message = 'Slack 연결 상태 확인에 실패했습니다.';
+    }
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      _saveMessage = message;
+    });
+    messenger.showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
+  Future<void> _sendSlackTest() async {
+    if (_saving) return;
+    final url = context
+        .read<NotificationPreferencesController>()
+        .value
+        .slackWebhookUrl
+        .trim();
+    final messenger = ScaffoldMessenger.of(context);
+    if (!url.startsWith('https://hooks.slack.com/services/')) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Slack 채널을 먼저 연결해 주세요.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _saveMessage = 'Slack 테스트 알림을 보내는 중입니다.';
+    });
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'text': 'CleanAir Slack 알림 테스트입니다. 경보가 발생하면 이 채널로 요약이 전송됩니다.',
+        }),
+      );
+      final ok = response.statusCode >= 200 && response.statusCode < 300;
+      final message = ok
+          ? 'Slack 테스트 알림을 보냈습니다.'
+          : 'Slack 테스트 전송 실패 (${response.statusCode})';
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _saveMessage = message;
+      });
+      messenger.showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _saveMessage = 'Slack 테스트 전송 실패: $error';
+      });
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(_saveMessage!),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final notificationController =
@@ -16487,6 +17190,100 @@ class _AlertSettingsScreenState extends State<AlertSettingsScreen> {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SoftCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Slack 외부 알림', style: _cardTitle),
+              const SizedBox(height: 10),
+              Text(
+                prefs.slackWebhookUrl.trim().isEmpty
+                    ? 'Slack 채널을 연결하면 경고와 위급 알림을 앱 밖에서도 받을 수 있습니다.'
+                    : 'Slack 채널 연결됨 · 경고와 위급 알림을 Slack으로도 보냅니다.',
+                style: _tinyMuted,
+              ),
+              const SizedBox(height: 12),
+              GradientButton(
+                label: prefs.slackWebhookUrl.trim().isEmpty
+                    ? 'Slack 연결하기'
+                    : 'Slack 다시 연결',
+                icon: Symbols.add_link,
+                onTap: () => unawaited(_startSlackConnect()),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _saving
+                          ? null
+                          : () => unawaited(
+                                prefs.slackWebhookUrl.trim().isEmpty
+                                    ? _refreshSlackConnection()
+                                    : _sendSlackTest(),
+                              ),
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: CleanColors.primaryFixed,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Center(
+                          child: Text(
+                            prefs.slackWebhookUrl.trim().isEmpty
+                                ? '연결 확인'
+                                : '테스트',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: CleanColors.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: prefs.slackWebhookUrl.trim().isEmpty
+                          ? null
+                          : () => unawaited(
+                                _savePreference(
+                                  'Slack 외부 알림을 해제했습니다.',
+                                  (controller) =>
+                                      controller.setSlackWebhookUrl(''),
+                                ),
+                              ),
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: CleanColors.surfaceLow,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            '해제',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: CleanColors.secondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -16950,6 +17747,7 @@ class _ControlHysteresisScreenState extends State<ControlHysteresisScreen> {
               _LineChartPanel(
                 values: values,
                 height: 136,
+                statusOf: _iaqiChartStatus,
               ),
               const SizedBox(height: 6),
               Row(

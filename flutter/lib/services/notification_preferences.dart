@@ -15,6 +15,7 @@ class NotificationPreferences {
     required this.minimumSeverityPriority,
     required this.minimumSeverityByType,
     required this.fireRiskMinimumLevel,
+    required this.slackWebhookUrl,
     required this.snoozedUntil,
     required this.mutedTypes,
   });
@@ -29,6 +30,7 @@ class NotificationPreferences {
       minimumSeverityPriority: 2,
       minimumSeverityByType: _defaultSeverityByType(),
       fireRiskMinimumLevel: 'strong_warning',
+      slackWebhookUrl: '',
       snoozedUntil: null,
       mutedTypes: _defaultMutedTypes(),
     );
@@ -42,6 +44,7 @@ class NotificationPreferences {
   final int minimumSeverityPriority;
   final Map<String, int> minimumSeverityByType;
   final String fireRiskMinimumLevel;
+  final String slackWebhookUrl;
   final DateTime? snoozedUntil;
   final Map<String, bool> mutedTypes;
 
@@ -71,6 +74,7 @@ class NotificationPreferences {
     int? minimumSeverityPriority,
     Map<String, int>? minimumSeverityByType,
     String? fireRiskMinimumLevel,
+    String? slackWebhookUrl,
     DateTime? Function()? snoozedUntil,
     Map<String, bool>? mutedTypes,
   }) {
@@ -87,6 +91,7 @@ class NotificationPreferences {
       minimumSeverityByType:
           minimumSeverityByType ?? this.minimumSeverityByType,
       fireRiskMinimumLevel: fireRiskMinimumLevel ?? this.fireRiskMinimumLevel,
+      slackWebhookUrl: slackWebhookUrl ?? this.slackWebhookUrl,
       snoozedUntil: snoozedUntil != null ? snoozedUntil() : this.snoozedUntil,
       mutedTypes: mutedTypes ?? this.mutedTypes,
     );
@@ -138,6 +143,7 @@ class NotificationPreferences {
       'minimumSeverityPriority': minimumSeverityPriority,
       'minimumSeverityByType': minimumSeverityByType,
       'fireRiskMinimumLevel': fireRiskMinimumLevel,
+      'slackWebhookUrl': slackWebhookUrl,
       'snoozedUntil': snoozedUntil?.toIso8601String(),
       'mutedTypes': mutedTypes,
     };
@@ -188,6 +194,7 @@ class NotificationPreferences {
           _sanitizeSeverity(map['minimumSeverityPriority']),
       minimumSeverityByType: severityByType,
       fireRiskMinimumLevel: _sanitizeFireRiskLevel(map['fireRiskMinimumLevel']),
+      slackWebhookUrl: _sanitizeSlackWebhookUrl(map['slackWebhookUrl']),
       snoozedUntil: snooze?.toLocal(),
       mutedTypes: mutedTypes,
     );
@@ -226,6 +233,13 @@ class NotificationPreferences {
     }
     return 'strong_warning';
   }
+
+  static String _sanitizeSlackWebhookUrl(Object? raw) {
+    final value = raw?.toString().trim() ?? '';
+    if (value.isEmpty) return '';
+    if (!value.startsWith('https://hooks.slack.com/services/')) return '';
+    return value;
+  }
 }
 
 const int _minutesPerDay = 24 * 60;
@@ -239,6 +253,7 @@ class NotificationPreferencesStorage {
   static const _minimumSeverityKey = 'minimum_alert_severity_priority';
   static const _minimumSeverityByTypeKey = 'minimum_alert_severity_by_type';
   static const _fireRiskMinimumLevelKey = 'fire_risk_minimum_level';
+  static const _slackWebhookUrlKey = 'slack_webhook_url';
   static const _snoozedUntilKey = 'alerts_snoozed_until';
   static const _mutedTypesKey = 'alerts_muted_types';
 
@@ -277,6 +292,9 @@ class NotificationPreferencesStorage {
       fireRiskMinimumLevel: NotificationPreferences._sanitizeFireRiskLevel(
         prefs.getString(_fireRiskMinimumLevelKey),
       ),
+      slackWebhookUrl: NotificationPreferences._sanitizeSlackWebhookUrl(
+        prefs.getString(_slackWebhookUrlKey),
+      ),
       snoozedUntil: _parseDate(prefs.getString(_snoozedUntilKey)),
       mutedTypes: muted,
     );
@@ -309,6 +327,10 @@ class NotificationPreferencesStorage {
         _fireRiskMinimumLevelKey,
         value.fireRiskMinimumLevel,
       ),
+      if (value.slackWebhookUrl.trim().isEmpty)
+        prefs.remove(_slackWebhookUrlKey)
+      else
+        prefs.setString(_slackWebhookUrlKey, value.slackWebhookUrl.trim()),
       if (value.snoozedUntil == null)
         prefs.remove(_snoozedUntilKey)
       else
@@ -423,6 +445,14 @@ class NotificationPreferencesController extends ChangeNotifier {
       _prefs.copyWith(
         fireRiskMinimumLevel: sanitized,
         minimumSeverityByType: nextByType,
+      ),
+    );
+  }
+
+  Future<void> setSlackWebhookUrl(String url) async {
+    await _update(
+      _prefs.copyWith(
+        slackWebhookUrl: NotificationPreferences._sanitizeSlackWebhookUrl(url),
       ),
     );
   }

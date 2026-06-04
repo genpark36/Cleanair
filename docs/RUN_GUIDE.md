@@ -71,6 +71,7 @@ C:\src\flutter\bin\flutter.bat run --dart-define=FORCE_ONBOARDING=true
 - 메인 대시보드 실시간 센서값
 - 통합 공기질 지수
 - 상세 그래프와 구간 통계
+- 기준 색상 배경이 들어간 상세 그래프
 - CSV 저장
 - 건강 모드
 - 공식 측정소 비교와 히트맵
@@ -78,6 +79,7 @@ C:\src\flutter\bin\flutter.bat run --dart-define=FORCE_ONBOARDING=true
 - Tasmota 플러그 제어
 - 방재모드
 - 방재 상황 전파
+- Slack 외부 알림 테스트
 
 CSV 파일은 Android 기준으로 아래 폴더에 저장됩니다.
 
@@ -163,13 +165,23 @@ firebase deploy --only hosting --project capstone-cleanair-2026
 제출본에는 앱, 웹 상황판, Firebase Functions, 펌웨어 설치 패키지처럼 실행에 필요한 파일만 남겼습니다.
 실험용 검증 스크립트, 일회성 진단 스크립트, 개발 중간 산출물은 포함하지 않았습니다.
 
-## 10. 포함된 설정 파일
+## 10. 포함된 설정 파일과 환경 변수
 
-이 제출 패키지는 바로 실행되는 것을 우선해 실제 설정 파일을 포함합니다.
+이 제출 패키지는 앱과 웹 상황판이 바로 실행될 수 있도록 Firebase 앱 설정과 웹 설정을 포함합니다.
 
 - 앱 Firebase 설정: `flutter/android/app/google-services.json`
 - 웹 Firebase 설정: `web_dashboard/firebase-config.js`
-- Functions 환경 변수: `functions/.env`
 - Firebase 설정: `.firebaserc`, `firebase.json`, `firestore.rules`
 
-저장소는 비공개로 유지해야 합니다.
+Functions의 실제 비밀값은 GitHub에 올리지 않습니다. Functions를 다시 배포할 때는 로컬 `functions/.env` 또는 Firebase 환경 변수에 아래 항목을 설정해야 합니다.
+
+- `INGEST_API_KEY`
+- `MQTT_URL`
+- `MQTT_USERNAME`
+- `MQTT_PASSWORD`
+- `GEMINI_API_KEY`
+- `SLACK_CLIENT_ID`
+- `SLACK_CLIENT_SECRET`
+- `SLACK_REDIRECT_URI`
+
+저장소는 비공개로 유지해야 합니다. 공개 저장소로 바꿀 경우 앱과 웹의 Firebase 설정도 함께 교체해야 합니다.

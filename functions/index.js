@@ -269,6 +269,432 @@ async function sendPushToDevice(event, device) {
   }
 }
 
+function normalizeSlackWebhookUrl(value) {
+  const url = String(value || "").trim();
+  if (!url) return "";
+  return url.startsWith("https://hooks.slack.com/services/") ? url : "";
+}
+
+function normalizeSlackOAuthText(value) {
+  const text = String(value || "").trim();
+  return text || null;
+}
+
+function slackRedirectUri(req) {
+  const configured = String(process.env.SLACK_REDIRECT_URI || "").trim();
+  if (configured) return configured;
+  const projectId =
+    process.env.GCLOUD_PROJECT ||
+    process.env.GCP_PROJECT ||
+    "capstone-cleanair-2026";
+  return `https://us-central1-${projectId}.cloudfunctions.net/slackOAuthCallback`;
+}
+
+function encodeSlackState(payload) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function decodeSlackState(raw) {
+  try {
+    const decoded = Buffer.from(String(raw || ""), "base64url").toString("utf8");
+    const parsed = JSON.parse(decoded);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function slackCallbackHtml({ ok, title, message }) {
+  const color = ok ? "#00798a" : "#b42318";
+  const safeTitle = String(title || "").replace(/[<>&]/g, "");
+  const safeMessage = String(message || "").replace(/[<>&]/g, "");
+  return `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CleanAir Slack 연결</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f3f9fb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172126;
+    }
+    main {
+      width: min(440px, calc(100vw - 40px));
+      padding: 32px 28px;
+      border-radius: 28px;
+      background: #fff;
+      box-shadow: 0 18px 48px rgba(12, 47, 54, 0.12);
+      text-align: center;
+    }
+    .mark {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 18px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: ${color};
+      color: #fff;
+      font-size: 30px;
+      font-weight: 800;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      line-height: 1.25;
+    }
+    p {
+      margin: 0;
+      color: #49656b;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="mark">${ok ? "✓" : "!"}</div>
+    <h1>${safeTitle}</h1>
+    <p>${safeMessage}</p>
+  </main>
+</body>
+</html>`;
+}
+
+function shouldSendSlackAlert(event, webhookUrl) {
+  if (!normalizeSlackWebhookUrl(webhookUrl)) return false;
+  if (event?.suppressed) return false;
+  if (event?.severity === "notice") return false;
+  return event?.severity === "warning" || event?.severity === "critical";
+}
+
+function slackAlertText(event, sensorId) {
+  const parts = [
+    `*${event.title || "CleanAir 경보"}*`,
+    event.message,
+    `센서: ${sensorId || "-"}`,
+  ];
+  const level =
+    event?.trendMeta?.label || event?.levelLabel || event?.level || event?.severity;
+  if (level) parts.push(`단계: ${level}`);
+  if (event?.trendMeta?.score != null) parts.push(`점수: ${event.trendMeta.score}`);
+  if (event?.eventId) parts.push(`이벤트: ${event.eventId}`);
+  return parts.filter((value) => String(value || "").trim()).join("\n");
+}
+
+async function postSlackAlert(webhookUrl, event, sensorId) {
+  if (!shouldSendSlackAlert(event, webhookUrl)) return;
+  const text = slackAlertText(event, sensorId);
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        blocks: [
+          {
+            type: "section",
+            text: { type: "mrkdwn", text },
+          },
+        ],
+      }),
+    });
+    if (!response.ok) {
+      logger.warn("slack_alert_failed", {
+        eventId: event.eventId,
+        status: response.status,
+      });
+    }
+  } catch (error) {
+    logger.error("slack_alert_error", {
+      eventId: event.eventId,
+      error: error?.message || error,
+    });
+  }
+}
+
+async function sendSlackAlert(event, sensorId, devices = []) {
+  const webhookUrls = new Set();
+  const globalWebhook = normalizeSlackWebhookUrl(process.env.SLACK_WEBHOOK_URL);
+  if (globalWebhook) webhookUrls.add(globalWebhook);
+
+  for (const device of devices) {
+    if (!shouldDeliver(event, device)) continue;
+    const webhook = normalizeSlackWebhookUrl(device?.slackWebhookUrl);
+    if (webhook) webhookUrls.add(webhook);
+  }
+
+  for (const webhookUrl of webhookUrls) {
+    await postSlackAlert(webhookUrl, event, sensorId);
+  }
+}
+
+function cleanMetricValue(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function localRecommendationForSnapshot(snapshot = {}) {
+  const pm25 = cleanMetricValue(snapshot.pm25);
+  const co2 = cleanMetricValue(snapshot.co2);
+  const tvoc = cleanMetricValue(snapshot.tvoc);
+  const nox = cleanMetricValue(snapshot.nox);
+  const co = cleanMetricValue(snapshot.co);
+  const temperature = cleanMetricValue(snapshot.temperature);
+  const humidity = cleanMetricValue(snapshot.humidity);
+  const iaqi = cleanMetricValue(snapshot.iaqiScore);
+
+  const reasons = [];
+  const actions = [];
+
+  if (co != null && co >= 10) {
+    reasons.push(`일산화탄소가 ${co.toFixed(1)} ppm으로 높습니다.`);
+    actions.push("연소기기 사용 여부를 확인하고 즉시 환기하세요.");
+  }
+  if (pm25 != null && pm25 >= 35) {
+    reasons.push(`초미세먼지가 ${pm25.toFixed(0)} µg/m³로 높습니다.`);
+    actions.push("공기청정기를 켜고 창문을 통한 먼지 유입 여부를 확인하세요.");
+  }
+  if (co2 != null && co2 >= 1000) {
+    reasons.push(`이산화탄소가 ${co2.toFixed(0)} ppm입니다.`);
+    actions.push("사람이 머무는 공간이면 환기를 권장합니다.");
+  }
+  if (tvoc != null && tvoc >= 250) {
+    reasons.push(`TVOC가 ${tvoc.toFixed(0)} index로 높습니다.`);
+    actions.push("조리, 향, 세정제, 접착제 사용 여부를 확인하고 환기하세요.");
+  }
+  if (nox != null && nox >= 2) {
+    reasons.push(`NOx가 ${nox.toFixed(0)} index로 상승했습니다.`);
+    actions.push("가스레인지나 외기 유입 가능성을 확인하세요.");
+  }
+  if (temperature != null && humidity != null) {
+    if (humidity >= 70) {
+      reasons.push(`습도가 ${humidity.toFixed(0)}%로 높습니다.`);
+      actions.push("제습 또는 환기로 습기를 낮추세요.");
+    } else if (humidity <= 30) {
+      reasons.push(`습도가 ${humidity.toFixed(0)}%로 낮습니다.`);
+      actions.push("건조감이 있으면 가습 또는 환기량 조절을 고려하세요.");
+    }
+  }
+
+  const summary = reasons.length
+    ? reasons[0]
+    : iaqi != null && iaqi > 1
+      ? "공기질 개선이 필요한 상태입니다."
+      : "현재 공기질은 안정적인 편입니다.";
+
+  return {
+    ok: true,
+    source: "local_rules",
+    summary,
+    recommendations: [...new Set(actions)].slice(0, 3),
+    confidence: reasons.length >= 2 ? "high" : "normal",
+  };
+}
+
+function extractOpenAiText(payload) {
+  if (typeof payload?.output_text === "string" && payload.output_text.trim()) {
+    return payload.output_text.trim();
+  }
+
+  const output = Array.isArray(payload?.output) ? payload.output : [];
+  const parts = [];
+  for (const item of output) {
+    const content = Array.isArray(item?.content) ? item.content : [];
+    for (const block of content) {
+      if (typeof block?.text === "string") parts.push(block.text);
+    }
+  }
+  return parts.join("\n").trim();
+}
+
+function recommendationSystemPrompt() {
+  return (
+    "너는 실내 공기질 모니터링 앱의 추천 문구를 작성한다. " +
+    "모든 출력 문자열은 반드시 한국어로만 작성한다. 중국어와 영어 문장은 사용하지 않는다. " +
+    "간결하게 말하고, 사용자가 바로 할 수 있는 행동만 제안한다. " +
+    "화재나 위험을 단정하지 말고, CO가 높거나 방재 이벤트가 명확할 때만 긴급 표현을 쓴다. " +
+    "summary에는 1개의 자연스러운 한국어 요약 문장만 넣는다. " +
+    "recommendations에는 사용자가 바로 할 수 있는 행동을 최대 3개까지 넣는다. " +
+    "JSON 외의 설명, 코드블록, 마크다운은 쓰지 않는다."
+  );
+}
+
+function recommendationPayload(body) {
+  return {
+    snapshot: body.snapshot || {},
+    recentHistory: Array.isArray(body.recentHistory)
+      ? body.recentHistory.slice(-12)
+      : [],
+    locationLabel: body.locationLabel || null,
+    alertMessages: Array.isArray(body.alertMessages)
+      ? body.alertMessages.slice(0, 5)
+      : [],
+  };
+}
+
+function parseRecommendationJson(text, source) {
+  if (!text) return null;
+  const cleaned = text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  const jsonText = firstBrace >= 0 && lastBrace > firstBrace
+    ? cleaned.slice(firstBrace, lastBrace + 1)
+    : cleaned;
+  try {
+    const parsed = JSON.parse(jsonText);
+    const summary = String(parsed.summary || "").trim();
+    if (!summary || summary.length < 8 || /^[{}\[\]\s]+$/.test(summary)) {
+      return null;
+    }
+    return {
+      ok: true,
+      source,
+      summary,
+      recommendations: Array.isArray(parsed.recommendations)
+        ? parsed.recommendations
+          .map((value) => String(value).trim())
+          .filter(Boolean)
+          .slice(0, 3)
+        : [],
+      confidence: String(parsed.confidence || "normal"),
+    };
+  } catch (error) {
+    const summary = cleaned.split("\n").find((line) => line.trim()) || cleaned;
+    if (!summary || summary.length < 8 || /^[{}\[\]\s]+$/.test(summary)) {
+      return null;
+    }
+    return {
+      ok: true,
+      source,
+      summary: summary.trim(),
+      recommendations: [],
+      confidence: "normal",
+    };
+  }
+}
+
+async function generateOpenAiRecommendation(body) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+
+  const model = process.env.OPENAI_RECOMMENDATION_MODEL || "gpt-5-mini";
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      max_output_tokens: 360,
+      input: [
+        {
+          role: "system",
+          content: recommendationSystemPrompt(),
+        },
+        {
+          role: "user",
+          content: JSON.stringify(recommendationPayload(body)),
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    logger.warn("openai_recommendation_failed", { status: response.status });
+    return null;
+  }
+
+  const payload = await response.json();
+  const text = extractOpenAiText(payload);
+  if (!text) return null;
+
+  return parseRecommendationJson(text, "openai");
+}
+
+function extractGeminiText(payload) {
+  const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
+  const parts = [];
+  for (const candidate of candidates) {
+    const contentParts = Array.isArray(candidate?.content?.parts)
+      ? candidate.content.parts
+      : [];
+    for (const part of contentParts) {
+      if (typeof part?.text === "string") parts.push(part.text);
+    }
+  }
+  return parts.join("\n").trim();
+}
+
+async function generateGeminiRecommendation(body) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const url =
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [{ text: recommendationSystemPrompt() }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{
+            text: `${recommendationSystemPrompt()}\n입력 데이터:\n${JSON.stringify(recommendationPayload(body))}`,
+          }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.35,
+        maxOutputTokens: 360,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
+        responseMimeType: "application/json",
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    logger.warn("gemini_recommendation_failed", { status: response.status });
+    return null;
+  }
+
+  const payload = await response.json();
+  return parseRecommendationJson(extractGeminiText(payload), "gemini");
+}
+
+async function generateProviderRecommendation(body) {
+  const provider = String(process.env.AI_PROVIDER || "").toLowerCase();
+  if (provider === "gemini") {
+    return generateGeminiRecommendation(body);
+  }
+  if (provider === "openai") {
+    return generateOpenAiRecommendation(body);
+  }
+  if (process.env.GEMINI_API_KEY) {
+    return generateGeminiRecommendation(body);
+  }
+  return generateOpenAiRecommendation(body);
+}
+
 async function dispatchAlertsForSnapshot(snapshotPayload) {
   const events = await generateAlertsFromSnapshot(snapshotPayload, {
     quietHoursWindow: DEFAULT_QUIET_HOURS,
@@ -293,6 +719,7 @@ async function dispatchAlertsForSnapshot(snapshotPayload) {
     };
 
     await db.collection("alerts").add(alertDoc);
+    await sendSlackAlert(event, sensorId, devices);
 
     for (const device of devices) {
       if (!shouldDeliver(event, device)) {
@@ -3192,6 +3619,188 @@ exports.registerDevice = onRequest(
   }
 );
 
+exports.generateAiRecommendation = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    invoker: "public",
+  },
+  async (req, res) => {
+    if (!ensurePost(req, res)) return;
+    if (!validateOptionalApiKey(req, res)) return;
+
+    const body = req.body || {};
+    const snapshot = body.snapshot && typeof body.snapshot === "object"
+      ? body.snapshot
+      : {};
+
+    try {
+      const aiResult = await generateProviderRecommendation(body);
+      const fallback = localRecommendationForSnapshot(snapshot);
+      const result = aiResult && aiResult.summary
+        ? {
+          ...fallback,
+          ...aiResult,
+          recommendations: aiResult.recommendations.length
+            ? aiResult.recommendations
+            : fallback.recommendations,
+        }
+        : fallback;
+
+      return res.status(200).json(result);
+    } catch (error) {
+      logger.error("ai_recommendation_error", { error: error?.message || error });
+      return res.status(200).json(localRecommendationForSnapshot(snapshot));
+    }
+  }
+);
+
+exports.startSlackConnect = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    invoker: "public",
+  },
+  async (req, res) => {
+    const clientId = String(process.env.SLACK_CLIENT_ID || "").trim();
+    if (!clientId) {
+      return res.status(500).send(slackCallbackHtml({
+        ok: false,
+        title: "Slack 연결 설정이 필요합니다",
+        message: "서버에 Slack Client ID가 설정되어 있지 않습니다.",
+      }));
+    }
+
+    const token = String(req.query.token || "").trim();
+    if (!token) {
+      return res.status(400).send(slackCallbackHtml({
+        ok: false,
+        title: "기기 정보가 없습니다",
+        message: "앱에서 Slack 연결을 다시 시작해 주세요.",
+      }));
+    }
+
+    const redirectUri = slackRedirectUri(req);
+    const state = encodeSlackState({
+      token,
+      createdAt: Date.now(),
+    });
+    const params = new URLSearchParams({
+      client_id: clientId,
+      scope: "incoming-webhook",
+      redirect_uri: redirectUri,
+      state,
+    });
+    return res.redirect(
+      302,
+      `https://slack.com/oauth/v2/authorize?${params.toString()}`
+    );
+  }
+);
+
+exports.slackOAuthCallback = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    invoker: "public",
+  },
+  async (req, res) => {
+    const code = String(req.query.code || "").trim();
+    const state = decodeSlackState(req.query.state);
+    const error = String(req.query.error || "").trim();
+
+    if (error) {
+      return res.status(400).send(slackCallbackHtml({
+        ok: false,
+        title: "Slack 연결이 취소되었습니다",
+        message: "필요하면 앱에서 다시 연결해 주세요.",
+      }));
+    }
+
+    const token = normalizeSlackOAuthText(state?.token);
+    if (!code || !token) {
+      return res.status(400).send(slackCallbackHtml({
+        ok: false,
+        title: "Slack 연결 정보를 확인할 수 없습니다",
+        message: "앱에서 Slack 연결을 다시 시작해 주세요.",
+      }));
+    }
+
+    const clientId = String(process.env.SLACK_CLIENT_ID || "").trim();
+    const clientSecret = String(process.env.SLACK_CLIENT_SECRET || "").trim();
+    if (!clientId || !clientSecret) {
+      return res.status(500).send(slackCallbackHtml({
+        ok: false,
+        title: "Slack 연결 설정이 필요합니다",
+        message: "서버에 Slack Client ID 또는 Client Secret이 설정되어 있지 않습니다.",
+      }));
+    }
+
+    try {
+      const body = new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: slackRedirectUri(req),
+      });
+      const response = await fetch("https://slack.com/api/oauth.v2.access", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      const decoded = await response.json();
+      if (!decoded?.ok) {
+        logger.warn("slack_oauth_exchange_failed", {
+          error: decoded?.error || response.status,
+        });
+        return res.status(400).send(slackCallbackHtml({
+          ok: false,
+          title: "Slack 연결에 실패했습니다",
+          message: "Slack 앱 설정과 Redirect URL을 확인한 뒤 다시 시도해 주세요.",
+        }));
+      }
+
+      const incoming = decoded.incoming_webhook || {};
+      const webhookUrl = normalizeSlackWebhookUrl(incoming.url);
+      if (!webhookUrl) {
+        return res.status(400).send(slackCallbackHtml({
+          ok: false,
+          title: "알림 채널을 받을 수 없습니다",
+          message: "Slack 승인 화면에서 알림을 받을 채널을 선택해 주세요.",
+        }));
+      }
+
+      await db.collection("devices").doc(token).set({
+        token,
+        slackWebhookUrl: webhookUrl,
+        slackConnected: true,
+        slackChannel: normalizeSlackOAuthText(incoming.channel),
+        slackChannelId: normalizeSlackOAuthText(incoming.channel_id),
+        slackTeamName: normalizeSlackOAuthText(decoded.team?.name),
+        slackTeamId: normalizeSlackOAuthText(decoded.team?.id),
+        slackConnectedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+
+      const channel = normalizeSlackOAuthText(incoming.channel) || "선택한 채널";
+      return res.status(200).send(slackCallbackHtml({
+        ok: true,
+        title: "Slack 연결이 완료되었습니다",
+        message: `${channel}로 CleanAir 경고와 위급 알림을 보낼 수 있습니다. 앱으로 돌아가 연결 확인을 눌러 주세요.`,
+      }));
+    } catch (exchangeError) {
+      logger.error("slack_oauth_callback_failed", {
+        error: exchangeError?.message || exchangeError,
+      });
+      return res.status(500).send(slackCallbackHtml({
+        ok: false,
+        title: "Slack 연결 중 오류가 발생했습니다",
+        message: "잠시 후 앱에서 다시 시도해 주세요.",
+      }));
+    }
+  }
+);
+
 exports.claimDevice = onRequest(
   {
     region: "us-central1",
@@ -3301,6 +3910,7 @@ exports.updatePreferences = onRequest(
       minimumSeverityPriority,
       minimumSeverityByType,
       fireRiskMinimumLevel,
+      slackWebhookUrl,
       timezone,
     } = req.body || {};
 
@@ -3346,6 +3956,17 @@ exports.updatePreferences = onRequest(
     if (fireRiskMinimumLevel !== undefined) {
       updatePayload.fireRiskMinimumLevel =
         normalizeFireRiskMinimumLevel(fireRiskMinimumLevel);
+    }
+    if (slackWebhookUrl !== undefined) {
+      const normalizedSlackWebhookUrl = normalizeSlackWebhookUrl(slackWebhookUrl);
+      updatePayload.slackWebhookUrl = normalizedSlackWebhookUrl;
+      if (!normalizedSlackWebhookUrl) {
+        updatePayload.slackConnected = false;
+        updatePayload.slackChannel = null;
+        updatePayload.slackChannelId = null;
+        updatePayload.slackTeamName = null;
+        updatePayload.slackTeamId = null;
+      }
     }
     if (timezone !== undefined) {
       updatePayload.timezone = typeof timezone === "string" ? timezone : null;
@@ -3410,6 +4031,10 @@ exports.getDevicePreferences = onRequest(
             data.minimumSeverityByType && typeof data.minimumSeverityByType === "object"
               ? data.minimumSeverityByType
               : {},
+          slackWebhookUrl: normalizeSlackWebhookUrl(data.slackWebhookUrl),
+          slackConnected: data.slackConnected === true,
+          slackChannel: normalizeSlackOAuthText(data.slackChannel),
+          slackTeamName: normalizeSlackOAuthText(data.slackTeamName),
           lastDeliveredAt: toIsoStringOrNull(data.lastDeliveredAt),
           lastDeliveredByType: data.lastDeliveredByType || {},
           pushDisabled: data.pushDisabled === true,

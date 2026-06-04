@@ -12,6 +12,7 @@
 **/.vscode/
 *.iml
 *.log
+functions/.env
 
 # Local/generated artifacts not needed for source review
 **/.codex_appdata/
