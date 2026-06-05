@@ -389,7 +389,7 @@ function slackAlertText(event, sensorId) {
 }
 
 async function postSlackAlert(webhookUrl, event, sensorId) {
-  if (!shouldSendSlackAlert(event, webhookUrl)) return;
+  if (!shouldSendSlackAlert(event, webhookUrl)) return false;
   const text = slackAlertText(event, sensorId);
 
   try {
@@ -411,12 +411,15 @@ async function postSlackAlert(webhookUrl, event, sensorId) {
         eventId: event.eventId,
         status: response.status,
       });
+      return false;
     }
+    return true;
   } catch (error) {
     logger.error("slack_alert_error", {
       eventId: event.eventId,
       error: error?.message || error,
     });
+    return false;
   }
 }
 
@@ -435,6 +438,47 @@ async function sendSlackAlert(event, sensorId, devices = []) {
     await postSlackAlert(webhookUrl, event, sensorId);
   }
 }
+
+exports.sendSlackTest = onRequest(
+  {
+    region: "us-central1",
+    cors: true,
+    invoker: "public",
+  },
+  async (req, res) => {
+    if (!ensurePost(req, res)) return;
+    if (!validateOptionalApiKey(req, res)) return;
+
+    const token = String(req.body?.token || "").trim();
+    if (!token) {
+      return badRequest(res, "token_is_required");
+    }
+
+    try {
+      const doc = await db.collection("devices").doc(token).get();
+      const webhookUrl = normalizeSlackWebhookUrl(doc.data()?.slackWebhookUrl);
+      if (!webhookUrl) {
+        return res.status(400).json({ ok: false, error: "slack_not_connected" });
+      }
+
+      const event = {
+        severity: "warning",
+        title: "CleanAir Slack 알림 테스트",
+        message: "이 메시지가 보이면 Slack 외부 알림 연결이 정상입니다.",
+        eventId: `slack-test-${Date.now()}`,
+        levelLabel: "테스트",
+      };
+      const sent = await postSlackAlert(webhookUrl, event, doc.data()?.sensorId || "test");
+      return res.status(sent ? 200 : 502).json({
+        ok: sent,
+        error: sent ? null : "slack_send_failed",
+      });
+    } catch (error) {
+      logger.error("slack_test_failed", { error: error?.message || error });
+      return res.status(500).json({ ok: false, error: "internal_error" });
+    }
+  }
+);
 
 function cleanMetricValue(value) {
   const parsed = Number(value);
@@ -2456,6 +2500,21 @@ exports.registerPlug = onRequest(
     }
 
     try {
+      if (payload.tasmotaTopic) {
+        const topicSnap = await db.collection("plugs")
+          .where("tasmotaTopic", "==", payload.tasmotaTopic)
+          .limit(5)
+          .get();
+        const topicOwner = topicSnap.docs.find((doc) => doc.id !== plugId);
+        if (topicOwner) {
+          return res.status(409).json({
+            ok: false,
+            error: "mqtt_topic_already_registered",
+            plugId,
+            existingPlugId: topicOwner.id,
+          });
+        }
+      }
       await db.collection("plugs").doc(plugId).set(payload, { merge: true });
       return res.status(200).json({ ok: true, plugId });
     } catch (error) {

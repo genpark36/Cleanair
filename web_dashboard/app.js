@@ -1386,12 +1386,15 @@ async function endIncident(incidentId) {
   }
 
   try {
-    await setDoc(doc(state.db, "user_profiles", state.user.uid, "incidents", incidentId), {
+    const incidentRef = doc(state.db, "user_profiles", state.user.uid, "incidents", incidentId);
+    await setDoc(incidentRef, {
       status: "resolved",
+      archived: true,
       resolvedAt: serverTimestamp(),
       resolvedBy: state.user.email || state.user.uid,
       updatedAt: serverTimestamp(),
     }, { merge: true });
+    state.incidents = state.incidents.filter((item) => item.id !== incidentId);
     if (alert) {
       dismissAlert(incidentId);
       state.alerts = state.alerts.filter((item) => item.id !== incidentId);

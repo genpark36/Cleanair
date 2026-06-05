@@ -88,11 +88,27 @@ class DisasterDeviceStorage {
       try {
         final decoded = jsonDecode(rawList);
         if (decoded is List) {
-          return decoded
+          final drafts = decoded
               .whereType<Map>()
               .map((item) =>
                   DisasterDeviceDraft.fromJson(Map<String, dynamic>.from(item)))
               .toList(growable: true);
+          final normalized = _dedupe(drafts);
+          final normalizedJson = jsonEncode(
+            normalized.map((draft) => draft.toJson()).toList(),
+          );
+          if (normalizedJson != rawList) {
+            await prefs.setString(_draftsKey, normalizedJson);
+            if (normalized.isEmpty) {
+              await prefs.remove(_draftKey);
+            } else {
+              await prefs.setString(
+                _draftKey,
+                jsonEncode(normalized.first.toJson()),
+              );
+            }
+          }
+          return normalized;
         }
       } catch (_) {
         // Fall through to the v1 single-device migration path.
@@ -109,7 +125,12 @@ class DisasterDeviceStorage {
       if (decoded is! Map) return const <DisasterDeviceDraft>[];
       final draft =
           DisasterDeviceDraft.fromJson(Map<String, dynamic>.from(decoded));
-      return <DisasterDeviceDraft>[draft];
+      final normalized = _dedupe(<DisasterDeviceDraft>[draft]);
+      await prefs.setString(
+        _draftsKey,
+        jsonEncode(normalized.map((item) => item.toJson()).toList()),
+      );
+      return normalized;
     } catch (_) {
       return const <DisasterDeviceDraft>[];
     }

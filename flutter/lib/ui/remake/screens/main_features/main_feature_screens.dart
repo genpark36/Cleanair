@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:permission_handler/permission_handler.dart' as app_permission;
 import 'package:provider/provider.dart';
@@ -16835,13 +16833,15 @@ class _AlertSettingsScreenState extends State<AlertSettingsScreen> {
 
   Future<void> _sendSlackTest() async {
     if (_saving) return;
-    final url = context
-        .read<NotificationPreferencesController>()
-        .value
-        .slackWebhookUrl
-        .trim();
+    final push = context.read<PushNotificationServiceV2>();
     final messenger = ScaffoldMessenger.of(context);
-    if (!url.startsWith('https://hooks.slack.com/services/')) {
+    final serverPrefs = await push.fetchServerDevicePreferences();
+    final url = serverPrefs?['slackWebhookUrl']?.toString().trim() ?? '';
+    if (!mounted) return;
+    await context
+        .read<NotificationPreferencesController>()
+        .setSlackWebhookUrl(url);
+    if (url.isEmpty) {
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Slack 채널을 먼저 연결해 주세요.'),
@@ -16855,17 +16855,10 @@ class _AlertSettingsScreenState extends State<AlertSettingsScreen> {
       _saveMessage = 'Slack 테스트 알림을 보내는 중입니다.';
     });
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'text': 'CleanAir Slack 알림 테스트입니다. 경보가 발생하면 이 채널로 요약이 전송됩니다.',
-        }),
-      );
-      final ok = response.statusCode >= 200 && response.statusCode < 300;
+      final ok = await push.sendSlackTestAlert();
       final message = ok
           ? 'Slack 테스트 알림을 보냈습니다.'
-          : 'Slack 테스트 전송 실패 (${response.statusCode})';
+          : push.lastRegistrationMessage ?? 'Slack 테스트 전송에 실패했습니다.';
       if (!mounted) return;
       setState(() {
         _saving = false;

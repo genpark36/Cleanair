@@ -310,6 +310,37 @@ class PushNotificationServiceV2 {
     );
   }
 
+  Future<bool> sendSlackTestAlert() async {
+    if (_baseUrl.isEmpty) {
+      _lastRegistrationMessage = 'Functions URL이 없어 Slack 테스트를 보낼 수 없습니다.';
+      _lastRegistrationAt = DateTime.now();
+      return false;
+    }
+
+    final token = await ensureClientToken();
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/sendSlackTest'),
+        headers: _headers(),
+        body: jsonEncode({'token': token}),
+      );
+      final decoded = jsonDecode(response.body);
+      final ok = response.statusCode >= 200 &&
+          response.statusCode < 300 &&
+          decoded is Map &&
+          decoded['ok'] == true;
+      _lastRegistrationAt = DateTime.now();
+      _lastRegistrationMessage = ok
+          ? 'Slack 테스트 알림 전송 완료'
+          : 'Slack 테스트 전송 실패 (${response.statusCode})';
+      return ok;
+    } catch (error) {
+      _lastRegistrationAt = DateTime.now();
+      _lastRegistrationMessage = 'Slack 테스트 전송 실패: $error';
+      return false;
+    }
+  }
+
   Future<bool> syncNotificationPreferences(
       NotificationPreferences prefs) async {
     if (_baseUrl.isEmpty) {
