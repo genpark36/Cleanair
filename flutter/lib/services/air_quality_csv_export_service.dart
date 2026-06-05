@@ -28,7 +28,7 @@ class AirQualityCsvExportService {
     }
 
     final buffer = StringBuffer(
-      'timestamp,pm25_ugm3,iaqi_score,iaqi_base_score,thermal_penalty,thermal_deviation,iaqi_primary_grade,iaqi_sub_level,m_score,e_score,i_score,co2_ppm,tvoc_index,nox_index,temp_c,humidity_pct,selected_metric,selected_metric_value,k_effective_1ph,t50_min,k_pm25_1ph,k_co2_1ph,r2_pm25,r2_co2\n',
+      'timestamp,pm25_ugm3,iaqi_score,iaqi_base_score,thermal_penalty,thermal_deviation,iaqi_primary_grade,iaqi_sub_level,m_score,e_score,i_score,co2_ppm,co_ppm,tvoc_index,nox_index,temp_c,humidity_pct,selected_metric,selected_metric_value,k_effective_1ph,t50_min,k_pm25_1ph,k_co2_1ph,r2_pm25,r2_co2\n',
     );
     final computed = _computePurificationMetrics(sorted);
 
@@ -82,6 +82,7 @@ class AirQualityCsvExportService {
         _csvNumber((iaqi['e_score'] as num?)?.toDouble(), decimals: 3),
         _csvNumber((iaqi['i_score'] as num?)?.toDouble(), decimals: 3),
         _csvNumber(snapshot.co2, decimals: 2),
+        _csvNumber(snapshot.co, decimals: 2),
         _csvNumber(snapshot.tvoc, decimals: 2),
         _csvNumber(snapshot.nox, decimals: 2),
         _csvNumber(snapshot.temperature, decimals: 2),
@@ -193,6 +194,8 @@ class AirQualityCsvExportService {
         return snapshot.pm25;
       case 'co2':
         return snapshot.co2;
+      case 'co':
+        return snapshot.co;
       case 'tvoc':
         return snapshot.tvoc;
       case 'nox':

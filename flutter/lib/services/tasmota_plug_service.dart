@@ -554,7 +554,9 @@ class TasmotaPlugService {
     final resolvedOn = onThreshold ??
         (aqiOn == null ? null : aqiOn / (normalizedMetric == 'iaqi' ? 100 : 1));
     final resolvedOff = offThreshold ??
-        (aqiOff == null ? null : aqiOff / (normalizedMetric == 'iaqi' ? 100 : 1));
+        (aqiOff == null
+            ? null
+            : aqiOff / (normalizedMetric == 'iaqi' ? 100 : 1));
     if (resolvedOn == null || resolvedOff == null) return null;
 
     final legacyAqiOn = aqiOn ?? (resolvedOn * 100).round();
@@ -578,15 +580,13 @@ class TasmotaPlugService {
                       'iaqiOn': rule.onThreshold,
                       'iaqiOff': rule.offThreshold,
                     },
-                    '${_normalizeAutoMetric(rule.metric)}On':
-                        rule.onThreshold,
+                    '${_normalizeAutoMetric(rule.metric)}On': rule.onThreshold,
                     '${_normalizeAutoMetric(rule.metric)}Off':
                         rule.offThreshold,
                   },
                   'hysteresis': {
                     'metric': _normalizeAutoMetric(rule.metric),
-                    'value':
-                        (rule.onThreshold - rule.offThreshold).abs(),
+                    'value': (rule.onThreshold - rule.offThreshold).abs(),
                     _normalizeAutoMetric(rule.metric):
                         (rule.onThreshold - rule.offThreshold).abs(),
                   },
@@ -608,7 +608,8 @@ class TasmotaPlugService {
       'hysteresis': {
         'metric': normalizedMetric,
         'value': hysteresis,
-        if (normalizedMetric == 'iaqi') 'aqi': (legacyAqiOn - legacyAqiOff).abs(),
+        if (normalizedMetric == 'iaqi')
+          'aqi': (legacyAqiOn - legacyAqiOff).abs(),
         normalizedMetric: hysteresis,
       },
       'constraints': {'minCommandIntervalSeconds': minCommandIntervalSeconds},
@@ -627,7 +628,7 @@ class TasmotaPlugService {
 
   String _normalizeAutoMetric(String value) {
     final normalized = value.trim().toLowerCase();
-    const allowed = {'iaqi', 'co2', 'pm25', 'tvoc', 'nox'};
+    const allowed = {'iaqi', 'co2', 'co', 'pm25', 'tvoc', 'nox'};
     return allowed.contains(normalized) ? normalized : 'iaqi';
   }
 

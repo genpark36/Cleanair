@@ -12326,6 +12326,8 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
     switch (metric) {
       case 'co2':
         return 'CO₂';
+      case 'co':
+        return 'CO';
       case 'pm25':
         return 'PM2.5';
       case 'tvoc':
@@ -12340,6 +12342,7 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
   ({double on, double off}) _autoMetricDefaults(String metric) {
     return switch (metric) {
       'co2' => (on: 1000.0, off: 900.0),
+      'co' => (on: 10.0, off: 5.0),
       'pm25' => (on: 35.0, off: 25.0),
       'tvoc' => (on: 400.0, off: 300.0),
       'nox' => (on: 2.0, off: 1.0),
@@ -12830,13 +12833,14 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
 
   String _normalizeAutoMetric(String value) {
     final normalized = value.trim().toLowerCase();
-    const allowed = {'iaqi', 'co2', 'pm25', 'tvoc', 'nox'};
+    const allowed = {'iaqi', 'co2', 'co', 'pm25', 'tvoc', 'nox'};
     return allowed.contains(normalized) ? normalized : 'iaqi';
   }
 
   double? _autoMetricValue(AirQualitySnapshot snapshot, String metric) {
     return switch (_normalizeAutoMetric(metric)) {
       'co2' => snapshot.co2,
+      'co' => snapshot.co,
       'pm25' => snapshot.pm25,
       'tvoc' => snapshot.tvoc,
       'nox' => snapshot.nox,
@@ -14184,6 +14188,11 @@ class _SmartPlugSettingsScreenState extends State<SmartPlugSettingsScreen> {
                 label: 'CO2',
                 selected: !autoDisabled && _autoRules.containsKey('co2'),
                 onTap: () => _setAutoMetric('co2'),
+              ),
+              _AutoMetricChip(
+                label: 'CO',
+                selected: !autoDisabled && _autoRules.containsKey('co'),
+                onTap: () => _setAutoMetric('co'),
               ),
               _AutoMetricChip(
                 label: 'PM2.5',

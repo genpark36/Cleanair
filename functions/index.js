@@ -1023,7 +1023,7 @@ function shouldUseFunctionMqttDispatch(transportHint, tasmotaTopic) {
 
 function normalizeAutoMetric(rawValue) {
   const value = String(rawValue || "").trim().toLowerCase();
-  if (["iaqi", "co2", "pm25", "tvoc", "nox"].includes(value)) {
+  if (["iaqi", "co2", "co", "pm25", "tvoc", "nox"].includes(value)) {
     return value;
   }
   return "iaqi";
@@ -1033,6 +1033,8 @@ function autoMetricLabel(metric) {
   switch (normalizeAutoMetric(metric)) {
     case "co2":
       return "CO2";
+    case "co":
+      return "CO";
     case "pm25":
       return "PM2.5";
     case "tvoc":
@@ -1940,6 +1942,17 @@ function resolveAutoMetricValue(snapshotPayload, iaqiBundle, metric) {
   switch (normalizeAutoMetric(metric)) {
     case "co2":
       return toFiniteNumberOrNull(raw.co2 ?? snapshotPayload?.co2);
+    case "co":
+      return toFiniteNumberOrNull(
+        raw.co
+          ?? raw.co_ppm
+          ?? raw.carbon_monoxide
+          ?? raw.carbonMonoxide
+          ?? snapshotPayload?.co
+          ?? snapshotPayload?.co_ppm
+          ?? snapshotPayload?.carbon_monoxide
+          ?? snapshotPayload?.carbonMonoxide
+      );
     case "pm25":
       return toFiniteNumberOrNull(
         raw.pm25
@@ -2400,6 +2413,14 @@ function buildSnapshotPayloadFromSensorDoc(sensorId, sensorData) {
     iaqi: latest.iaqi ?? sensorData?.iaqi,
     iaqiScore: latest.iaqiScore ?? sensorData?.iaqiScore,
     co2: latest.co2 ?? latest.rco2 ?? sensorData?.co2 ?? sensorData?.rco2,
+    co: latest.co
+      ?? latest.co_ppm
+      ?? latest.carbon_monoxide
+      ?? latest.carbonMonoxide
+      ?? sensorData?.co
+      ?? sensorData?.co_ppm
+      ?? sensorData?.carbon_monoxide
+      ?? sensorData?.carbonMonoxide,
     tvoc: latest.tvoc ?? latest.voc ?? sensorData?.tvoc ?? sensorData?.voc,
     nox: latest.nox ?? sensorData?.nox,
     temp: latest.temp ?? latest.temperature ?? sensorData?.temp ?? sensorData?.temperature,
@@ -3396,6 +3417,7 @@ exports.ingest = onRequest(
       serial,
       pm25,
       co2,
+      co,
       tvoc,
       nox,
       temp,
@@ -3411,6 +3433,12 @@ exports.ingest = onRequest(
 
     const parsedPm25 = toFiniteNumber(pm25);
     const parsedCo2 = toFiniteNumber(co2);
+    const parsedCo = toFiniteNumber(
+      co
+        ?? (req.body || {}).co_ppm
+        ?? (req.body || {}).carbon_monoxide
+        ?? (req.body || {}).carbonMonoxide
+    );
     const parsedTvoc = toFiniteNumber(tvoc);
     const parsedNox = toFiniteNumber(nox);
     const parsedTemp = toFiniteNumber(temp);
@@ -3460,6 +3488,7 @@ exports.ingest = onRequest(
       iaqi: parsedIaqi,
       iaqiScore: parsedIaqiScore,
       co2: parsedCo2,
+      co: parsedCo,
       tvoc: parsedTvoc,
       nox: parsedNox,
       temp: parsedTemp,
@@ -3520,6 +3549,7 @@ exports.ingest = onRequest(
           iaqi: parsedIaqi,
           iaqiScore: parsedIaqiScore,
           co2: parsedCo2,
+          co: parsedCo,
           tvoc: parsedTvoc,
           nox: parsedNox,
           temp: parsedTemp,
@@ -3538,6 +3568,7 @@ exports.ingest = onRequest(
         iaqi: parsedIaqi,
         iaqiScore: parsedIaqiScore,
         co2: parsedCo2,
+        co: parsedCo,
         tvoc: parsedTvoc,
         nox: parsedNox,
         temp: parsedTemp,
@@ -4331,6 +4362,9 @@ exports.relay = onRequest(
         const nowDate = new Date();
         const relayPm25 = toFiniteNumber(body.pm02);
         const relayCo2 = toFiniteNumber(body.rco2);
+        const relayCo = toFiniteNumber(
+          body.co ?? body.co_ppm ?? body.carbon_monoxide ?? body.carbonMonoxide
+        );
         const relayTemp = toFiniteNumber(body.temp);
         const relayHumidity = toFiniteNumber(body.rhum);
         const relayTvoc = toFiniteNumber(body.tvoc);
@@ -4362,6 +4396,7 @@ exports.relay = onRequest(
           iaqi: relayIaqi,
           iaqiScore: relayIaqiScore,
           co2: relayCo2,
+          co: relayCo,
           tvoc: relayTvoc,
           nox: toFiniteNumber(body.nox),
           temp: relayTemp,

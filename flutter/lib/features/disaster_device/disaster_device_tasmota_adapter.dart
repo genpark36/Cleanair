@@ -22,7 +22,9 @@ class DisasterDeviceTasmotaAdapter {
 
   String? validateControl(DisasterDeviceDraft draft) {
     if (usesMqttControl(draft)) {
-      if (draft.deviceId.trim().isEmpty) return '플러그 정보를 저장할 수 없습니다. 플러그를 다시 추가해 주세요.';
+      if (draft.deviceId.trim().isEmpty) {
+        return '플러그 정보를 저장할 수 없습니다. 플러그를 다시 추가해 주세요.';
+      }
       if (draft.mqttTopic.trim().isEmpty) {
         return '원격 제어 이름을 입력해 주세요.';
       }
@@ -34,7 +36,9 @@ class DisasterDeviceTasmotaAdapter {
     }
 
     final address = _normalizeLocalAddress(draft.plugIp);
-    if (address.isEmpty) return '플러그 IP를 입력해 주세요.';
+    if (address.isEmpty) {
+      return '플러그 IP를 입력해 주세요.';
+    }
     if (!_isValidLocalAddress(address)) {
       return 'IP 또는 로컬 주소 형식을 확인해 주세요. 예: 192.168.0.24';
     }
@@ -176,7 +180,7 @@ class DisasterDeviceTasmotaAdapter {
 
   String _normalizeAutoMetric(String value) {
     final normalized = value.trim().toLowerCase();
-    const allowed = {'iaqi', 'co2', 'pm25', 'tvoc', 'nox'};
+    const allowed = {'iaqi', 'co2', 'co', 'pm25', 'tvoc', 'nox'};
     return allowed.contains(normalized) ? normalized : 'iaqi';
   }
 
@@ -184,6 +188,8 @@ class DisasterDeviceTasmotaAdapter {
     switch (_normalizeAutoMetric(metric)) {
       case 'co2':
         return 'CO2';
+      case 'co':
+        return 'CO';
       case 'pm25':
         return 'PM2.5';
       case 'tvoc':
