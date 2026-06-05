@@ -3851,8 +3851,8 @@ class _FireRiskCriteriaCard extends StatelessWidget {
             value: assessment.persistenceLabel,
           ),
           _MetricRow(
-            label: 'CO 보강',
-            value: assessment.coConnected ? '연결됨' : '연결 안 됨',
+            label: '판단 모드',
+            value: assessment.modeLabel,
           ),
           const SizedBox(height: 14),
           StitchCard(
@@ -3861,8 +3861,8 @@ class _FireRiskCriteriaCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Text(
               assessment.coConnected
-                  ? 'CO가 연결되면 CO와 미세먼지가 같이 오르는지, CO 단독 위험이 있는지 따로 확인합니다. CO₂는 환기 부족 신호로만 약하게 반영합니다.'
-                  : 'CO 센서가 없을 때는 PM2.5, TVOC, 온도, NOx 중 여러 값이 동시에 나빠지고 반복되는지를 중심으로 판단합니다.',
+                  ? 'CO 확장형은 CO가 0ppm으로 측정된 상황과 CO가 높아진 상황을 구분합니다. CO와 미세먼지가 함께 오르거나 CO 단독 위험이 있으면 더 강하게 판단합니다.'
+                  : '기본형은 CO 데이터가 수신되지 않는 AirGradient 구성입니다. 이때는 PM2.5, TVOC, 온도, NOx가 동시에 나빠지고 반복되는지를 중심으로 판단합니다.',
               style: Theme.of(context)
                   .textTheme
                   .bodySmall

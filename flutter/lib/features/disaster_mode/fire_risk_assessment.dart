@@ -49,6 +49,7 @@ class FireRiskAssessment {
   bool get isRisky => level != FireRiskLevel.normal;
   bool get isUrgent =>
       level == FireRiskLevel.fireSuspected || level == FireRiskLevel.coOnly;
+  String get modeLabel => coConnected ? 'CO 확장형' : '기본형';
 
   String get persistenceLabel {
     return switch (persistenceGrade) {
@@ -66,6 +67,7 @@ class FireRiskAssessment {
         .join('\n');
     return [
       '방재모드: $levelLabel',
+      '판단 모드: $modeLabel',
       summary,
       '위험점수 ${_fmt(totalScore)} · 동시에 나빠진 지표 $riskCount개 · $persistenceLabel',
       if (activeMetrics.isNotEmpty) activeMetrics,

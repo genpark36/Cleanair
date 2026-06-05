@@ -532,6 +532,7 @@ const buildFireRiskEvent = async (
       code: level.level,
       label: level.label,
       coConnected: evaluation.coConnected,
+      coMode: evaluation.coConnected ? "co_extended" : "basic",
       riskCount: evaluation.riskCount,
       cautionCount: evaluation.cautionCount,
       candidateCount,
@@ -550,7 +551,8 @@ const buildFireRiskEvent = async (
         key: metric.key,
         label: metric.label,
         score: round(metric.score, 2)
-      }))
+      })),
+      coMode: evaluation.coConnected ? "co_extended" : "basic"
     },
     duration: {
       accumulatedMs: 5 * 60 * 1000,

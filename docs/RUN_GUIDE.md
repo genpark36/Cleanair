@@ -326,7 +326,7 @@ Configuration -> Configure MQTT
 | MQTT TLS | `mqtts://` 서버를 쓰면 체크 |
 | Client | `cleanair_plug_01_%06X`처럼 Topic 뒤에 `_%06X` 추가 |
 | User | MQTT 사용자 이름 |
-| Password | MQTT 비밀번호 |
+| Password | 제공된 MQTT 비밀번호 |
 | Topic | 앱에 등록할 플러그 Topic |
 | Full Topic | `%prefix%/%topic%/` |
 
@@ -418,7 +418,7 @@ Topic: cleanair_plug_03
 Full Topic: %prefix%/%topic%/
 ```
 
-비밀번호는 화면에 보이지 않으므로 오타가 나기 쉽습니다. `rc 5`가 계속 뜨면 비밀번호를 다시 입력하고 저장한 뒤 플러그를 재시작합니다.
+비밀번호 칸에 `****`가 보여도 실제 비밀번호가 자동으로 유지된다는 뜻은 아닙니다. 새 플러그를 설정하거나 Topic을 바꿨다면 제공된 MQTT 비밀번호를 직접 다시 입력한 뒤 저장합니다. `rc 5`가 계속 뜨면 비밀번호를 다시 입력하고 저장한 뒤 플러그를 재시작합니다.
 
 ### 12.4 HiveMQ 웹 클라이언트 테스트
 

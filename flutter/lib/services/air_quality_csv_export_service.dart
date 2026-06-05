@@ -196,6 +196,8 @@ class AirQualityCsvExportService {
         return snapshot.co2;
       case 'co':
         return snapshot.co;
+      case 'iaqi':
+        return snapshot.iaqiScore;
       case 'tvoc':
         return snapshot.tvoc;
       case 'nox':

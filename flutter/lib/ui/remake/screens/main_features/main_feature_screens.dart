@@ -332,14 +332,15 @@ class _CleanAirTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeTop = MediaQuery.paddingOf(context).top;
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
       child: Container(
-        height: 64,
+        height: safeTop + 64,
         color: background.withValues(alpha: 0.94),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.fromLTRB(20, safeTop, 20, 0),
         child: Row(
           children: [
             onLeadingTap == null
@@ -5908,14 +5909,16 @@ class _DataLoggingScreenState extends State<DataLoggingScreen> {
                           color: CleanColors.onSurface,
                         ),
                         children: [
-                          TextSpan(
-                            text: ' ${data.unit}',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: CleanColors.secondary,
+                          if (data.unit.trim().isNotEmpty &&
+                              data.value != 'N/A')
+                            TextSpan(
+                              text: ' ${data.unit}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: CleanColors.secondary,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
@@ -6218,6 +6221,43 @@ void _showMetricCriteriaSheet(
           ('주의', '2 초과'),
         ],
       );
+    case 'IAQI':
+      return (
+        max: 5,
+        description:
+            '통합 공기질지수는 PM2.5, CO₂, TVOC와 열쾌적성 보정을 함께 반영한 대표 지수입니다. 1을 초과하면 공기질 개선이 필요한 구간으로 봅니다.',
+        segments: const [
+          (label: '좋음', color: Color(0xFF16A34A), end: 0.5),
+          (label: '보통', color: Color(0xFFEAB308), end: 1),
+          (label: '조금 나쁨', color: Color(0xFFF97316), end: 2),
+          (label: '나쁨', color: Color(0xFFFF4056), end: 3),
+          (label: '상당히 나쁨', color: Color(0xFFB91C1C), end: 4),
+          (label: '매우 나쁨', color: Color(0xFF9333EA), end: 5),
+        ],
+        lines: const [
+          ('좋음', '0.5 미만'),
+          ('보통', '0.5-1.0'),
+          ('개선 필요', '1.0 초과'),
+          ('강한 개선 필요', '3.0 초과'),
+        ],
+      );
+    case 'CO':
+      return (
+        max: 50,
+        description:
+            'CO는 일산화탄소입니다. CO 확장 센서가 연결된 경우에만 표시되며, 값이 없으면 N/A로 표시합니다. CO는 낮은 농도라도 지속되면 위험할 수 있어 별도 기준으로 확인합니다.',
+        segments: const [
+          (label: '좋음', color: Color(0xFF16A34A), end: 10),
+          (label: '주의', color: Color(0xFFF97316), end: 35),
+          (label: '위험', color: Color(0xFFDC2626), end: 50),
+        ],
+        lines: const [
+          ('좋음', '10 ppm 미만'),
+          ('주의', '10-35 ppm'),
+          ('위험', '35 ppm 이상'),
+          ('미수신', 'CO 확장 센서가 없으면 N/A'),
+        ],
+      );
     case '온도':
       return (
         max: 35,
@@ -6516,6 +6556,7 @@ bool _hasAnyCsvExportValue(AirQualitySnapshot snapshot) {
     snapshot.co2,
     snapshot.tvoc,
     snapshot.nox,
+    snapshot.co,
     snapshot.temperature,
     snapshot.humidity,
     snapshot.iaqiScore,
@@ -6533,6 +6574,10 @@ String _exportMetricId(_PollutantMetricData data) {
       return 'tvoc';
     case 'NOx':
       return 'nox';
+    case 'IAQI':
+      return 'iaqi';
+    case 'CO':
+      return 'co';
     case '온도':
       return 'temperature';
     case '습도':
@@ -6732,6 +6777,28 @@ List<_PollutantMetricData> _livePollutantMetrics(
       summary: '연소기기 사용이나 외부 공기 유입이 있을 때 NOx가 오를 수 있어요.',
     ),
     _metricFromHistory(
+      label: 'IAQI',
+      title: '통합 공기질 지수',
+      unit: '',
+      icon: Symbols.speed,
+      current: snapshot?.iaqiScore,
+      history: history,
+      valueOf: (sample) => sample.iaqiScore,
+      statusOf: _iaqiChartStatus,
+      summary: '여러 공기질 지표와 열쾌적성 보정을 함께 반영한 대표 지수입니다.',
+    ),
+    _metricFromHistory(
+      label: 'CO',
+      title: 'CO 일산화탄소',
+      unit: 'ppm',
+      icon: Symbols.warning,
+      current: snapshot?.co,
+      history: history,
+      valueOf: (sample) => sample.co,
+      statusOf: coStatus,
+      summary: 'CO 센서가 연결된 경우 일산화탄소 농도를 표시합니다. 값이 없으면 확장 센서가 연결되지 않은 상태입니다.',
+    ),
+    _metricFromHistory(
       label: '온도',
       title: '실내 온도',
       unit: '°C',
@@ -6778,12 +6845,14 @@ _PollutantMetricData _metricFromHistory({
         ]
       : _downsampleValues(rawValues, maxPoints: 48);
   if (values.isEmpty) {
+    final noDataLabel = label == 'CO' ? 'N/A' : '-';
+    final noDataStatus = label == 'CO' ? '데이터 없음' : '연결 대기';
     return _PollutantMetricData(
       label: label,
       title: title,
-      value: '-',
+      value: noDataLabel,
       unit: unit,
-      status: '연결 대기',
+      status: noDataStatus,
       summary: summary,
       max: '-',
       min: '-',
@@ -6889,6 +6958,18 @@ String _metricStatusSummary({
         '좋음' || '최적' || '적정' || '쾌적' => '현재 NOx 영향이 낮습니다.',
         '보통' || '주의' => '현재 NOx는 $formatted$unitText로 보통 범위입니다.',
         _ => '현재 NOx는 $formatted$unitText로 높습니다. 연소기기 사용이나 외부 공기 유입을 확인해 주세요.',
+      },
+    'IAQI' => switch (status) {
+        '좋음' => '현재 통합 공기질지수는 $formatted로 좋음 범위입니다.',
+        '보통' => '현재 통합 공기질지수는 $formatted로 보통 범위입니다.',
+        _ => '현재 통합 공기질지수는 $formatted입니다. 공기질 개선이 필요한 구간입니다.',
+      },
+    'CO' => switch (status) {
+        '좋음' => '현재 일산화탄소 농도는 $formatted$unitText로 낮습니다.',
+        '주의' => '현재 일산화탄소 농도는 $formatted$unitText입니다. 환기와 연소기기 상태를 확인해 주세요.',
+        '위험' =>
+          '현재 일산화탄소 농도는 $formatted$unitText로 높습니다. 즉시 환기하고 공간 안전을 확인해 주세요.',
+        _ => 'CO 확장 센서 데이터가 아직 수신되지 않았습니다.',
       },
     '온도' => switch (status) {
         '서늘함' => '현재 실내 온도는 $formatted$unitText로 조금 서늘합니다.',

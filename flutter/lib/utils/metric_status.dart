@@ -1,7 +1,7 @@
-/// Unified metric status labels — single source of truth.
-///
-/// Thresholds based on Node-RED alert engine & AirGradient sensor specs
-/// (Sensirion SGP41 VOC/NOx Index).
+// Unified metric status labels.
+//
+// Thresholds based on Node-RED alert engine & AirGradient sensor specs
+// (Sensirion SGP41 VOC/NOx Index).
 
 /// PM2.5 status (µg/m³, 환경부 기준)
 String pm25Status(double value) {
@@ -37,6 +37,14 @@ String noxStatus(double value) {
   return '주의';
 }
 
+/// CO status (ppm, CO extension sensor)
+String coStatus(double value) {
+  if (value.isNaN) return '정보 없음';
+  if (value < 10) return '좋음';
+  if (value < 35) return '주의';
+  return '위험';
+}
+
 /// Temperature status (°C, 실내 쾌적 기준)
 String temperatureStatus(double value) {
   if (value < 18) return '서늘함';
@@ -64,6 +72,8 @@ String metricStatus(String id, double value, {double humidity = 50}) {
       return tvocStatus(value);
     case 'nox':
       return noxStatus(value);
+    case 'co':
+      return coStatus(value);
     case 'temperature':
       return temperatureStatus(value);
     case 'humidity':
