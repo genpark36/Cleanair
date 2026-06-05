@@ -1,11 +1,12 @@
 # Cleanair 실행 및 설정 가이드
 
-이 문서는 Cleanair를 빈 상태에서 설치하고, 센서와 플러그와 웹 상황판까지 연결하는 순서를 정리한 문서입니다.
+이 문서는 Cleanair를 초기 상태에서 설치하고, 센서와 플러그와 웹 상황판까지 연결하는 순서를 정리한 문서이자, 사용자/개발자용 트러블슈팅 참고 매뉴얼입니다.
 
 전체 흐름은 아래 순서로 진행합니다.
 
 해당 문서에는 사용자 실행 및 개발자 유지보수에 대한 내용이 모두 포함되어 있습니다.
 필요한 정보를 선별적으로 참고하시길 바랍니다.
+(개발자용)의 경우, 구동을 위해 거쳐야할 절차가 아닌, 개발자 점검 및 오류 수정용 매뉴얼입니다.
 
 ```text
 구동을 위해 반드시 거쳐야할 절차는 다음과 같습니다.
@@ -378,7 +379,7 @@ Restart 1
 
 | Tasmota 항목 | 입력값 |
 | --- | --- |
-| Host | MQTT 서버 주소 |
+| Host | 7d18e3d75dbb4d12aa5951049f5868d2.s1.eu.hivemq.cloud |
 | Port | 8883 |
 | MQTT TLS | 체크 |
 | Client | `cleanair_plug_01_%06X`처럼 Topic 뒤에 `_%06X` 추가 |
@@ -456,7 +457,7 @@ MQT: Connect failed ..., rc 5
 6. Topic이 다른 플러그와 겹치지 않는지 확인합니다.
 7. 저장 후 플러그를 재시작합니다.
 
-### 13.4 HiveMQ 웹 클라이언트 테스트
+### 13.4 HiveMQ 웹 클라이언트 테스트(개발자용)
 
 MQTT 웹 클라이언트에서 아래 토픽을 구독합니다.
 
@@ -487,7 +488,7 @@ stat/cleanair_plug_01/POWER
 
 메시지는 `ON` 또는 `OFF`입니다.
 
-### 13.5 MQTT worker 실행
+### 13.5 MQTT worker 실행(개발자용)
 
 MQTT 명령과 플러그 응답을 Firebase에 기록하려면 MQTT worker를 실행합니다.
 
@@ -564,7 +565,7 @@ https://capstone-cleanair-2026.web.app
 
 웹 상황판에서도 플러그 ON/OFF 제어와 제어 이력 CSV 저장을 할 수 있습니다.
 
-## 17. 앱 빌드
+## 17. 앱 빌드(개발자용)
 
 APK를 새로 빌드하려면 Flutter 폴더에서 실행합니다.
 
@@ -586,7 +587,7 @@ flutter/build/app/outputs/flutter-apk/app-release.apk
 release_apk/cleanair-final-release.apk
 ```
 
-## 18. Firebase Functions 배포
+## 18. Firebase Functions 배포(개발자용)
 
 Functions를 다시 배포하려면 프로젝트 루트에서 실행합니다.
 
@@ -611,7 +612,7 @@ Functions 역할:
 - 플러그 명령 처리
 - AI 공기질 추천 생성
 
-## 19. 웹 상황판 배포
+## 19. 웹 상황판 배포(개발자용)
 
 ```powershell
 firebase deploy --only hosting --project capstone-cleanair-2026
@@ -623,7 +624,7 @@ firebase deploy --only hosting --project capstone-cleanair-2026
 https://capstone-cleanair-2026.web.app
 ```
 
-## 20. 환경 변수
+## 20. 환경 변수(개발자용)
 
 Functions를 새로 배포할 때는 `functions/.env` 또는 Firebase 환경 변수에 필요한 값이 있어야 합니다.
 
@@ -650,7 +651,7 @@ Functions를 새로 배포할 때는 `functions/.env` 또는 Firebase 환경 변
 1. 센서가 Wi-Fi에 연결되어 있는지 확인합니다.
 2. 센서 화면에 PIN이나 측정값이 표시되는지 확인합니다.
 3. 앱에서 선택된 센서가 실제 센서와 같은지 확인합니다.
-4. Firebase Functions가 배포되어 있는지 확인합니다.
+4. Firebase Functions가 배포되어 있는지 확인합니다.(개발자용)
 5. 앱을 완전히 종료한 뒤 다시 실행합니다.
 
 ### PIN 등록이 안 됨
@@ -660,7 +661,7 @@ Functions를 새로 배포할 때는 `functions/.env` 또는 Firebase 환경 변
 1. 센서 화면의 PIN을 다시 확인합니다.
 2. PIN 입력 중 공백이 들어가지 않았는지 확인합니다.
 3. 센서 펌웨어가 Cleanair 펌웨어인지 확인합니다.
-4. Firebase Functions의 `claimDevice`, `registerDevice`가 배포되어 있는지 확인합니다.
+4. Firebase Functions의 `claimDevice`, `registerDevice`가 배포되어 있는지 확인합니다.(개발자용)
 
 ### 주변 센서 검색이 안 됨
 
@@ -676,8 +677,9 @@ Functions를 새로 배포할 때는 `functions/.env` 또는 Firebase 환경 변
 확인할 것:
 
 1. 인터넷 연결을 확인합니다.
-2. Kakao JavaScript 키와 REST 키 설정을 확인합니다.
-3. 웹 상황판을 쓴다면 허용 도메인에 현재 도메인이 등록되어 있는지 확인합니다.
+2. 브라우저에서 위치 정보 사용 권한을 허용하였는지 확인합니다.
+3. Kakao JavaScript 키와 REST 키 설정을 확인합니다.(개발자용)
+4. 웹 상황판을 쓴다면 허용 도메인에 현재 도메인이 등록되어 있는지 확인합니다.(개발자용)
 
 ### CSV 저장 실패
 
@@ -726,7 +728,7 @@ Restart 1
 1. 두 플러그의 Topic이 서로 다른지 확인합니다.
 2. 앱에 저장된 플러그 Topic이 서로 다른지 확인합니다.
 3. IP가 서로 바뀌어 저장되지 않았는지 확인합니다.
-4. HiveMQ 웹 클라이언트에서 각 Topic에 따로 명령을 보내봅니다.
+4. HiveMQ 웹 클라이언트에서 각 Topic에 따로 명령을 보내봅니다.(개발자용)
 
 ### Slack 메시지가 안 옴
 
@@ -738,22 +740,21 @@ Restart 1
 4. Functions 환경 변수의 Slack 값이 설정되어 있는지 확인합니다.
 5. 앱에서 테스트 전송을 실행합니다.
 
-### 웹 상황판 로그인이 안 됨
+### 웹 상황판 로그인이 안 됨(개발자용)
 
 확인할 것:
 
 1. Firebase Authentication에서 Google 로그인이 켜져 있는지 확인합니다.
 2. OAuth 동의 화면이 게시 상태인지 확인합니다.
-3. 브라우저 팝업 차단을 해제합니다.
+3. 브라우저 팝업 차단을 해제합니다.(사용자)
 4. 웹 상황판 배포 도메인이 Firebase Auth 승인 도메인에 포함되어 있는지 확인합니다.
 
-### 웹 지도 안 보임
+### 웹 지도 안 보임(개발자용)
 
 확인할 것:
 
 1. Kakao JavaScript 키가 맞는지 확인합니다.
 2. Kakao 개발자 콘솔에 웹 상황판 도메인이 등록되어 있는지 확인합니다.
-3. 브라우저 새로고침 후 다시 확인합니다.
 
 ## 22. 최종 확인 순서
 
