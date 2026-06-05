@@ -326,8 +326,9 @@ http://플러그_IP
 cleanair_plug_01
 cleanair_plug_02
 cleanair_plug_03
+cleanair_plug_XX
 ```
-
+XX는 숫자를 임의로 설정하면 됩니다.(단, 04이후의 숫자를 권장합니다. 01-03은 개발 과정에서 사용하였음.)
 같은 Topic을 두 플러그에 넣으면 두 플러그가 같은 명령을 받을 수 있고, 앱에서도 상태가 섞여 보일 수 있습니다.
 
 ## 12. 로컬 HTTP 플러그 제어
@@ -377,8 +378,8 @@ Restart 1
 | Port | 8883 |
 | MQTT TLS | 체크 |
 | Client | `cleanair_plug_01_%06X`처럼 Topic 뒤에 `_%06X` 추가 |
-| User | MQTT 사용자 이름 |
-| Password | MQTT 비밀번호 |
+| User | Capstone |
+| Password | Capstone1 |
 | Topic | 앱에 등록할 플러그 Topic |
 | Full Topic | `%prefix%/%topic%/` |
 
@@ -408,7 +409,7 @@ Topic: cleanair_plug_03
 Full Topic: %prefix%/%topic%/
 ```
 
-비밀번호 칸에 `****`가 보여도 실제 비밀번호가 자동으로 새 설정에 적용된다는 뜻은 아닙니다. 새 플러그를 설정하거나 Topic을 바꿨다면 비밀번호를 직접 다시 입력한 뒤 저장해야 합니다.
+비밀번호 칸에 `****`가 보여도 실제 비밀번호가 자동으로 새 설정에 적용된다는 뜻 아닙니다. 새 플러그 등록 시 비밀번호(Capstone1)를 직접 다시 입력한 뒤 저장해야 합니다.
 
 저장 후에는 플러그가 MQTT 서버에 다시 연결될 때까지 10~30초 정도 기다립니다. 연결이 제대로 되었는지는 Console의 `Status 6`으로 확인합니다.
 
