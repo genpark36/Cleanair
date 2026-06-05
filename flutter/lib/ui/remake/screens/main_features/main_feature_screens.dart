@@ -53,6 +53,24 @@ typedef _ChartPoint = ({DateTime time, double value});
 typedef _ChartStatusResolver = String Function(double value);
 typedef _DataLogRow = ({String a, String b, String c, Color color});
 
+const double _cleanAirTopBarBodyHeight = 64;
+
+EdgeInsets _cleanAirScrollPadding(
+  BuildContext context, {
+  required double left,
+  required double right,
+  double topGap = 22,
+  double bottomGap = 178,
+}) {
+  final safe = MediaQuery.paddingOf(context);
+  return EdgeInsets.fromLTRB(
+    left,
+    safe.top + _cleanAirTopBarBodyHeight + topGap,
+    right,
+    safe.bottom + bottomGap,
+  );
+}
+
 Future<SensorLocationDraft?> _loadLocationForBinding(
   DeviceBindingConfigV2 binding,
 ) {
@@ -123,7 +141,12 @@ class MainDashboardScreen extends StatelessWidget {
                 children: [
                   Positioned.fill(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(14, 82, 14, 126),
+                      padding: _cleanAirScrollPadding(
+                        context,
+                        left: 14,
+                        right: 14,
+                        bottomGap: 184,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -338,7 +361,7 @@ class _CleanAirTopBar extends StatelessWidget {
       left: 0,
       right: 0,
       child: Container(
-        height: safeTop + 64,
+        height: safeTop + _cleanAirTopBarBodyHeight,
         color: background.withValues(alpha: 0.94),
         padding: EdgeInsets.fromLTRB(20, safeTop, 20, 0),
         child: Row(
@@ -455,6 +478,7 @@ class _DashboardData {
     required this.co2,
     required this.tvoc,
     required this.nox,
+    required this.co,
     required this.temperature,
     required this.humidity,
     required this.historyScores,
@@ -481,6 +505,7 @@ class _DashboardData {
   final double? co2;
   final double? tvoc;
   final double? nox;
+  final double? co;
   final double? temperature;
   final double? humidity;
   final List<double> historyScores;
@@ -522,6 +547,7 @@ class _DashboardData {
         co2: null,
         tvoc: null,
         nox: null,
+        co: null,
         temperature: null,
         humidity: null,
         historyScores: const <double>[],
@@ -550,6 +576,7 @@ class _DashboardData {
     final co2 = snapshot.co2;
     final tvoc = snapshot.tvoc;
     final nox = snapshot.nox;
+    final co = snapshot.co;
     final temperature = snapshot.temperature;
     final humidity = snapshot.humidity;
     final history = controller.rawHistory
@@ -585,6 +612,7 @@ class _DashboardData {
       co2: co2,
       tvoc: tvoc,
       nox: nox,
+      co: co,
       temperature: temperature,
       humidity: humidity,
       historyScores: historyScores,
@@ -1729,6 +1757,15 @@ class _DashboardMetricGrid extends StatelessWidget {
         detailIndex: 3,
       ),
       _DashboardMetric(
+        label: 'CO',
+        value: data.co,
+        unit: 'ppm',
+        status: data.co == null ? '데이터 없음' : coStatus(data.co!),
+        icon: Symbols.warning,
+        detailIndex: 5,
+        noDataLabel: 'N/A',
+      ),
+      _DashboardMetric(
         label: '온도',
         value: data.temperature,
         unit: '°C',
@@ -1737,7 +1774,7 @@ class _DashboardMetricGrid extends StatelessWidget {
             : temperatureStatus(data.temperature!),
         icon: Symbols.thermostat,
         fractionDigits: 1,
-        detailIndex: 4,
+        detailIndex: 6,
       ),
       _DashboardMetric(
         label: '습도',
@@ -1746,7 +1783,7 @@ class _DashboardMetricGrid extends StatelessWidget {
         status:
             data.humidity == null ? '연결 대기' : humidityStatus(data.humidity!),
         icon: Symbols.humidity_percentage,
-        detailIndex: 5,
+        detailIndex: 7,
       ),
     ];
 
@@ -1826,6 +1863,7 @@ class _DashboardMetric {
     required this.icon,
     required this.detailIndex,
     this.fractionDigits = 0,
+    this.noDataLabel = '-',
   });
 
   final String label;
@@ -1835,6 +1873,7 @@ class _DashboardMetric {
   final IconData icon;
   final int detailIndex;
   final int fractionDigits;
+  final String noDataLabel;
 }
 
 class _DashboardMetricTile extends StatelessWidget {
@@ -1846,8 +1885,9 @@ class _DashboardMetricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasValue = metric.value != null;
-    final value =
-        hasValue ? metric.value!.toStringAsFixed(metric.fractionDigits) : '-';
+    final value = hasValue
+        ? metric.value!.toStringAsFixed(metric.fractionDigits)
+        : metric.noDataLabel;
     return Material(
       color: const Color(0xFFF5FAFD),
       borderRadius: BorderRadius.circular(20),
@@ -3008,7 +3048,7 @@ class _PollutantCardState extends State<_PollutantCard> {
   }
 }
 
-enum _DashboardPollutant { pm25, co2, tvoc, nox }
+enum _DashboardPollutant { pm25, co2, tvoc, nox, co }
 
 class _DashboardPollutantSeries {
   const _DashboardPollutantSeries({
@@ -3094,7 +3134,9 @@ _DashboardPollutantSeries _dashboardPollutantSeries(
   return _DashboardPollutantSeries(
     title: title,
     unit: unit,
-    status: latestValue == null ? '연결 대기' : statusOf(latestValue),
+    status: latestValue == null
+        ? (pollutant == _DashboardPollutant.co ? '데이터 없음' : '연결 대기')
+        : statusOf(latestValue),
     icon: icon,
     values: values,
     points: points,
@@ -3129,6 +3171,7 @@ String _dashboardPollutantLabel(_DashboardPollutant pollutant) {
     _DashboardPollutant.co2 => 'CO₂',
     _DashboardPollutant.tvoc => 'TVOC',
     _DashboardPollutant.nox => 'NOx',
+    _DashboardPollutant.co => 'CO',
   };
 }
 
@@ -3138,6 +3181,7 @@ String _dashboardPollutantTitle(_DashboardPollutant pollutant) {
     _DashboardPollutant.co2 => 'CO₂ 이산화탄소',
     _DashboardPollutant.tvoc => 'TVOC 총휘발성유기화합물',
     _DashboardPollutant.nox => 'NOx 질소산화물',
+    _DashboardPollutant.co => 'CO 일산화탄소',
   };
 }
 
@@ -3147,6 +3191,7 @@ String _dashboardPollutantUnit(_DashboardPollutant pollutant) {
     _DashboardPollutant.co2 => 'ppm',
     _DashboardPollutant.tvoc => 'index',
     _DashboardPollutant.nox => 'index',
+    _DashboardPollutant.co => 'ppm',
   };
 }
 
@@ -3156,6 +3201,7 @@ IconData _dashboardPollutantIcon(_DashboardPollutant pollutant) {
     _DashboardPollutant.co2 => Symbols.co2,
     _DashboardPollutant.tvoc => Symbols.science,
     _DashboardPollutant.nox => Symbols.cloud,
+    _DashboardPollutant.co => Symbols.warning,
   };
 }
 
@@ -3167,6 +3213,7 @@ double? Function(AirQualitySnapshot?) _dashboardPollutantValueGetter(
     _DashboardPollutant.co2 => (sample) => sample?.co2,
     _DashboardPollutant.tvoc => (sample) => sample?.tvoc,
     _DashboardPollutant.nox => (sample) => sample?.nox,
+    _DashboardPollutant.co => (sample) => sample?.co,
   };
 }
 
@@ -3178,6 +3225,7 @@ String Function(double) _dashboardPollutantStatusGetter(
     _DashboardPollutant.co2 => co2Status,
     _DashboardPollutant.tvoc => tvocStatus,
     _DashboardPollutant.nox => noxStatus,
+    _DashboardPollutant.co => coStatus,
   };
 }
 
@@ -3632,7 +3680,12 @@ class _LegacyPage extends StatelessWidget {
         children: [
           Positioned.fill(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 84, 16, 130),
+              padding: _cleanAirScrollPadding(
+                context,
+                left: 16,
+                right: 16,
+                bottomGap: 184,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: children,
