@@ -346,6 +346,28 @@ Topic: cleanair_plug_02
 Full Topic: %prefix%/%topic%/
 ```
 
+세 번째 플러그는 아래처럼 입력합니다.
+
+```text
+Client: cleanair_plug_03_%06X
+Topic: cleanair_plug_03
+Full Topic: %prefix%/%topic%/
+```
+
+심사 또는 시연 환경에서는 HiveMQ 관리자 화면을 따로 만질 필요가 없습니다. 제출자가 미리 준비한 MQTT 계정과 Topic을 그대로 입력하면 됩니다.
+
+권장 Topic:
+
+```text
+cleanair_plug_01
+cleanair_plug_02
+cleanair_plug_03
+```
+
+새 플러그를 추가할 때는 아직 쓰지 않은 번호를 선택합니다. 이미 등록된 플러그와 같은 Topic을 쓰면 두 플러그가 같은 명령을 받거나, 앱에서 상태가 섞여 보일 수 있습니다.
+
+관리자용 참고: HiveMQ Cloud에서는 위 Topic들이 사용할 수 있도록 미리 publish/subscribe 권한을 열어두어야 합니다. 심사자는 이 작업을 하지 않습니다.
+
 ### 12.2 Tasmota 콘솔 확인
 
 Tasmota Console에서 아래 명령을 입력합니다.
@@ -365,7 +387,40 @@ Power Off
 
 `ON` 또는 `OFF`만 입력하면 Tasmota가 명령으로 인식하지 못할 수 있습니다.
 
-### 12.3 HiveMQ 웹 클라이언트 테스트
+### 12.3 MQTT 연결 실패 확인
+
+Tasmota Console에 아래와 같은 로그가 반복되면 MQTT 서버가 접속을 거절한 것입니다.
+
+```text
+MQT: Connect failed ... rc 5
+```
+
+`rc 5`는 보통 사용자 이름, 비밀번호, TLS 설정, 또는 서버 쪽 권한 문제입니다. 기존 플러그는 되는데 새 플러그만 안 된다면 먼저 비밀번호와 Topic 번호를 확인합니다. 그래도 안 되면 해당 Topic이 서버에서 허용되어 있지 않을 수 있으므로 관리자에게 확인해야 합니다.
+
+확인 순서:
+
+1. Host에 `mqtts://`를 붙이지 않고 서버 주소만 입력했는지 확인합니다.
+2. Port가 `8883`인지 확인합니다.
+3. `MQTT TLS`가 체크되어 있는지 확인합니다.
+4. User와 Password가 HiveMQ에 만든 값과 정확히 같은지 확인합니다.
+5. Topic과 Client가 서로 맞는지 확인합니다.
+6. 같은 Topic을 다른 플러그가 이미 쓰고 있지 않은지 확인합니다.
+
+플러그 3번의 기본 입력 예시는 아래와 같습니다.
+
+```text
+Host: 7d18e3d75dbb4d12aa5951049f5868d2.s1.eu.hivemq.cloud
+Port: 8883
+MQTT TLS: 체크
+Client: cleanair_plug_03_%06X
+User: Capstone
+Topic: cleanair_plug_03
+Full Topic: %prefix%/%topic%/
+```
+
+비밀번호는 화면에 보이지 않으므로 오타가 나기 쉽습니다. `rc 5`가 계속 뜨면 비밀번호를 다시 입력하고 저장한 뒤 플러그를 재시작합니다.
+
+### 12.4 HiveMQ 웹 클라이언트 테스트
 
 토픽을 구독합니다.
 
@@ -390,7 +445,7 @@ Message: OFF
 
 정상이라면 `stat/cleanair_plug_01/POWER`에 `ON` 또는 `OFF` 응답이 옵니다.
 
-### 12.4 MQTT worker 실행
+### 12.5 MQTT worker 실행
 
 Functions 폴더에서 worker를 실행하면 MQTT 명령과 응답을 Firestore에 기록할 수 있습니다.
 
