@@ -17,8 +17,6 @@ Cleanair는 AirGradient 센서, Android 앱, Firebase, Tasmota 스마트 플러�
 - 앱 사용 설명서: `docs/APP_OVERVIEW.md`
 - 설치 및 설정 가이드: `docs/RUN_GUIDE.md`
 
-두 문서만 보면 앱 설치, 센서 등록, 위치 설정, 스마트 플러그 제어, MQTT 원격 제어, 알림, Slack 연동, 웹 상황판 사용까지 순서대로 진행할 수 있습니다.
-
 ## 빠른 시작
 
 1. Android 기기에 `release_apk/cleanair-final-release.apk`를 설치합니다.
