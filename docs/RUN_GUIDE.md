@@ -31,6 +31,8 @@ APK만 설치해서 사용할 경우 Flutter SDK는 필요하지 않습니다. �
 
 ## 2. 폴더 구성
 
+이 문서의 명령어는 GitHub에서 받은 `Cleanair` 폴더를 기준으로 작성했습니다. PowerShell이나 터미널에서 먼저 `Cleanair` 폴더로 이동한 뒤 실행하면 됩니다.
+
 | 경로 | 내용 |
 | --- | --- |
 | `release_apk/cleanair-final-release.apk` | Android 설치 파일 |
@@ -56,12 +58,14 @@ release_apk/cleanair-final-release.apk
 3. Android가 설치를 막으면 해당 파일 관리자 또는 브라우저의 “알 수 없는 앱 설치” 권한을 허용합니다.
 4. 설치가 끝나면 Cleanair 앱을 실행합니다.
 
-처음 실행하면 초기 설정 화면이 열립니다. 이미 설정을 마친 상태에서 다시 초기 설정부터 보고 싶다면 Flutter 실행 시 아래 옵션을 사용합니다.
+처음 실행하면 초기 설정 화면이 열립니다. 이미 설정을 마친 상태에서 다시 초기 설정부터 보고 싶다면 프로젝트를 받은 폴더에서 Flutter 실행 옵션을 사용합니다.
 
 ```powershell
-cd C:\Users\박건우\Desktop\capstoneapp\github_verify\Cleanair\flutter
-C:\src\flutter\bin\flutter.bat run --dart-define=FORCE_ONBOARDING=true
+cd .\flutter
+flutter run --dart-define=FORCE_ONBOARDING=true
 ```
+
+Windows에서 `flutter` 명령이 잡히지 않으면 Flutter SDK를 설치한 위치의 실행 파일을 직접 사용합니다. 예를 들어 `C:\src\flutter`에 설치했다면 `C:\src\flutter\bin\flutter.bat run`처럼 실행하면 됩니다.
 
 ## 4. AirGradient 센서 펌웨어 설치
 
@@ -98,7 +102,7 @@ firmware_installer/
 PowerShell에서 직접 실행할 수도 있습니다.
 
 ```powershell
-cd C:\Users\박건우\Desktop\capstoneapp\github_verify\Cleanair\firmware_installer
+cd .\firmware_installer
 .\install_cleanair_firmware.bat
 ```
 
@@ -371,7 +375,7 @@ Message: OFF
 Functions 폴더에서 worker를 실행하면 MQTT 명령과 응답을 Firestore에 기록할 수 있습니다.
 
 ```powershell
-cd C:\Users\박건우\Desktop\capstoneapp\github_verify\Cleanair\functions
+cd .\functions
 npm install
 npm run worker:plug
 ```
@@ -435,9 +439,9 @@ https://capstone-cleanair-2026.web.app
 APK를 새로 빌드하려면 Flutter 폴더에서 실행합니다.
 
 ```powershell
-cd C:\Users\박건우\Desktop\capstoneapp\github_verify\Cleanair\flutter
-C:\src\flutter\bin\flutter.bat pub get
-C:\src\flutter\bin\flutter.bat build apk --release
+cd .\flutter
+flutter pub get
+flutter build apk --release
 ```
 
 빌드된 APK 위치:
@@ -457,15 +461,15 @@ release_apk/cleanair-final-release.apk
 일반 실행:
 
 ```powershell
-cd C:\Users\박건우\Desktop\capstoneapp\github_verify\Cleanair\flutter
-C:\src\flutter\bin\flutter.bat run
+cd .\flutter
+flutter run
 ```
 
 초기 설정 화면부터 실행:
 
 ```powershell
-cd C:\Users\박건우\Desktop\capstoneapp\github_verify\Cleanair\flutter
-C:\src\flutter\bin\flutter.bat run --dart-define=FORCE_ONBOARDING=true
+cd .\flutter
+flutter run --dart-define=FORCE_ONBOARDING=true
 ```
 
 ## 18. Firebase Functions 배포
@@ -473,7 +477,7 @@ C:\src\flutter\bin\flutter.bat run --dart-define=FORCE_ONBOARDING=true
 Functions를 다시 배포하려면 프로젝트 루트에서 실행합니다.
 
 ```powershell
-cd C:\Users\박건우\Desktop\capstoneapp\github_verify\Cleanair
+cd .\
 firebase deploy --only functions --project capstone-cleanair-2026
 ```
 
@@ -490,7 +494,7 @@ Functions는 다음 역할을 맡습니다.
 ## 19. 웹 상황판 배포
 
 ```powershell
-cd C:\Users\박건우\Desktop\capstoneapp\github_verify\Cleanair
+cd .\
 firebase deploy --only hosting --project capstone-cleanair-2026
 ```
 
