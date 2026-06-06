@@ -148,12 +148,23 @@ python -m pip install esptool
 | NOx | index |
 | 온도 | degC |
 | 습도 | % |
+| CO | ppm, SEN0466 연결 시 |
 
-CO 센서는 AirGradient ONE 기본 구성에 포함되어 있지 않습니다.
+CO 센서는 AirGradient ONE 기본 구성에 포함되어 있지 않습니다. 현재 펌웨어는 DFRobot SEN0466 CO 센서를 I2C에 연결했을 때 자동으로 감지하도록 구성되어 있습니다.
 
-앱, 웹, Firebase Functions는 `co` 값을 받을 준비가 되어 있습니다. SEN0466 같은 CO 센서를 추가로 장착할 경우 펌웨어에서 CO 값을 읽어 Firebase payload에 `co` 필드로 보내면 됩니다.
+CO 센서가 정상적으로 감지되면 Firebase payload에 `co` 값이 추가됩니다. CO 센서가 없으면 `co` 필드를 보내지 않습니다. 이 방식은 “CO 센서 미연결”과 “CO 0ppm”을 구분하기 위한 처리입니다.
 
-CO 센서가 없을 때는 `co: 0`을 보내면 안 됩니다. CO 센서가 없는 상태와 실제 CO 농도 0ppm이 구분되지 않기 때문입니다. 센서가 정상적으로 읽힐 때만 `co` 값을 보내는 방식이 맞습니다.
+CO 센서 감지 여부는 시리얼 로그에서 확인할 수 있습니다.
+
+```text
+Init optional CO sensor success
+```
+
+CO 센서가 없으면 아래 문구가 나오며, 이 상태도 기본형 AirGradient 센서로 정상 동작합니다.
+
+```text
+Optional CO sensor not found
+```
 
 ## 5. 앱에서 센서 등록
 
@@ -540,7 +551,7 @@ CO2 끄기 기준: 900 ppm
 - 웹 상황판 전송
 - 119 전화 화면 열기
 
-CO 센서가 없는 기본형에서는 PM2.5, CO2, TVOC, NOx, 온도 변화 등을 중심으로 판단합니다. CO 센서가 연결되어 `co` 값이 들어오면 CO 위험도 함께 반영됩니다.
+CO 센서가 없는 기본형에서는 PM2.5, CO2, TVOC, NOx, 온도 변화 등을 중심으로 판단합니다. CO 센서가 연결되어 `co` 값이 들어오면 CO 위험도 함께 반영됩니다. CO 센서가 연결되지 않은 상태를 CO 0ppm으로 보지 않도록, 서버와 앱은 `co` 필드가 실제로 들어오는지 확인한 뒤 확장형 판단을 적용합니다.
 
 방재모드에서 상황 요약을 누르면 내용을 복사하거나 다른 앱으로 공유할 수 있습니다. 메시지는 현장 확인과 신고 판단에 필요한 위치, 센서값, 판단 단계, 연결 장치 정보를 담습니다.
 
@@ -662,6 +673,16 @@ Functions를 새로 배포할 때는 `functions/.env` 또는 Firebase 환경 변
 2. PIN 입력 중 공백이 들어가지 않았는지 확인합니다.
 3. 센서 펌웨어가 Cleanair 펌웨어인지 확인합니다.
 4. Firebase Functions의 `claimDevice`, `registerDevice`가 배포되어 있는지 확인합니다.(개발자용)
+
+센서 화면에 PIN 자체가 표시되지 않으면 펌웨어가 새 Firebase relay 서버와 통신하지 못하는 상태일 수 있습니다. 이 경우 펌웨어를 다시 설치한 뒤 시리얼 로그에서 아래 흐름을 확인합니다.
+
+```text
+Firebase sendDataToFirebase requestCode=true
+Firebase HTTP Response code: 200
+Pairing PIN: 123456
+```
+
+`Firebase HTTP Response code`가 200이 아니거나 아예 나오지 않으면 Wi-Fi 연결, Functions 배포 상태, 펌웨어 안의 relay 서버 주소를 확인해야 합니다. 현재 설치 패키지의 펌웨어는 `capstone-cleanair-2026` 프로젝트의 relay 함수로 전송하도록 빌드되어 있습니다.
 
 ### 주변 센서 검색이 안 됨
 
