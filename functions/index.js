@@ -217,7 +217,7 @@ async function sendPushToDevice(event, device) {
         body: event.message,
       },
       android: {
-        priority: event.type === "fire_risk" && event.severity === "critical" ? "high" : "normal",
+        priority: "high",
         notification: {
           channelId:
             event.type === "fire_risk" && event.severity === "critical"
@@ -4445,6 +4445,67 @@ exports.relay = onRequest(
               nowDate
             )
           );
+        }
+
+        const relaySnapshotPayload = {
+          serial: normalizedMac,
+          raw: {
+            pm25: relayPm25,
+            iaqi: relayIaqi,
+            iaqiScore: relayIaqiScore,
+            co2: relayCo2,
+            co: relayCo,
+            tvoc: relayTvoc,
+            nox: sensorData.nox,
+            temp: relayTemp,
+            humidity: relayHumidity,
+            k: Number.isFinite(relayK) ? relayK : null,
+            kEffective: relayKEffective,
+            kSource: resolvedRelayK.source,
+            kPm25: resolvedRelayK.kPm25,
+            kCo2: resolvedRelayK.kCo2,
+            kR2Pm25: resolvedRelayK.r2Pm25,
+            kR2Co2: resolvedRelayK.r2Co2,
+            kSampleCountPm25: resolvedRelayK.pmSampleCount,
+            kSampleCountCo2: resolvedRelayK.co2SampleCount,
+          },
+          pm25: relayPm25,
+          iaqi: relayIaqi,
+          iaqiScore: relayIaqiScore,
+          co2: relayCo2,
+          co: relayCo,
+          tvoc: relayTvoc,
+          nox: sensorData.nox,
+          temp: relayTemp,
+          humidity: relayHumidity,
+          k: Number.isFinite(relayK) ? relayK : null,
+          kEffective: relayKEffective,
+          kSource: resolvedRelayK.source,
+          kPm25: resolvedRelayK.kPm25,
+          kCo2: resolvedRelayK.kCo2,
+          kR2Pm25: resolvedRelayK.r2Pm25,
+          kR2Co2: resolvedRelayK.r2Co2,
+          kSampleCountPm25: resolvedRelayK.pmSampleCount,
+          kSampleCountCo2: resolvedRelayK.co2SampleCount,
+          timestamp: nowDate.toISOString(),
+        };
+
+        try {
+          await dispatchAlertsForSnapshot(relaySnapshotPayload);
+        } catch (alertError) {
+          logger.error("relay_alert_dispatch_failed", {
+            sensorId: normalizedMac,
+            error: alertError?.message || alertError,
+          });
+        }
+
+        try {
+          await dispatchAutoControlForSnapshot(relaySnapshotPayload);
+        } catch (autoControlError) {
+          logger.error("relay_auto_control_dispatch_failed", {
+            sensorId: normalizedMac,
+            error: autoControlError?.message || autoControlError,
+          });
         }
 
         if (!requestCode) {
