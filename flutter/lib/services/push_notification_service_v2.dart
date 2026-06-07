@@ -416,7 +416,7 @@ class PushNotificationServiceV2 {
         ? notification!.title!
         : (data['title']?.toString().trim().isNotEmpty == true
             ? data['title'].toString()
-            : '공기질 경보');
+            : '공기질 알림');
     final body = notification?.body?.trim().isNotEmpty == true
         ? notification!.body!
         : (data['body']?.toString().trim().isNotEmpty == true
@@ -493,7 +493,7 @@ class PushNotificationServiceV2 {
       if (severity != null && severity.isNotEmpty) severity,
       if (sensorId != null && sensorId.isNotEmpty) sensorId,
     ];
-    return parts.isEmpty ? '새 공기질 경보가 도착했습니다.' : parts.join(' · ');
+    return parts.isEmpty ? '현재 공기질 상태를 확인해 주세요.' : parts.join(' · ');
   }
 
   String _formatMinutes(int value) {

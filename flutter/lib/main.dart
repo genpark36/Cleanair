@@ -29,7 +29,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final data = message.data;
   final title = data['title']?.toString().trim().isNotEmpty == true
       ? data['title'].toString()
-      : '공기질 경보';
+      : '공기질 알림';
   final body = data['body']?.toString().trim().isNotEmpty == true
       ? data['body'].toString()
       : [
@@ -39,7 +39,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
         ].where((value) => value != null && value.isNotEmpty).join(' · ');
   await AlertNotificationPresenter.showAlert(
     title,
-    body.isEmpty ? '새 공기질 경보가 도착했습니다.' : body,
+    body.isEmpty ? '현재 공기질 상태를 확인해 주세요.' : body,
     payload: jsonEncode({
       if (data['type'] != null) 'type': data['type'].toString(),
       if (data['severity'] != null) 'severity': data['severity'].toString(),

@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../models/air_quality_snapshot.dart';
+import 'home_screen_widget_service.dart';
 import 'local_snapshot_store.dart';
 
 class BackgroundServiceManager {
@@ -195,6 +196,13 @@ class _BackgroundFirestoreRunner {
         final snapshot = _snapshotFromDocument(doc.id, data);
         _lastSnapshot = snapshot;
         await _store.appendSnapshot(snapshot);
+        final recent = await _store.loadRecent();
+        unawaited(
+          HomeScreenWidgetService.update(
+            latest: snapshot,
+            history: recent.map((entry) => entry.toSnapshot()).toList(),
+          ),
+        );
         _updateForegroundNotification();
       },
       onError: (_) {

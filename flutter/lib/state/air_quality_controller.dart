@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/air_quality_snapshot.dart';
 import '../services/firestore_snapshot_service.dart';
+import '../services/home_screen_widget_service.dart';
 import '../services/local_snapshot_store.dart';
 import '../utils/air_quality_data.dart';
 
@@ -97,6 +98,12 @@ class AirQualityController extends ChangeNotifier {
         ..clear()
         ..addAll(samples.map((sample) => sample.toSnapshot()));
       _latestSnapshot = _history.isNotEmpty ? _history.last : null;
+      unawaited(
+        HomeScreenWidgetService.update(
+          latest: _latestSnapshot,
+          history: _history,
+        ),
+      );
       notifyListeners();
     } catch (_) {}
   }
@@ -177,6 +184,12 @@ class AirQualityController extends ChangeNotifier {
         _history.removeRange(0, _history.length - _maxHistoryEntries);
       }
       _latestSnapshot = _history.isNotEmpty ? _history.last : _latestSnapshot;
+      unawaited(
+        HomeScreenWidgetService.update(
+          latest: _latestSnapshot,
+          history: _history,
+        ),
+      );
       notifyListeners();
     } catch (error) {
       try {
@@ -245,6 +258,12 @@ class AirQualityController extends ChangeNotifier {
     _latestSnapshot = snapshot;
     _history.add(snapshot);
     unawaited(_store.appendSnapshot(snapshot));
+    unawaited(
+      HomeScreenWidgetService.update(
+        latest: _latestSnapshot,
+        history: _history,
+      ),
+    );
 
     final cutoff = DateTime.now().subtract(_historyWindow);
     _history.removeWhere((entry) => entry.timestamp.isBefore(cutoff));

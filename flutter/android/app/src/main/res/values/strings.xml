@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CleanAir</string>
+    <string name="cleanair_status_widget_description">현재 공기질과 방재 상태</string>
+    <string name="cleanair_trend_widget_description">최근 하루 IAQI 흐름</string>
+</resources>

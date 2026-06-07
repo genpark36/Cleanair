@@ -33,8 +33,8 @@ class AlertNotificationService {
     await AlertNotificationPresenter.ensureInitialized();
     _prefsListener = () => _engine.purgeExpired(DateTime.now());
     _preferences.addListener(_prefsListener!);
-    _subscription ??=
-        _snapshotService.snapshots.listen(_handleSnapshot, onError: _handleError);
+    _subscription ??= _snapshotService.snapshots
+        .listen(_handleSnapshot, onError: _handleError);
   }
 
   void _handleSnapshot(AirQualitySnapshot snapshot) {
@@ -46,7 +46,7 @@ class AlertNotificationService {
     }
     for (final message in messages) {
       unawaited(AlertNotificationPresenter.showAlert(
-        '공기질 경보',
+        '공기질 알림',
         message,
         payload: snapshot.id,
       ));
