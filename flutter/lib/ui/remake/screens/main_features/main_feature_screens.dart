@@ -2745,7 +2745,7 @@ class _TrendCard extends StatefulWidget {
 }
 
 class _TrendCardState extends State<_TrendCard> {
-  _LogRange _range = _LogRange.day;
+  _LogRange _range = _LogRange.tenMinutes;
   bool _asBars = false;
 
   @override
@@ -2862,7 +2862,7 @@ class _PollutantCard extends StatefulWidget {
 
 class _PollutantCardState extends State<_PollutantCard> {
   _DashboardPollutant _selected = _DashboardPollutant.pm25;
-  _LogRange _range = _LogRange.day;
+  _LogRange _range = _LogRange.tenMinutes;
   bool _asBars = false;
 
   @override
@@ -5663,7 +5663,7 @@ class DataLoggingScreen extends StatefulWidget {
 class _DataLoggingScreenState extends State<DataLoggingScreen> {
   final _csvExportService = AirQualityCsvExportService();
   int _selected = 0;
-  _LogRange _range = _LogRange.day;
+  _LogRange _range = _LogRange.tenMinutes;
   bool _chartAsBars = false;
   bool _exporting = false;
   bool _serverExporting = false;
