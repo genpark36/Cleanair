@@ -527,7 +527,7 @@ function renderStatus() {
 }
 
 function renderCriticalBanner() {
-  const critical = getActiveIncident() || getCriticalAlert();
+  const critical = getActiveIncident() || getEmergencyAlert();
   if (!critical) {
     els.criticalBanner.classList.add("hidden");
     els.criticalBanner.innerHTML = "";
@@ -1268,7 +1268,8 @@ async function saveProfile() {
 
 function openEmergencyModal() {
   const incident = getActiveIncident();
-  const alert = getCriticalAlert() || state.alerts[0] || null;
+  const alert = getEmergencyAlert() || state.alerts[0] || null;
+  const emergency = Boolean(incident?.isCritical) || isEmergencyAlert(alert);
   const sensorId = incident?.sensorId || alert?.sensorId;
   const sensor = sensorId
     ? state.sensors.find((item) => item.id === sensorId)
@@ -1286,7 +1287,7 @@ function openEmergencyModal() {
     <article class="modal-card incident-modal-card">
       <header class="modal-head">
         <div>
-          <div class="card-sub">LEVEL: ${(incident?.isCritical || alert?.isCritical) ? "EMERGENCY" : "MONITORING"}</div>
+          <div class="card-sub">LEVEL: ${emergency ? "EMERGENCY" : "MONITORING"}</div>
           <h2>${escapeHtml(title)}</h2>
         </div>
         <button class="icon-button" data-action="close-modal">×</button>
@@ -1294,7 +1295,7 @@ function openEmergencyModal() {
       <div class="modal-body">
         <section>
           <h2>상황 정보</h2>
-          <div class="alert-item ${(incident?.isCritical || alert?.isCritical) ? "critical" : ""}">
+          <div class="alert-item ${emergency ? "critical" : ""}">
             <strong>${escapeHtml(sensor?.name || "시설 선택 필요")}</strong>
             <div>${escapeHtml(location)}</div>
             <div>${escapeHtml(message)}</div>
@@ -1321,7 +1322,8 @@ function openEmergencyModal() {
 
 async function createIncidentFromCurrent() {
   if (!state.db || !state.user) return;
-  const alert = getCriticalAlert() || state.alerts[0] || null;
+  const alert = getEmergencyAlert() || state.alerts[0] || null;
+  const emergency = isEmergencyAlert(alert);
   const sensor = alert?.sensorId
     ? state.sensors.find((item) => item.id === alert.sensorId)
     : state.sensors.find((item) => item.status === "danger") || state.sensors[0];
@@ -1335,7 +1337,7 @@ async function createIncidentFromCurrent() {
     await setDoc(ref, {
       id: ref.id,
       status: "active",
-      severity: alert?.isCritical || sensor?.status === "danger" ? "critical" : "warning",
+      severity: emergency || sensor?.status === "danger" ? "critical" : "warning",
       type: alert?.type || "manual_report",
       title,
       message,
@@ -1410,7 +1412,7 @@ async function endIncident(incidentId) {
 
 async function copySituationSummary() {
   const incident = getActiveIncident();
-  const alert = getCriticalAlert() || state.alerts[0] || null;
+  const alert = getEmergencyAlert() || state.alerts[0] || null;
   const sensorId = incident?.sensorId || alert?.sensorId;
   const sensor = sensorId
     ? state.sensors.find((item) => item.id === sensorId)
@@ -1917,8 +1919,25 @@ function getStatusCounts() {
   return counts;
 }
 
-function getCriticalAlert() {
-  return state.alerts.find((alert) => alert.isCritical && !isDismissedAlert(alert)) || null;
+function getEmergencyAlert() {
+  return state.alerts.find((alert) => isEmergencyAlert(alert) && !isDismissedAlert(alert)) || null;
+}
+
+function isEmergencyAlert(alert) {
+  if (!alert) return false;
+  const type = String(alert.type || "").toLowerCase();
+  const severity = String(alert.severity || "").toLowerCase();
+  const title = String(alert.title || "");
+  const message = String(alert.message || "");
+  const fireRisk = type.includes("fire_risk") || type.includes("fire");
+  if (!fireRisk) return false;
+  return severity.includes("critical")
+    || severity.includes("emergency")
+    || title.includes("화재")
+    || title.includes("CO 위험")
+    || title.includes("CO 상승")
+    || message.includes("화재")
+    || message.includes("CO 위험");
 }
 
 function statusLabel(status) {
