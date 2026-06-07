@@ -279,7 +279,7 @@ class FireRiskAssessment {
         '${leading.isEmpty ? '공기질' : leading} 상태가 나쁩니다. 환기와 오염원을 확인해 주세요.',
       FireRiskLevel.notice => '공기질이 조금 안좋아졌습니다. 환기를 권장해요.',
       FireRiskLevel.coOnly => 'CO가 높습니다. 즉시 환기하고 연소기기 상태를 확인하세요.',
-      FireRiskLevel.normal => '화재 의심 패턴이 아닙니다. 정상적인 상태입니다.',
+      FireRiskLevel.normal => '화재 의심 패턴은 보이지 않습니다. 현재 상태는 안정적입니다.',
     };
     return FireRiskAssessment(
       level: level,

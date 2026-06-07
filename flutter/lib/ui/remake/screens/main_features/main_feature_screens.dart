@@ -2147,7 +2147,7 @@ class _DashboardStatusSummaryCard extends StatelessWidget {
             ? '현재 공기질은 ${data.status} 상태입니다.'
             : '센서가 연결되면 실시간 공기질을 표시합니다.';
     final disasterText = assessment.level == FireRiskLevel.normal
-        ? '화재 의심 패턴은 보이지 않습니다.'
+        ? '화재 의심 패턴은 보이지 않습니다. 사람이 머무는 공간은 주기적인 환기를 권장합니다.'
         : assessment.headline;
 
     return _SoftCard(
@@ -9774,7 +9774,7 @@ class _ComparisonNormalScreenState extends State<ComparisonNormalScreen> {
             icon: Symbols.info,
             title: '표본 수 n=${pmStats?.n ?? 0}',
             subtitle: hasComparison
-                ? '실외 데이터는 공공 관측소 기준이며 실내 센서와 시간차가 있을 수 있습니다.'
+                ? '실외 데이터는 공공 관측소 기준의 데이터이며 실내 센서와 시간차가 있을 수 있습니다.'
                 : '비교 데이터가 들어오기 전에는 실내 센서값만 보여줍니다.',
           ),
         ),

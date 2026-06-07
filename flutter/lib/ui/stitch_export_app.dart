@@ -3827,7 +3827,7 @@ class _FireRiskCriteriaCard extends StatelessWidget {
           Text('판단 기준', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Text(
-            '최근 60초 평균, 5분 변화량, 여러 지표가 동시에 나빠졌는지, 같은 흐름이 반복되는지를 확인합니다.',
+            '최근 60초 평균, 5분 변화량, 여러 지표가 동시에 나빠졌는지, 같은 흐름이 반복되는지 확인합니다.',
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
@@ -3861,8 +3861,8 @@ class _FireRiskCriteriaCard extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Text(
               assessment.coConnected
-                  ? 'CO 확장형은 CO가 0ppm으로 측정된 상황과 CO가 높아진 상황을 구분합니다. CO와 미세먼지가 함께 오르거나 CO 단독 위험이 있으면 더 강하게 판단합니다.'
-                  : '기본형은 CO 데이터가 수신되지 않는 AirGradient 구성입니다. 이때는 PM2.5, TVOC, 온도, NOx가 동시에 나빠지고 반복되는지를 중심으로 판단합니다.',
+                  ? 'CO 센서가 연결되어 있으면 실제 CO 측정값을 함께 반영합니다. CO가 높거나 CO와 미세먼지가 함께 오르면 더 높은 단계로 판단합니다.'
+                  : 'CO 센서가 없으면 PM2.5, TVOC, 온도, NOx의 변화가 함께 나타나는지와 같은 흐름이 반복되는지로 판단합니다.',
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
@@ -4485,7 +4485,7 @@ class _PropagationCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            assessment.isUrgent ? assessment.headline : '현재 전달할 긴급 상황은 없습니다',
+            assessment.isUrgent ? assessment.headline : '현재 전파할 긴급 상황은 없습니다',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: assessment.isUrgent ? Sx.danger : Sx.text,
                 ),
@@ -4575,7 +4575,7 @@ class _SituationTimeline extends StatelessWidget {
                     radius: 18,
                     padding: const EdgeInsets.all(14),
                     child: Text(
-                      '최근 기록할 만한 방재 상황은 없습니다.',
+                      '최근 기록된 방재 상황이 없습니다.',
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
@@ -4598,7 +4598,7 @@ class _SituationTimeline extends StatelessWidget {
                     radius: 18,
                     padding: const EdgeInsets.all(14),
                     child: Text(
-                      '서버 기록을 불러오지 못했습니다. 현재 화면의 판단값은 최신 센서 데이터 기준으로 계속 표시됩니다.',
+                      '서버 기록을 불러오지 못했습니다. 현재 화면에는 최신 센서 데이터 기준의 판단값을 표시합니다.',
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
